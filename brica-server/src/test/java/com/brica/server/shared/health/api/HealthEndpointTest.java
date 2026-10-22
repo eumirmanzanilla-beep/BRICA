@@ -1,35 +1,25 @@
 package com.brica.server.shared.health.api;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.test.web.servlet.MockMvc;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@WebMvcTest(HealthController.class)
 class HealthEndpointTest {
 
-    @Value("${local.server.port}")
-    private int port;
+    @Autowired
+    private MockMvc mockMvc;
 
     @Test
     void shouldReturnServerHealth() throws Exception {
-        var request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:" + port + "/api/v1/health"))
-                .GET()
-                .build();
-
-        var response = HttpClient.newHttpClient()
-                .send(request, HttpResponse.BodyHandlers.ofString());
-
-        assertEquals(200, response.statusCode());
-        assertTrue(response.body().contains("\"status\":\"UP\""));
-        assertTrue(response.body().contains("\"service\":\"brica-server\""));
+        mockMvc.perform(get("/api/v1/health"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("UP"))
+            .andExpect(jsonPath("$.service").value("brica-server"));
     }
 }
