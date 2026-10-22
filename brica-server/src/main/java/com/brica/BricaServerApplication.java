@@ -1,4 +1,4 @@
-package com.brica.server;
+package com.brica;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
