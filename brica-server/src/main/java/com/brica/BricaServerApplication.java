@@ -10,3 +10,4 @@ public class BricaServerApplication {
         SpringApplication.run(BricaServerApplication.class, args);
     }
 }
+    
