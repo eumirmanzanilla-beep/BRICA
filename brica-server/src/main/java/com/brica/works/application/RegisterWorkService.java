@@ -9,6 +9,7 @@ import com.brica.clientes.domain.Cliente;
 import com.brica.clientes.infrastructure.ClienteRepository;
 import com.brica.works.domain.Work;
 import com.brica.works.infrastructure.WorkRepository;
+import com.brica.clientes.application.ClientNotFoundException;  
 
 @Service 
 public class RegisterWorkService {
@@ -31,8 +32,10 @@ public class RegisterWorkService {
         String description,
         LocalDate startDate,
         LocalDate endDate) {
-            Cliente client = clientRepository.findById(clientId).orElseThrow(()
-            -> new IllegalArgumentException("Client not found with id: " + clientId));
+            Cliente client = clientRepository.findById(clientId)
+                .orElseThrow(() ->
+                    new ClientNotFoundException(clientId)
+                );
 
         Work work = new Work(
             client,

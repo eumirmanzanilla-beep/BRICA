@@ -9,6 +9,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.brica.clientes.application.ClientNotFoundException;
 import com.brica.clientes.domain.Cliente;
 import com.brica.clientes.infrastructure.ClienteRepository;
 import com.brica.works.domain.Work;
@@ -72,7 +73,7 @@ class RegisterWorkServiceTest {
             .thenReturn(Optional.empty());
 
         assertThrows(
-            IllegalArgumentException.class,
+            ClientNotFoundException.class,
             () -> registerWorkService.registerWork(
                 999L,
                 "Invalid Work",
