@@ -1,14 +1,17 @@
 package com.brica.works.api;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import com.brica.clientes.application.ClientNotFoundException;
 import com.brica.clientes.domain.Cliente;
 import com.brica.server.shared.error.api.ApiExceptionHandler;
+import com.brica.works.application.ListWorksService;
 import com.brica.works.application.RegisterWorkService;
 import com.brica.works.domain.Work;
 
 import org.junit.jupiter.api.Test;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -16,12 +19,14 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -35,9 +40,80 @@ class WorkControllerTest {
     @MockitoBean
     private RegisterWorkService registerWorkService;
 
+    @MockitoBean
+    private ListWorksService listWorksService;
+
+    @Test
+    void shouldListWorks() throws Exception {
+        Cliente client = mock(Cliente.class);
+
+        when(client.getIdCliente())
+            .thenReturn(1L);
+
+        Work work = mock(Work.class);
+
+        when(work.getId())
+            .thenReturn(10L);
+
+        when(work.getClient())
+            .thenReturn(client);
+
+        when(work.getName())
+            .thenReturn("Administrative Building Renovation");
+
+        when(work.getLocation())
+            .thenReturn("Merida, Yucatan");
+
+        when(work.getDescription())
+            .thenReturn("General renovation work");
+
+        when(work.getStartDate())
+            .thenReturn(LocalDate.of(2026, 10, 23));
+
+        when(work.getEndDate())
+            .thenReturn(LocalDate.of(2027, 1, 30));
+
+        when(listWorksService.listWorks())
+            .thenReturn(List.of(work));
+
+        mockMvc.perform(
+                get("/api/v1/works")
+            )
+            .andExpect(status().isOk())
+            .andExpect(
+                jsonPath("$[0].id")
+                    .value(10)
+            )
+            .andExpect(
+                jsonPath("$[0].clientId")
+                    .value(1)
+            )
+            .andExpect(
+                jsonPath("$[0].name")
+                    .value("Administrative Building Renovation")
+            )
+            .andExpect(
+                jsonPath("$[0].location")
+                    .value("Merida, Yucatan")
+            )
+            .andExpect(
+                jsonPath("$[0].description")
+                    .value("General renovation work")
+            )
+            .andExpect(
+                jsonPath("$[0].startDate")
+                    .value("2026-10-23")
+            )
+            .andExpect(
+                jsonPath("$[0].endDate")
+                    .value("2027-01-30")
+            );
+
+        verify(listWorksService).listWorks();
+    }
+
     @Test
     void shouldRegisterWork() throws Exception {
-
         Cliente client = mock(Cliente.class);
 
         when(client.getIdCliente())
@@ -80,12 +156,12 @@ class WorkControllerTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""
                         {
-                        "clientId": 1,
-                        "name": "Administrative Building Renovation",
-                        "location": "Merida, Yucatan",
-                        "description": "General renovation work",
-                        "startDate": "2026-10-23",
-                        "endDate": "2027-01-30"
+                          "clientId": 1,
+                          "name": "Administrative Building Renovation",
+                          "location": "Merida, Yucatan",
+                          "description": "General renovation work",
+                          "startDate": "2026-10-23",
+                          "endDate": "2027-01-30"
                         }
                         """)
             )
