@@ -1,4 +1,4 @@
-package com.brica.contracts.infrasctructure;
+package com.brica.contracts.infrastructure;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
