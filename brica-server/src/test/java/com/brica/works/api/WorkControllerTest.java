@@ -3,8 +3,8 @@ package com.brica.works.api;
 import java.time.LocalDate;
 import java.util.List;
 
-import com.brica.clientes.application.ClientNotFoundException;
-import com.brica.clientes.domain.Cliente;
+import com.brica.clients.application.ClientNotFoundException;
+import com.brica.clients.domain.Client;
 import com.brica.server.shared.error.api.ApiExceptionHandler;
 import com.brica.works.application.ListWorksService;
 import com.brica.works.application.RegisterWorkService;
@@ -45,9 +45,9 @@ class WorkControllerTest {
 
     @Test
     void shouldListWorks() throws Exception {
-        Cliente client = mock(Cliente.class);
+        Client client = mock(Client.class);
 
-        when(client.getIdCliente())
+        when(client.getId())
             .thenReturn(1L);
 
         Work work = mock(Work.class);
@@ -114,9 +114,9 @@ class WorkControllerTest {
 
     @Test
     void shouldRegisterWork() throws Exception {
-        Cliente client = mock(Cliente.class);
+        Client client = mock(Client.class);
 
-        when(client.getIdCliente())
+        when(client.getId())
             .thenReturn(1L);
 
         Work work = mock(Work.class);

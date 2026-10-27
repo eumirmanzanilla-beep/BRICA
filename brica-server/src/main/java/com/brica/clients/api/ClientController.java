@@ -1,10 +1,10 @@
-package com.brica.clientes.api;
+package com.brica.clients.api;
 
 import java.util.List;
 
-import com.brica.clientes.application.ListClientsService;
-import com.brica.clientes.application.RegisterClientService;
-import com.brica.clientes.domain.Cliente;
+import com.brica.clients.application.ListClientsService;
+import com.brica.clients.application.RegisterClientService;
+import com.brica.clients.domain.Client;
 
 import jakarta.validation.Valid;
 
@@ -44,7 +44,7 @@ public class ClientController {
     public ClientResponse registerClient(
             @Valid @RequestBody RegisterClientRequest request) {
 
-        Cliente client = registerClientService.registerClient(
+        Client client = registerClientService.registerClient(
             request.name(),
             request.legalRepresentative()
         );

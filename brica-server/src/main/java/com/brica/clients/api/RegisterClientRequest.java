@@ -1,4 +1,4 @@
-package com.brica.clientes.api;
+package com.brica.clients.api;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

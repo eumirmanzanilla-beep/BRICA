@@ -1,7 +1,7 @@
 package com.brica.contracts.infrastructure;
 
-import com.brica.clientes.domain.Cliente;
-import com.brica.clientes.infrastructure.ClienteRepository;
+import com.brica.clients.domain.Client;
+import com.brica.clients.infrastructure.ClientRepository;
 import com.brica.contracts.domain.Contract;
 import com.brica.works.domain.Work;
 import com.brica.works.infrastructure.WorkRepository;
@@ -44,7 +44,7 @@ class ContractPersistenceIntegrationTest {
     }
 
     @Autowired
-    private ClienteRepository clienteRepository;
+    private ClientRepository clientRepository;
 
     @Autowired
     private WorkRepository workRepository;
@@ -62,8 +62,8 @@ class ContractPersistenceIntegrationTest {
     @Transactional
     void shouldPersistJsonbAndWorkRelationship() {
         // Arrange: crear un cliente y una obra reales en PostgreSQL.
-        Cliente client = clienteRepository.saveAndFlush(
-                new Cliente(
+        Client client = clientRepository.saveAndFlush(
+                new Client(
                         "Cliente de integración",
                         "Representante de integración"
                 )

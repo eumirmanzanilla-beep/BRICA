@@ -9,9 +9,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.brica.clientes.application.ClientNotFoundException;
-import com.brica.clientes.domain.Cliente;
-import com.brica.clientes.infrastructure.ClienteRepository;
+import com.brica.clients.application.ClientNotFoundException;
+import com.brica.clients.domain.Client;
+import com.brica.clients.infrastructure.ClientRepository;
 import com.brica.works.domain.Work;
 import com.brica.works.infrastructure.WorkRepository;
 
@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
 class RegisterWorkServiceTest {
 
     @Mock
-    private ClienteRepository clientRepository;
+    private ClientRepository clientRepository;
 
     @Mock
     private WorkRepository workRepository;
@@ -36,7 +36,7 @@ class RegisterWorkServiceTest {
 
     @Test
     void shouldRegisterWorkForExistingClient() {
-        Cliente client = new Cliente(
+        Client client = new Client(
             "Constructora ABC",
             "Jane Doe"
         );

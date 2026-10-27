@@ -17,7 +17,7 @@ public record WorkResponse(
     public static WorkResponse from(Work work) {
         return new WorkResponse(
             work.getId(),
-            work.getClient().getIdCliente(),
+            work.getClient().getId(),
             work.getName(),
             work.getLocation(),
             work.getDescription(),

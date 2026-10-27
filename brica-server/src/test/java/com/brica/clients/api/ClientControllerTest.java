@@ -1,10 +1,6 @@
-package com.brica.clientes.api;
+package com.brica.clients.api;
 
 import java.util.List;
-
-import com.brica.clientes.application.ListClientsService;
-import com.brica.clientes.application.RegisterClientService;
-import com.brica.clientes.domain.Cliente;
 
 import org.junit.jupiter.api.Test;
 
@@ -13,6 +9,11 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
+import com.brica.clients.api.ClientController;
+import com.brica.clients.application.ListClientsService;
+import com.brica.clients.application.RegisterClientService;
+import com.brica.clients.domain.Client;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -39,25 +40,25 @@ class ClientControllerTest {
 
     @Test
     void shouldListClients() throws Exception {
-        Cliente firstClient = mock(Cliente.class);
-        Cliente secondClient = mock(Cliente.class);
+        Client firstClient = mock(Client.class);
+        Client secondClient = mock(Client.class);
 
-        when(firstClient.getIdCliente())
+        when(firstClient.getId())
             .thenReturn(1L);
 
-        when(firstClient.getNombre())
+        when(firstClient.getName())
             .thenReturn("Constructora ABC");
 
-        when(firstClient.getRepresentanteLegal())
+        when(firstClient.getLegalRepresentative())
             .thenReturn("Jane Doe");
 
-        when(secondClient.getIdCliente())
+        when(secondClient.getId())
             .thenReturn(2L);
 
-        when(secondClient.getNombre())
+        when(secondClient.getName())
             .thenReturn("Constructora XYZ");
 
-        when(secondClient.getRepresentanteLegal())
+        when(secondClient.getLegalRepresentative())
             .thenReturn("John Doe");
 
         when(listClientsService.listClients())
@@ -93,7 +94,7 @@ class ClientControllerTest {
 
     @Test
     void shouldRegisterClient() throws Exception {
-        Cliente client = new Cliente(
+        Client client = new Client(
             "Constructora ABC",
             "Jane Doe"
         );
