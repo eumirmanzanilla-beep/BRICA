@@ -1,12 +1,14 @@
-package com.brica.clientes.application;
+package com.brica.clients.application;
 
-import com.brica.clientes.domain.Cliente;
-import com.brica.clientes.infrastructure.ClienteRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import com.brica.clients.application.RegisterClientService;
+import com.brica.clients.domain.Client;
+import com.brica.clients.infrastructure.ClientRepository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -17,32 +19,32 @@ import static org.mockito.Mockito.when;
 class RegisterClientServiceTest {
 
     @Mock
-    private ClienteRepository clientRepository;
+    private ClientRepository clientRepository;
 
     @InjectMocks
     private RegisterClientService registerClientService;
 
     @Test
     void shouldRegisterClient() {
-        when(clientRepository.save(any(Cliente.class)))
+        when(clientRepository.save(any(Client.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
 
-        Cliente client = registerClientService.registerClient(
+        Client client = registerClientService.registerClient(
             "Constructora ABC",
             "Jane Doe"
         );
 
         assertEquals(
             "Constructora ABC",
-            client.getNombre()
+            client.getName()
         );
 
         assertEquals(
             "Jane Doe",
-            client.getRepresentanteLegal()
+            client.getLegalRepresentative()
         );
 
         verify(clientRepository)
-            .save(any(Cliente.class));
+            .save(any(Client.class));
     }
 }

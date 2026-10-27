@@ -2,7 +2,7 @@ package com.brica.works.domain;
 
 import java.time.LocalDate;
 
-import com.brica.clientes.domain.Cliente;
+import com.brica.clients.domain.Client;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -25,7 +25,7 @@ public class Work {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "client_id", nullable = false)
-    private Cliente client;
+    private Client client;
 
     @Column(name = "name", nullable = false, length = 255)
     private String name;
@@ -46,7 +46,7 @@ public class Work {
     }
 
     public Work(
-            Cliente client,
+            Client client,
             String name,
             String location,
             String description,
@@ -65,7 +65,7 @@ public class Work {
         return id;
     }
 
-    public Cliente getClient() {
+    public Client getClient() {
         return client;
     }
 

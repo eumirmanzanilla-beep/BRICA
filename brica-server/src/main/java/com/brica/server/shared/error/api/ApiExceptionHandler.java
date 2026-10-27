@@ -1,7 +1,6 @@
 package com.brica.server.shared.error.api;
 
-import com.brica.clientes.application.ClientNotFoundException;
-
+import com.brica.clients.application.ClientNotFoundException;
 import com.brica.works.application.WorkNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;

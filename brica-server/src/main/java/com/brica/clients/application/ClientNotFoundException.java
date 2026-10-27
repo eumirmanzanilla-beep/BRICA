@@ -1,4 +1,4 @@
-package com.brica.clientes.application;
+package com.brica.clients.application;
 
 public class ClientNotFoundException extends RuntimeException {
 

@@ -1,9 +1,9 @@
-package com.brica.clientes.application;
+package com.brica.clients.application;
 
 import java.util.List;
 
-import com.brica.clientes.domain.Cliente;
-import com.brica.clientes.infrastructure.ClienteRepository;
+import com.brica.clients.domain.Client;
+import com.brica.clients.infrastructure.ClientRepository;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,14 +11,16 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class ListClientsService {
 
-    private final ClienteRepository clientRepository;
+    private final ClientRepository clientRepository;
 
-    public ListClientsService(ClienteRepository clientRepository) {
+    public ListClientsService(
+            ClientRepository clientRepository) {
+
         this.clientRepository = clientRepository;
     }
 
     @Transactional(readOnly = true)
-    public List<Cliente> listClients() {
+    public List<Client> listClients() {
         return clientRepository.findAll();
     }
 }

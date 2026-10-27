@@ -1,6 +1,5 @@
-package com.brica.clientes.infrastructure;
+package com.brica.clients.infrastructure;
 
-import com.brica.clientes.domain.Cliente;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -9,6 +8,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+
+import com.brica.clients.domain.Client;
+import com.brica.clients.infrastructure.ClientRepository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -24,33 +26,33 @@ class ClientPersistenceIntegrationTest {
         new PostgreSQLContainer<>("postgres:18-alpine");
 
     @Autowired
-    private ClienteRepository clientRepository;
+    private ClientRepository clientRepository;
 
     @Test
     void shouldPersistClient() {
-        Cliente client = new Cliente(
+        Client client = new Client(
             "Constructora Integration Test",
             "Jane Doe"
         );
 
-        Cliente savedClient =
+        Client savedClient =
             clientRepository.saveAndFlush(client);
 
-        assertNotNull(savedClient.getIdCliente());
+        assertNotNull(savedClient.getId());
 
-        Cliente persistedClient =
+        Client persistedClient =
             clientRepository
-                .findById(savedClient.getIdCliente())
+                .findById(savedClient.getId())
                 .orElseThrow();
 
         assertEquals(
             "Constructora Integration Test",
-            persistedClient.getNombre()
+            persistedClient.getName()
         );
 
         assertEquals(
             "Jane Doe",
-            persistedClient.getRepresentanteLegal()
+            persistedClient.getLegalRepresentative()
         );
     }
 }
