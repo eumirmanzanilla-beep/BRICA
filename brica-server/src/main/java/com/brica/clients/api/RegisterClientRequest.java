@@ -5,19 +5,19 @@ import jakarta.validation.constraints.Size;
 
 public record RegisterClientRequest(
 
-        @NotBlank(message = "name must not be blank")
+        @NotBlank(message = "El campo es obligatorio.")
         @Size(
             max = 255,
-            message = "name must not exceed 255 characters"
+            message = "El campo no debe superar 255 caracteres."
         )
         String name,
 
         @NotBlank(
-            message = "legalRepresentative must not be blank"
+            message = "El campo es obligatorio."
         )
         @Size(
             max = 255,
-            message = "legalRepresentative must not exceed 255 characters"
+            message = "El campo no debe superar 255 caracteres."
         )
         String legalRepresentative
 

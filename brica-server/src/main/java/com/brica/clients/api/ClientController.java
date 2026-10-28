@@ -32,8 +32,11 @@ public class ClientController {
     }
 
     @GetMapping
-    public List<ClientResponse> listClients() {
-        return listClientsService.listClients()
+    public List<ClientResponse> listClients(
+            @org.springframework.web.bind.annotation.RequestParam(value = "page", required = false) Integer page,
+            @org.springframework.web.bind.annotation.RequestParam(value = "size", required = false) Integer size) {
+        return (page == null && size == null ? listClientsService.listClients()
+                : listClientsService.listClients(page == null ? 0 : page, size == null ? 50 : size))
                 .stream()
                 .map(ClientResponse::from)
                 .toList();

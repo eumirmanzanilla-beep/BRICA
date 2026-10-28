@@ -3,17 +3,17 @@ package com.brica.works.application;
 import java.time.LocalDate;
 import java.util.Optional;
 
-import com.brica.clients.application.ClientNotFoundException;
-import com.brica.clients.application.port.ClientStore;
-import com.brica.clients.domain.Client;
-import com.brica.works.application.port.WorkStore;
-import com.brica.works.domain.Work;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import com.brica.clients.application.ClientNotFoundException;
+import com.brica.clients.domain.Client;
+import com.brica.clients.application.port.ClientStore;
+import com.brica.works.domain.Work;
+import com.brica.works.application.port.WorkStore;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -26,10 +26,10 @@ import static org.mockito.Mockito.when;
 class RegisterWorkServiceTest {
 
     @Mock
-    private ClientStore clientStore;
+    private ClientStore clientRepository;
 
     @Mock
-    private WorkStore workStore;
+    private WorkStore workRepository;
 
     @InjectMocks
     private RegisterWorkService registerWorkService;
@@ -41,10 +41,10 @@ class RegisterWorkServiceTest {
             "Jane Doe"
         );
 
-        when(clientStore.findById(1L))
+        when(clientRepository.findById(1L))
             .thenReturn(Optional.of(client));
 
-        when(workStore.save(any(Work.class)))
+        when(workRepository.save(any(Work.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
 
         Work work = registerWorkService.registerWork(
@@ -63,20 +63,20 @@ class RegisterWorkServiceTest {
 
         assertEquals(client, work.getClient());
 
-        verify(clientStore).findById(1L);
-        verify(workStore).save(any(Work.class));
+        verify(clientRepository).findById(1L);
+        verify(workRepository).save(any(Work.class));
     }
 
     @Test
     void shouldRejectWorkWhenClientDoesNotExist() {
-        when(clientStore.findById(999L))
+        when(clientRepository.findById(999L))
             .thenReturn(Optional.empty());
 
         assertThrows(
             ClientNotFoundException.class,
             () -> registerWorkService.registerWork(
                 999L,
-                "Invalid Work",
+                "Invalid Obra",
                 "Merida, Yucatan",
                 null,
                 LocalDate.of(2026, 10, 23),
@@ -84,9 +84,16 @@ class RegisterWorkServiceTest {
             )
         );
 
-        verify(clientStore).findById(999L);
+        verify(clientRepository).findById(999L);
 
-        verify(workStore, never())
+        verify(workRepository, never())
             .save(any(Work.class));
+    }
+    @Test
+    void shouldRejectInvalidClientIdBeforeAccessingPersistence() {
+        assertThrows(com.brica.server.shared.validation.domain.InvalidDataException.class,
+                () -> registerWorkService.registerWork(0L, "Obra", "Ubicación", null,
+                        LocalDate.of(2026, 1, 1), null));
+        org.mockito.Mockito.verifyNoInteractions(clientRepository, workRepository);
     }
 }

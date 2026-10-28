@@ -3,17 +3,17 @@ package com.brica.contracts.application;
 import java.util.Map;
 import java.util.Optional;
 
-import com.brica.contracts.application.port.ContractStore;
-import com.brica.contracts.domain.Contract;
-import com.brica.works.application.WorkNotFoundException;
-import com.brica.works.application.port.WorkStore;
-import com.brica.works.domain.Work;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import com.brica.contracts.domain.Contract;
+import com.brica.contracts.application.port.ContractStore;
+import com.brica.works.application.WorkNotFoundException;
+import com.brica.works.domain.Work;
+import com.brica.works.application.port.WorkStore;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -27,10 +27,10 @@ import static org.mockito.Mockito.when;
 class RegisterContractServiceTest {
 
     @Mock
-    private WorkStore workStore;
+    private WorkStore workRepository;
 
     @Mock
-    private ContractStore contractStore;
+    private ContractStore contractRepository;
 
     @InjectMocks
     private RegisterContractService registerContractService;
@@ -44,10 +44,10 @@ class RegisterContractServiceTest {
             "amount", 1500000
         );
 
-        when(workStore.findById(1L))
+        when(workRepository.findById(1L))
             .thenReturn(Optional.of(work));
 
-        when(contractStore.save(any(Contract.class)))
+        when(contractRepository.save(any(Contract.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
 
         Contract contract =
@@ -66,14 +66,14 @@ class RegisterContractServiceTest {
             contract.getData().get("amount")
         );
 
-        verify(workStore).findById(1L);
-        verify(contractStore)
+        verify(workRepository).findById(1L);
+        verify(contractRepository)
             .save(any(Contract.class));
     }
 
     @Test
     void shouldRejectContractWhenWorkDoesNotExist() {
-        when(workStore.findById(999L))
+        when(workRepository.findById(999L))
             .thenReturn(Optional.empty());
 
         assertThrows(
@@ -87,9 +87,9 @@ class RegisterContractServiceTest {
             )
         );
 
-        verify(workStore).findById(999L);
+        verify(workRepository).findById(999L);
 
-        verify(contractStore, never())
+        verify(contractRepository, never())
             .save(any(Contract.class));
     }
 }

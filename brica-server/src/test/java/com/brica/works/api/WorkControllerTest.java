@@ -43,6 +43,12 @@ class WorkControllerTest {
     @MockitoBean
     private ListWorksService listWorksService;
 
+    @MockitoBean
+    private com.brica.works.application.ConsultWorkService consultService;
+
+    @MockitoBean
+    private com.brica.works.application.CorrectWorkService correctService;
+
     @Test
     void shouldListWorks() throws Exception {
         Client client = mock(Client.class);
@@ -210,7 +216,7 @@ class WorkControllerTest {
             .andExpect(status().isNotFound())
             .andExpect(
                 jsonPath("$.title")
-                    .value("Client not found")
+                    .value("Cliente no encontrado")
             );
     }
 
