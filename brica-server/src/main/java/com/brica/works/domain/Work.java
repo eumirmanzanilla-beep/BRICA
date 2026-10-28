@@ -1,10 +1,14 @@
+
 package com.brica.works.domain;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.LinkedHashMap;
-import com.brica.server.shared.validation.domain.InputRules;
+import java.util.Objects;
 
 import com.brica.clients.domain.Client;
+import com.brica.server.shared.validation.domain.InputRules;
+import com.brica.server.shared.validation.domain.InvalidDataException;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -44,6 +48,9 @@ public class Work {
     @Column(name = "end_date")
     private LocalDate endDate;
 
+    @Column(name = "deleted_at")
+    private OffsetDateTime deletedAt;
+
     protected Work() {
     }
 
@@ -56,16 +63,67 @@ public class Work {
             LocalDate endDate) {
 
         validate(name, location, startDate, endDate);
+
         if (client == null) {
-            throw new com.brica.server.shared.validation.domain.InvalidDataException(
-                    java.util.Map.of("clientId", "El cliente es obligatorio."));
+            throw new InvalidDataException(
+                    java.util.Map.of(
+                            "clientId",
+                            "El cliente es obligatorio."
+                    )
+            );
         }
+
         this.client = client;
         this.name = name;
         this.location = location;
         this.description = description;
         this.startDate = startDate;
         this.endDate = endDate;
+    }
+
+    public void correctGeneralInformation(
+            String name,
+            String location,
+            String description) {
+
+        validate(name, location, startDate, endDate);
+
+        this.name = name;
+        this.location = location;
+        this.description = description;
+    }
+
+    public void markDeleted(OffsetDateTime deletedAt) {
+        this.deletedAt = Objects.requireNonNull(
+                deletedAt,
+                "La fecha de eliminación es obligatoria."
+        );
+    }
+
+    private static void validate(
+            String name,
+            String location,
+            LocalDate start,
+            LocalDate end) {
+
+        var errors = new LinkedHashMap<String, String>();
+
+        InputRules.requiredText(errors, "name", name, 255);
+        InputRules.requiredText(errors, "location", location, 255);
+
+        if (start == null) {
+            errors.put(
+                    "startDate",
+                    "La fecha de inicio es obligatoria."
+            );
+        } else if (end != null && end.isBefore(start)) {
+            errors.put(
+                    "endDate",
+                    "La fecha de terminación no puede ser anterior al inicio."
+            );
+        }
+
+        InputRules.rejectErrors(errors);
     }
 
     public Long getId() {
@@ -95,22 +153,8 @@ public class Work {
     public LocalDate getEndDate() {
         return endDate;
     }
-    private static void validate(String name, String location, LocalDate start, LocalDate end) {
-        var errors = new LinkedHashMap<String, String>();
-        InputRules.requiredText(errors, "name", name, 255);
-        InputRules.requiredText(errors, "location", location, 255);
-        if (start == null) {
-            errors.put("startDate", "La fecha de inicio es obligatoria.");
-        } else if (end != null && end.isBefore(start)) {
-            errors.put("endDate", "La fecha de terminación no puede ser anterior al inicio.");
-        }
-        InputRules.rejectErrors(errors);
-    }
 
-    public void correctGeneralInformation(String name, String location, String description) {
-        validate(name, location, startDate, endDate);
-        this.name = name;
-        this.location = location;
-        this.description = description;
+    public OffsetDateTime getDeletedAt() {
+        return deletedAt;
     }
 }
