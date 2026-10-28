@@ -1,34 +1,25 @@
 package com.brica.works.infrastructure;
 
-import java.util.List;
-import java.util.Optional;
-
 import com.brica.works.application.port.WorkStore;
 import com.brica.works.domain.Work;
-
 import org.springframework.stereotype.Repository;
 
 @Repository
 public class JpaWorkStore implements WorkStore {
+    private final WorkRepository repository;
 
-    private final WorkRepository workRepository;
-
-    public JpaWorkStore(WorkRepository workRepository) {
-        this.workRepository = workRepository;
-    }
+    public JpaWorkStore(WorkRepository repository) { this.repository = repository; }
 
     @Override
-    public Work save(Work work) {
-        return workRepository.save(work);
-    }
+    public Work save(Work entity) { return repository.save(entity); }
+    @Override
+    public java.util.Optional<Work> findById(Long id) { return repository.findById(id); }
 
     @Override
-    public Optional<Work> findById(Long id) {
-        return workRepository.findById(id);
+    public java.util.List<Work> list(int page, int size) {
+        return repository.findAll(org.springframework.data.domain.PageRequest.of(page, size,
+                org.springframework.data.domain.Sort.by("id"))).getContent();
     }
-
     @Override
-    public List<Work> list() {
-        return workRepository.findAllByOrderByIdAsc();
-    }
+    public java.util.Optional<Work> findForUpdate(Long id) { return repository.findForUpdate(id); }
 }

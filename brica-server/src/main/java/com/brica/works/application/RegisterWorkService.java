@@ -2,39 +2,38 @@ package com.brica.works.application;
 
 import java.time.LocalDate;
 
-import com.brica.clients.application.ClientNotFoundException;
-import com.brica.clients.application.port.ClientStore;
-import com.brica.clients.domain.Client;
-import com.brica.works.application.port.WorkStore;
-import com.brica.works.domain.Work;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.brica.clients.domain.Client;
+import com.brica.clients.application.port.ClientStore;
+import com.brica.works.domain.Work;
+import com.brica.works.application.port.WorkStore;
+import com.brica.clients.application.ClientNotFoundException;
 
 @Service
 public class RegisterWorkService {
 
-    private final ClientStore clientStore;
-    private final WorkStore workStore;
+    private final ClientStore clientRepository;
+    private final WorkStore workRepository;
 
     public RegisterWorkService(
-            ClientStore clientStore,
-            WorkStore workStore) {
-
-        this.clientStore = clientStore;
-        this.workStore = workStore;
-    }
+            ClientStore clientRepository,
+            WorkStore workRepository) {
+                this.clientRepository = clientRepository;
+                this.workRepository = workRepository;
+            }
 
     @Transactional
     public Work registerWork(
-            Long clientId,
-            String name,
-            String location,
-            String description,
-            LocalDate startDate,
-            LocalDate endDate) {
-
-        Client client = clientStore.findById(clientId)
+        Long clientId,
+        String name,
+        String location,
+        String description,
+        LocalDate startDate,
+        LocalDate endDate) {
+        com.brica.server.shared.validation.domain.InputRules.positiveId("clientId", clientId);
+            Client client = clientRepository.findById(clientId)
                 .orElseThrow(() ->
                     new ClientNotFoundException(clientId)
                 );
@@ -48,6 +47,6 @@ public class RegisterWorkService {
             endDate
         );
 
-        return workStore.save(work);
+        return workRepository.save(work);
     }
 }

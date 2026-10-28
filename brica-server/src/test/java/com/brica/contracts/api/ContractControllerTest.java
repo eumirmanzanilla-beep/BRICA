@@ -120,11 +120,11 @@ class ContractControllerTest {
             .andExpect(status().isNotFound())
             .andExpect(
                 jsonPath("$.title")
-                    .value("Work not found")
+                    .value("Obra no encontrada")
             )
             .andExpect(
                 jsonPath("$.detail")
-                    .value("Work not found with id: 999")
+                    .value("No existe la obra solicitada.")
             );
     }
 

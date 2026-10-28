@@ -1,8 +1,7 @@
 package com.brica.clients.application;
 
-import com.brica.clients.application.port.ClientStore;
 import com.brica.clients.domain.Client;
-
+import com.brica.clients.application.port.ClientStore;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -18,14 +17,14 @@ import static org.mockito.Mockito.when;
 class RegisterClientServiceTest {
 
     @Mock
-    private ClientStore clientStore;
+    private ClientStore clientRepository;
 
     @InjectMocks
     private RegisterClientService registerClientService;
 
     @Test
     void shouldRegisterClient() {
-        when(clientStore.save(any(Client.class)))
+        when(clientRepository.save(any(Client.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
 
         Client client = registerClientService.registerClient(
@@ -43,7 +42,7 @@ class RegisterClientServiceTest {
             client.getLegalRepresentative()
         );
 
-        verify(clientStore)
+        verify(clientRepository)
             .save(any(Client.class));
     }
 }

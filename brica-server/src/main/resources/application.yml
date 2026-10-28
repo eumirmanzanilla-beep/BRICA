@@ -2,8 +2,12 @@ spring:
   application:
     name: brica-server
 
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/brica}
+    url: ${DB_URL:jdbc:postgresql://localhost:${POSTGRES_PORT:5433}/${POSTGRES_DB:brica}}
     username: ${DB_USER:brica}
     password: ${DB_PASSWORD}
 

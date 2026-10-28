@@ -4,30 +4,32 @@ import java.time.LocalDate;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
 public record RegisterWorkRequest(
 
-        @NotNull(message = "clientId is required")
+        @NotNull(message = "El campo es obligatorio.")
+        @Positive(message = "El identificador debe ser positivo.")
         Long clientId,
 
-        @NotBlank(message = "name must not be blank")
+        @NotBlank(message = "El campo es obligatorio.")
         @Size(
             max = 255,
-            message = "name must not exceed 255 characters"
+            message = "El campo no debe superar 255 caracteres."
         )
         String name,
 
-        @NotBlank(message = "location must not be blank")
+        @NotBlank(message = "El campo es obligatorio.")
         @Size(
             max = 255,
-            message = "location must not exceed 255 characters"
+            message = "El campo no debe superar 255 caracteres."
         )
         String location,
 
         String description,
 
-        @NotNull(message = "startDate is required")
+        @NotNull(message = "El campo es obligatorio.")
         LocalDate startDate,
 
         LocalDate endDate

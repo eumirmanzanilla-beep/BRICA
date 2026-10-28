@@ -2,9 +2,14 @@
 # Etapa 1: construcción
 # ============================================================
 
-FROM maven:3.10.0-eclipse-temurin-25 AS build
+FROM eclipse-temurin:25-jdk-noble AS build
 
 WORKDIR /workspace
+
+# La versión de Maven procede del mismo Wrapper usado en desarrollo.
+COPY mvnw .
+COPY .mvn .mvn
+RUN chmod +x mvnw
 
 # Copiamos primero los POM para aprovechar la caché de Docker.
 COPY pom.xml .
@@ -12,7 +17,7 @@ COPY brica-server/pom.xml brica-server/pom.xml
 COPY brica-client/pom.xml brica-client/pom.xml
 
 # Descarga dependencias antes de copiar el código fuente.
-RUN mvn \
+RUN ./mvnw \
     --no-transfer-progress \
     -pl brica-server \
     -am \
@@ -23,7 +28,7 @@ RUN mvn \
 COPY brica-server/src brica-server/src
 
 # Compilamos el servidor.
-RUN mvn \
+RUN ./mvnw \
     --no-transfer-progress \
     -pl brica-server \
     -am \

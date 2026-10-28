@@ -2,6 +2,10 @@ package com.brica.clients.api;
 
 import java.util.List;
 
+import com.brica.clients.application.ListClientsService;
+import com.brica.clients.application.RegisterClientService;
+import com.brica.clients.domain.Client;
+
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,11 +13,6 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-
-import com.brica.clients.api.ClientController;
-import com.brica.clients.application.ListClientsService;
-import com.brica.clients.application.RegisterClientService;
-import com.brica.clients.domain.Client;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;

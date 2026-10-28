@@ -1,6 +1,5 @@
 package com.brica.contracts.domain;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import org.hibernate.annotations.JdbcTypeCode;
@@ -43,9 +42,11 @@ public class Contract {
             Map<String, Object> data) {
 
         this.work = work;
-        this.data = data == null
-                ? new HashMap<>()
-                : new HashMap<>(data);
+        if (work == null) {
+            throw new com.brica.server.shared.validation.domain.InvalidDataException(
+                    Map.of("workId", "La obra es obligatoria."));
+        }
+        this.data = ContractData.copy(data);
     }
 
     public Long getId() {
@@ -57,6 +58,6 @@ public class Contract {
     }
 
     public Map<String, Object> getData() {
-        return Map.copyOf(data);
+        return ContractData.copy(data);
     }
 }

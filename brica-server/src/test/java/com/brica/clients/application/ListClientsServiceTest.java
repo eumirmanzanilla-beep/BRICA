@@ -2,11 +2,12 @@ package com.brica.clients.application;
 
 import java.util.List;
 
-import com.brica.clients.application.port.ClientStore;
 import com.brica.clients.domain.Client;
+import com.brica.clients.application.port.ClientStore;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -19,7 +20,7 @@ import static org.mockito.Mockito.when;
 class ListClientsServiceTest {
 
     @Mock
-    private ClientStore clientStore;
+    private ClientStore clientRepository;
 
     @InjectMocks
     private ListClientsService listClientsService;
@@ -31,7 +32,7 @@ class ListClientsServiceTest {
             new Client("Constructora XYZ", "John Doe")
         );
 
-        when(clientStore.list())
+        when(clientRepository.list(0, 50))
             .thenReturn(clients);
 
         List<Client> result =
@@ -39,6 +40,6 @@ class ListClientsServiceTest {
 
         assertEquals(clients, result);
 
-        verify(clientStore).list();
+        verify(clientRepository).list(0, 50);
     }
 }

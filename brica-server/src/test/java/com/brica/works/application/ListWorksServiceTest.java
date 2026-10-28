@@ -2,11 +2,12 @@ package com.brica.works.application;
 
 import java.util.List;
 
-import com.brica.works.application.port.WorkStore;
 import com.brica.works.domain.Work;
+import com.brica.works.application.port.WorkStore;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -20,7 +21,7 @@ import static org.mockito.Mockito.when;
 class ListWorksServiceTest {
 
     @Mock
-    private WorkStore workStore;
+    private WorkStore workRepository;
 
     @InjectMocks
     private ListWorksService listWorksService;
@@ -35,7 +36,7 @@ class ListWorksServiceTest {
             secondWork
         );
 
-        when(workStore.list())
+        when(workRepository.list(0, 50))
             .thenReturn(works);
 
         List<Work> result =
@@ -43,6 +44,7 @@ class ListWorksServiceTest {
 
         assertEquals(works, result);
 
-        verify(workStore).list();
+        verify(workRepository)
+            .list(0, 50);
     }
 }
