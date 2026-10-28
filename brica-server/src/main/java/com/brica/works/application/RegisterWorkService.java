@@ -2,37 +2,39 @@ package com.brica.works.application;
 
 import java.time.LocalDate;
 
+import com.brica.clients.application.ClientNotFoundException;
+import com.brica.clients.application.port.ClientStore;
+import com.brica.clients.domain.Client;
+import com.brica.works.application.port.WorkStore;
+import com.brica.works.domain.Work;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.brica.clients.application.ClientNotFoundException;
-import com.brica.clients.domain.Client;
-import com.brica.clients.infrastructure.ClientRepository;
-import com.brica.works.domain.Work;
-import com.brica.works.infrastructure.WorkRepository;  
-
-@Service 
+@Service
 public class RegisterWorkService {
 
-    private final ClientRepository clientRepository;
-    private final WorkRepository workRepository;
+    private final ClientStore clientStore;
+    private final WorkStore workStore;
 
     public RegisterWorkService(
-            ClientRepository clientRepository,
-            WorkRepository workRepository) {
-                this.clientRepository = clientRepository;
-                this.workRepository = workRepository;
-            }
+            ClientStore clientStore,
+            WorkStore workStore) {
+
+        this.clientStore = clientStore;
+        this.workStore = workStore;
+    }
 
     @Transactional
     public Work registerWork(
-        Long clientId,
-        String name,
-        String location,
-        String description,
-        LocalDate startDate,
-        LocalDate endDate) {
-            Client client = clientRepository.findById(clientId)
+            Long clientId,
+            String name,
+            String location,
+            String description,
+            LocalDate startDate,
+            LocalDate endDate) {
+
+        Client client = clientStore.findById(clientId)
                 .orElseThrow(() ->
                     new ClientNotFoundException(clientId)
                 );
@@ -46,6 +48,6 @@ public class RegisterWorkService {
             endDate
         );
 
-        return workRepository.save(work);
+        return workStore.save(work);
     }
 }

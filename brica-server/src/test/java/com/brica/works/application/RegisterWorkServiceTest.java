@@ -3,17 +3,17 @@ package com.brica.works.application;
 import java.time.LocalDate;
 import java.util.Optional;
 
+import com.brica.clients.application.ClientNotFoundException;
+import com.brica.clients.application.port.ClientStore;
+import com.brica.clients.domain.Client;
+import com.brica.works.application.port.WorkStore;
+import com.brica.works.domain.Work;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import com.brica.clients.application.ClientNotFoundException;
-import com.brica.clients.domain.Client;
-import com.brica.clients.infrastructure.ClientRepository;
-import com.brica.works.domain.Work;
-import com.brica.works.infrastructure.WorkRepository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -26,10 +26,10 @@ import static org.mockito.Mockito.when;
 class RegisterWorkServiceTest {
 
     @Mock
-    private ClientRepository clientRepository;
+    private ClientStore clientStore;
 
     @Mock
-    private WorkRepository workRepository;
+    private WorkStore workStore;
 
     @InjectMocks
     private RegisterWorkService registerWorkService;
@@ -41,10 +41,10 @@ class RegisterWorkServiceTest {
             "Jane Doe"
         );
 
-        when(clientRepository.findById(1L))
+        when(clientStore.findById(1L))
             .thenReturn(Optional.of(client));
 
-        when(workRepository.save(any(Work.class)))
+        when(workStore.save(any(Work.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
 
         Work work = registerWorkService.registerWork(
@@ -63,13 +63,13 @@ class RegisterWorkServiceTest {
 
         assertEquals(client, work.getClient());
 
-        verify(clientRepository).findById(1L);
-        verify(workRepository).save(any(Work.class));
+        verify(clientStore).findById(1L);
+        verify(workStore).save(any(Work.class));
     }
 
     @Test
     void shouldRejectWorkWhenClientDoesNotExist() {
-        when(clientRepository.findById(999L))
+        when(clientStore.findById(999L))
             .thenReturn(Optional.empty());
 
         assertThrows(
@@ -84,9 +84,9 @@ class RegisterWorkServiceTest {
             )
         );
 
-        verify(clientRepository).findById(999L);
+        verify(clientStore).findById(999L);
 
-        verify(workRepository, never())
+        verify(workStore, never())
             .save(any(Work.class));
     }
 }

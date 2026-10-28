@@ -2,27 +2,27 @@ package com.brica.contracts.application;
 
 import java.util.Map;
 
+import com.brica.contracts.application.port.ContractStore;
+import com.brica.contracts.domain.Contract;
+import com.brica.works.application.WorkNotFoundException;
+import com.brica.works.application.port.WorkStore;
+import com.brica.works.domain.Work;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import com.brica.contracts.domain.Contract;
-import com.brica.contracts.infrastructure.ContractRepository;
-import com.brica.works.application.WorkNotFoundException;
-import com.brica.works.domain.Work;
-import com.brica.works.infrastructure.WorkRepository;
 
 @Service
 public class RegisterContractService {
 
-    private final WorkRepository workRepository;
-    private final ContractRepository contractRepository;
+    private final WorkStore workStore;
+    private final ContractStore contractStore;
 
     public RegisterContractService(
-            WorkRepository workRepository,
-            ContractRepository contractRepository) {
+            WorkStore workStore,
+            ContractStore contractStore) {
 
-        this.workRepository = workRepository;
-        this.contractRepository = contractRepository;
+        this.workStore = workStore;
+        this.contractStore = contractStore;
     }
 
     @Transactional
@@ -30,7 +30,7 @@ public class RegisterContractService {
             Long workId,
             Map<String, Object> data) {
 
-        Work work = workRepository.findById(workId)
+        Work work = workStore.findById(workId)
                 .orElseThrow(() ->
                     new WorkNotFoundException(workId)
                 );
@@ -40,6 +40,6 @@ public class RegisterContractService {
             data
         );
 
-        return contractRepository.save(contract);
+        return contractStore.save(contract);
     }
 }
