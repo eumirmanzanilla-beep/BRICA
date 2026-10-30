@@ -1,90 +1,132 @@
-# BRICA — Iteración 0
 
-Primer esqueleto ejecutable del sistema BRICA.
+# BRICA
 
-## Objetivo de esta iteración
+Sistema de gestión administrativa y documental para proyectos
+de construcción.
 
-Comprobar la infraestructura mínima cliente-servidor antes de implementar reglas de negocio:
+## Estado del desarrollo
 
-1. El backend Spring Boot arranca.
-2. `GET /api/v1/health` responde `200 OK`.
-3. El cliente JavaFX arranca.
-4. El cliente puede comprobar la conexión con el servidor.
-5. La prueba automática del endpoint de salud pasa correctamente.
+BRICA se encuentra en desarrollo. Actualmente dispone de una
+arquitectura cliente-servidor y de las primeras funcionalidades
+para administrar Clientes, Obras y Contratos.
 
-No se incluye todavía PostgreSQL, JPA, Flyway, seguridad, Cliente ni Obra.
+### Backend
+
+- API REST desarrollada con Java 25 y Spring Boot 4.1.1.
+- Persistencia mediante PostgreSQL y JPA/Hibernate.
+- Migraciones de base de datos con Flyway.
+- Registro, consulta, actualización y eliminación lógica de Clientes.
+- Registro, consulta, corrección y eliminación lógica de Obras.
+- Registro de Contratos.
+- Validación de información y respuestas HTTP estructuradas.
+- Control de concurrencia en correcciones de Obras mediante
+  ETag e If-Match.
+
+### Cliente de escritorio
+
+- Aplicación JavaFX 25.
+- Navegación entre módulos.
+- Panel de inicio.
+- Gestión de Clientes.
+- Gestión de Obras.
+- Comunicación asíncrona con la API REST.
+
+La interfaz de Contratos y las funcionalidades de generación
+documental permanecen pendientes.
+
+## Arquitectura
+
+BRICA utiliza una arquitectura cliente-servidor:
+
+JavaFX → REST/HTTP → Spring Boot → JPA → PostgreSQL
+
+El cliente de escritorio no accede directamente a PostgreSQL.
+
+## Estructura del repositorio
+
+- `brica-client/`: aplicación JavaFX.
+- `brica-server/`: backend Spring Boot.
+- `docs/adr/`: decisiones de arquitectura.
+- `compose.yml`: servicios Docker de desarrollo.
+- `pom.xml`: configuración Maven multimódulo.
 
 ## Requisitos
 
-- JDK 25
-- Maven 3.10.0 o Maven Wrapper
+- JDK 25.
+- Maven Wrapper incluido en el proyecto.
+- PostgreSQL 18 para el entorno Docker de desarrollo.
+- Docker, opcional para el uso de PostgreSQL en desarrollo.
 
-## Crear Maven Wrapper
+## Configuración del servidor
 
-Desde la raíz, una sola vez:
+El backend utiliza las siguientes variables de entorno:
 
-```bash
-mvn wrapper:wrapper -Dmaven=3.10.0
-```
+- `DB_URL`: URL JDBC de PostgreSQL.
+- `DB_USER`: usuario de PostgreSQL.
+- `DB_PASSWORD`: contraseña de PostgreSQL.
 
-Después puede usarse `mvnw`/`mvnw.cmd`.
+La conexión debe apuntar a una instancia disponible de PostgreSQL.
 
-## Compilar todo
+El archivo `.env.example` sirve como referencia para la
+configuración de Docker. No deben incorporarse contraseñas reales
+al repositorio.
 
-Windows:
+## Compilación
 
-```powershell
-.\mvnw.cmd clean verify
-```
+Desde la raíz del proyecto en Windows:
 
-Linux/macOS:
+    .\mvnw.cmd -pl brica-client compile
 
-```bash
-./mvnw clean verify
-```
+Para compilar todos los módulos:
 
-## Ejecutar servidor
+    .\mvnw.cmd compile
 
-```powershell
-.\mvnw.cmd -pl brica-server spring-boot:run
-```
+## Ejecutar el servidor
 
-Después abrir:
+Con PostgreSQL disponible y las variables de entorno configuradas:
 
-`http://localhost:8080/api/v1/health`
+    .\mvnw.cmd -pl brica-server spring-boot:run
 
-Respuesta esperada:
+Endpoint de comprobación:
 
-```json
-{"status":"UP","service":"brica-server"}
-```
+    http://localhost:8080/api/v1/health
 
-## Ejecutar cliente
+## Ejecutar el cliente
 
-En otra terminal, dejando el servidor activo:
+En otra terminal:
 
-```powershell
-.\mvnw.cmd -pl brica-client javafx:run
-```
+    .\mvnw.cmd -pl brica-client javafx:run
 
-Presionar **Comprobar servidor**.
+La URL del servidor puede configurarse mediante la variable
+`BRICA_SERVER_URL` o la propiedad `brica.server.url`.
 
-Resultado esperado: **Servidor BRICA disponible**.
+## Flujo de desarrollo
 
-## Configurar otra URL de servidor
+- `main`: rama principal de integración.
+- `feat/*`: nuevas funcionalidades.
+- `fix/*`: corrección de errores.
+- `refactor/*`: mejoras internas sin modificar comportamiento.
+- `chore/*`: mantenimiento y configuración.
+- `docs/*`: documentación.
 
-Por variable de entorno:
+Los cambios destinados a `main` deben proponerse mediante
+Pull Requests.
 
-```powershell
-$env:BRICA_SERVER_URL="https://servidor-brica"
-```
+Se utilizan mensajes de commit siguiendo la convención
+Conventional Commits.
 
-O como propiedad Java:
+## Documentación
 
-```text
--Dbrica.server.url=https://servidor-brica
-```
+Las decisiones arquitectónicas están registradas en `docs/adr/`.
 
-## Siguiente iteración
+El desarrollo debe conservar la separación entre presentación,
+lógica de aplicación, dominio e infraestructura.
 
-Agregar PostgreSQL + Flyway y construir la primera vertical funcional: `Cliente` + `Obra`.
+## Funcionalidades pendientes
+
+- Interfaz de Contratos.
+- Gestión documental.
+- Plantillas y paquetes documentales.
+- Generación de documentos.
+- Funcionalidades administrativas adicionales.
+- Preparación para distribución e instalación.
