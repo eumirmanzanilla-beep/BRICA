@@ -11,15 +11,22 @@ public class BricaClientApplication extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
+
         var loader = new FXMLLoader(
-                BricaClientApplication.class.getResource("/com/brica/client/presentation/main-view.fxml"));
+                BricaClientApplication.class.getResource(
+                        "/com/brica/client/presentation/main-view.fxml"
+                )
+        );
 
         var scene = new Scene(loader.load());
 
-        stage.setTitle("BRICA");
+        stage.setTitle("BRICA - Gestión Constructora");
+
         stage.setScene(scene);
-        stage.setMinWidth(460);
-        stage.setMinHeight(280);
+
+        stage.setMinWidth(900);
+        stage.setMinHeight(600);
+
         stage.show();
     }
 

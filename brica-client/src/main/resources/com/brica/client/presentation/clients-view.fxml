@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox
+    xmlns="http://javafx.com/javafx/25"
+    xmlns:fx="http://javafx.com/fxml/1"
+    fx:controller="com.brica.client.presentation.ClientsController"
+    spacing="16.0"
+    fillWidth="true"
+    styleClass="clients-root">
+
+    <!-- ENCABEZADO DEL MÓDULO -->
+    <VBox spacing="5.0">
+
+        <Label
+            text="Directorio de clientes"
+            styleClass="content-title"/>
+
+        <Label
+            text="Consulta y administra los clientes registrados en BRICA."
+            wrapText="true"
+            styleClass="content-description"/>
+
+    </VBox>
+
+    <!-- ACCIONES -->
+    <FlowPane
+        hgap="8.0"
+        vgap="8.0"
+        alignment="CENTER_LEFT">
+
+        <Button
+            fx:id="newClientButton"
+            text="+ Nuevo cliente"
+            onAction="#onNewClient"
+            styleClass="primary-button"/>
+
+        <Button
+            fx:id="editClientButton"
+            text="Editar"
+            onAction="#onEditClient"
+            styleClass="secondary-button"/>
+
+        <Button
+            fx:id="deleteClientButton"
+            text="Eliminar"
+            onAction="#onDeleteClient"
+            styleClass="danger-button"/>
+
+        <Button
+            fx:id="refreshButton"
+            text="Actualizar"
+            onAction="#onRefresh"
+            styleClass="secondary-button"/>
+
+    </FlowPane>
+
+    <!-- LISTADO REAL -->
+    <TableView
+        fx:id="clientsTable"
+        VBox.vgrow="ALWAYS"
+        minHeight="180.0"
+        prefHeight="390.0"
+        styleClass="data-table">
+
+        <columns>
+
+            <TableColumn
+                fx:id="idColumn"
+                text="ID"
+                prefWidth="75.0"/>
+
+            <TableColumn
+                fx:id="nameColumn"
+                text="Nombre del cliente"
+                prefWidth="280.0"/>
+
+            <TableColumn
+                fx:id="representativeColumn"
+                text="Representante legal"
+                prefWidth="300.0"/>
+
+        </columns>
+
+        <placeholder>
+            <Label
+                text="No hay clientes para mostrar."
+                styleClass="empty-state"/>
+        </placeholder>
+
+    </TableView>
+
+    <!-- PAGINACIÓN Y MENSAJES -->
+    <HBox
+        alignment="CENTER_LEFT"
+        spacing="10.0"
+        styleClass="clients-footer">
+
+        <Label
+            fx:id="statusLabel"
+            text="Cargando clientes..."
+            wrapText="true"
+            styleClass="content-note"/>
+
+        <Region HBox.hgrow="ALWAYS"/>
+
+        <Button
+            fx:id="previousPageButton"
+            text="Anterior"
+            onAction="#onPreviousPage"
+            styleClass="secondary-button"/>
+
+        <Label
+            fx:id="pageLabel"
+            text="Página 1"
+            styleClass="content-note"/>
+
+        <Button
+            fx:id="nextPageButton"
+            text="Siguiente"
+            onAction="#onNextPage"
+            styleClass="secondary-button"/>
+
+    </HBox>
+
+</VBox>

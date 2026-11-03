@@ -1,0 +1,48 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "context7": {
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp",
+      "enabled": true,
+      "oauth": false,
+      "headers": {
+        "Authorization": "Bearer {env:CONTEXT7_API_KEY}"
+      }
+    },
+    "github": {
+      "type": "remote",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "enabled": true,
+      "oauth": false,
+      "headers": {
+        "Authorization": "Bearer {env:GITHUB_MCP_PAT}"
+      }
+    }, 
+    "dbhub": {
+      "type": "local",
+      "command": [
+        "cmd",
+        "/c",
+        "npx",
+        "-y",
+        "@bytebase/dbhub@latest",
+        "--transport",
+        "stdio",
+        "--config",
+        "C:/Users/eumir/Proyectos/BRICA/dbhub.toml"
+      ],
+      "enabled": true
+    },
+    "markitdown": {
+      "type": "local",
+      "command": [
+        "uvx",
+        "--python",
+        "3.12",
+        "markitdown-mcp"
+      ],
+      "enabled": true
+    }
+  }
+}

@@ -1,0 +1,14 @@
+[[sources]]
+id = "brica"
+type = "postgres"
+host = "127.0.0.1"
+port = 5423
+database = "brica"
+user = "brica_mcp"
+password = "${BRICA_MCP_DB_PASSWORD}"
+
+[[tools]]
+name = "execute_sql"
+source = "brica"
+readonly = true
+max_rows = 500
