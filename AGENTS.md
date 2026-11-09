@@ -21,7 +21,6 @@ Desde la raíz, en PowerShell configura `.env` para Compose y `DB_*` en el entor
 - `brica-server/`  - API REST, aplicación, dominio y persistencia, organizados por funcionalidad.
 - `brica-client/`  - Interfaz JavaFX, FXML y consumo de la API.
 - `brica-server/src/main/resources/db/migration/`  - Migraciones SQL versionadas.
-- `docs/adr/`   - Decisiones arquitectónicas existentes.
 
 ## Convenciones
 - Sigue los nombres en inglés del código actual: `PascalCase` para clases, `camelCase` para métodos y variables.

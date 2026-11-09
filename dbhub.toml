@@ -2,7 +2,7 @@
 id = "brica"
 type = "postgres"
 host = "127.0.0.1"
-port = 5423
+port = 5432
 database = "brica"
 user = "brica_mcp"
 password = "${BRICA_MCP_DB_PASSWORD}"
