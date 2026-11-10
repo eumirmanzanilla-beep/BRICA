@@ -299,3 +299,13 @@ Las respuestas del responsable de la sección 1 sustituyen las propuestas anteri
 - Conservados los IDs de 53 tareas y los 42 criterios; 18 tareas siguen cerradas. Decisiones resueltas y trabajo diferido no se presentan como implementación terminada.
 - Fuentes discrepantes identificadas y sin modificar: `docs/DiccionarioDatos_BRICA.docx` (`operacion_etapa`) y la precondición de `specs/002/spec.md`. ERS/DAS y guía de fixtures se mantienen como fuentes/evidencia previas, no se reescriben en esta tarea.
 - Verificación de esta tarea: espacios, enlaces locales, trazabilidad, longitud de memoria y conservación del contenido de archivos ajenos. Los 144 tests corresponden a la ejecución previa, no se ejecutó Maven por editar documentación. Sin commit, push ni PR.
+
+## Entrega separada — 2026-11-10
+
+- Issue #22: convenciones, rama `docs/22-repo-contribution-workflow`; solo `AGENTS.md` y `CONTRIBUTING.md`.
+- Issue #23: rama `feat/23-documents-secure-reference-catalog`; seis commits de fuentes, catálogo interno, seguridad/API, escritorio, fixtures e instrucciones. Ambas ramas parten de `main` actualizado; PR en borrador, sin merge.
+- `./mvnw test` sobre snapshots del índice antes de cada commit de código: catálogo interno 114 servidor; seguridad 126 servidor; escritorio 126 servidor + 14 cliente; fixtures 130 servidor + 14 cliente. Sin fallos, errores ni omitidas.
+- `./mvnw clean verify` final: 130 servidor + 14 cliente, sin fallos, errores ni omitidas. Integración ejecutada con PostgreSQL 18 desechable en Testcontainers.
+- DOCX fuente y fixtures: ZIP/XML válidos; fuentes de requisitos/diseño, no documentos operativos. Fixtures reproducidos sin diferencias y sin datos reales. Markdown, enlaces locales, FXML/controladores y espacios comprobados.
+- `.env` y `dbhub.toml` conservados localmente fuera de commits; respaldo privado con SHA-256. Solo dependencias de seguridad ya aprobadas; sin analizador Python ni generación/versiones/paquetes.
+- Pendiente: recorrido visual de JavaFX/Word en Windows y aceptación completa de F0/F1/Spec 001. Se mantienen los bloqueos y discrepancias registrados anteriormente.

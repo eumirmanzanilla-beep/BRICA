@@ -57,7 +57,7 @@ Fuentes efectivas: `AGENTS.md`, `docs/constitution.md`, únicamente la spec 001,
 
 El diagnóstico de la tabla corresponde a la planificación original. Al iniciar la implementación se verificó con DBHub, en solo lectura, PostgreSQL 18.6, base `brica`, usuario `brica_mcp`, tablas de negocio existentes y V1–V4 aplicadas. Se contrastó la identidad con el contenedor de Docker Desktop por versión, base y fecha exacta de inicio de PostgreSQL. La configuración efectiva actual publica el contenedor en el puerto 5432 del host; 5433 sigue siendo el valor por defecto de Compose, no el puerto observado. V5 se verifica en bases desechables de pruebas; no se aplica manualmente a desarrollo desde DBHub.
 
-Estado posterior comprobado: V5 y V6 existen en código; catálogo de nombres y seguridad están implementados, y el backend de desarrollo llegó a V6. La última suite existente tras el arreglo independiente del login es `test`: 130 servidor + 14 cliente, sin fallos. El último `clean verify` registrado sigue siendo el anterior de 130 + 6; no atribuirle las pruebas posteriores ni repetirlas como si se ejecutaran durante esta actualización documental.
+Estado posterior comprobado: V5 y V6 existen en código; catálogo de nombres y seguridad están implementados, y el backend de desarrollo llegó a V6. El 2026-11-10 se ejecutaron `test` y `clean verify`: 130 servidor + 14 cliente, sin fallos, errores ni pruebas omitidas. La entrega se separa en convenciones (#22) y catálogo protegido (#23), ambos desde `main`, sin cerrar Spec 001 ni validar visualmente JavaFX.
 
 ## 3. Decisiones y bloqueos previos
 
