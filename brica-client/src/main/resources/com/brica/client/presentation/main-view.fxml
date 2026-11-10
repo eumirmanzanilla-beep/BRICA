@@ -94,6 +94,8 @@
 
             <Region VBox.vgrow="ALWAYS"/>
 
+            <Button text="Cerrar sesión" onAction="#onLogout" maxWidth="Infinity" styleClass="nav-button"/>
+
             <Separator/>
 
             <!-- ESTADO DEL SISTEMA -->

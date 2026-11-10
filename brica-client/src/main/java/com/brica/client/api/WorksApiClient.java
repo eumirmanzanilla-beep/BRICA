@@ -1,7 +1,6 @@
 package com.brica.client.api;
 
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
@@ -22,15 +21,13 @@ public final class WorksApiClient {
     private static final Duration TIMEOUT =
             Duration.ofSeconds(10);
 
-    private final HttpClient httpClient;
+    private final ServerSession session;
     private final ObjectMapper mapper = new ObjectMapper();
     private final URI worksUri;
 
     public WorksApiClient(URI serverBaseUri) {
 
-        httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(3))
-                .build();
+        session = ServerSession.shared(serverBaseUri);
 
         worksUri = serverBaseUri.resolve(
                 "/api/v1/works"
@@ -219,12 +216,7 @@ public final class WorksApiClient {
             HttpRequest request,
             Function<HttpResponse<String>, T> parser) {
 
-        return httpClient.sendAsync(
-                request,
-                HttpResponse.BodyHandlers.ofString(
-                        StandardCharsets.UTF_8
-                )
-        ).thenApply(response -> {
+        return session.send(request).thenApply(response -> {
 
             int status = response.statusCode();
 

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<StackPane xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.brica.client.presentation.LoginController"
+           styleClass="app-root" stylesheets="@styles/app.css" prefWidth="900" prefHeight="600">
+    <VBox spacing="16" maxWidth="440" maxHeight="420" styleClass="content-card">
+        <padding><Insets top="30" right="30" bottom="30" left="30"/></padding>
+        <Label text="BRICA" styleClass="content-title"/>
+        <Label text="Acceso a gestión de obras" styleClass="content-description"/>
+        <Label fx:id="usernameLabel" text="Usuario"/>
+        <TextField fx:id="usernameField" promptText="Identificador exacto" onAction="#onLogin"/>
+        <Label fx:id="passwordLabel" text="Contraseña"/>
+        <PasswordField fx:id="passwordField" onAction="#onLogin"/>
+        <Button fx:id="loginButton" text="Iniciar sesión" defaultButton="true" onAction="#onLogin" maxWidth="Infinity"/>
+        <Label fx:id="statusLabel" text="Utiliza la cuenta proporcionada por el administrador." wrapText="true"/>
+    </VBox>
+</StackPane>

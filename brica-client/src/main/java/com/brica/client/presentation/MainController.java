@@ -5,6 +5,7 @@ import java.net.URL;
 import java.util.List;
 
 import com.brica.client.api.ServerHealthClient;
+import com.brica.client.api.ServerSession;
 import com.brica.client.config.ClientConfig;
 
 import javafx.application.Platform;
@@ -17,6 +18,18 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 public class MainController {
+    private Runnable logout = () -> { };
+
+    public void configureSession(ServerSession session, Runnable logout) {
+        this.logout = logout;
+        var user = session.user();
+        clientsNavButton.setDisable(!user.can("CLIENTS_READ"));
+        worksNavButton.setDisable(!user.can("WORKS_READ"));
+        contractsNavButton.setDisable(!user.can("CONTRACTS_READ") && !user.can("CONTRACTS_WRITE"));
+    }
+
+    @FXML
+    private void onLogout() { logout.run(); }
 
     private static final String VIEW_BASE_PATH =
             "/com/brica/client/presentation/";

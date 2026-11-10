@@ -9,6 +9,10 @@ public final class ClientConfig {
     private ClientConfig() {
     }
 
+    public static boolean allowInsecureHttp() {
+        return Boolean.parseBoolean(System.getenv("BRICA_ALLOW_HTTP"));
+    }
+
     public static URI serverBaseUri() {
         var configuredUrl = System.getProperty("brica.server.url");
 
