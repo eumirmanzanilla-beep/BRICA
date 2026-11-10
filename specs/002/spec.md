@@ -46,7 +46,7 @@ Como usuario interno, quiero revisar y descargar el documento que BRICA completa
 | CA-11 | Una vista previa emitida y datos de la obra que cambiaron después | Intento confirmar la generación | BRICA solicita una vista previa actualizada antes de finalizar, de modo que la salida coincida con lo que revisé. |
 | CA-12 | Un fallo durante el renderizado o el almacenamiento | Intento finalizar | BRICA informa qué operación falló y permite reintentar. El historial no presenta archivos incompletos como documentos definitivos. |
 
-## 4. Requisitos de la Spec 001
+## 4. Requisitos de la Spec 002
 
 | ID | Comportamiento requerido | Trazabilidad |
 |---|---|---|
