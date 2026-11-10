@@ -1,4 +1,5 @@
 package com.brica.documents.application;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.brica.documents.application.port.ReferenceFieldStore;
 import com.brica.documents.domain.ReferenceAttribute;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@PreAuthorize("@accessPolicy.hasPermission('DOCUMENT_CONFIG_ADMIN')")
 public class RegisterReferenceFieldService {
     private final ReferenceFieldStore store;
 

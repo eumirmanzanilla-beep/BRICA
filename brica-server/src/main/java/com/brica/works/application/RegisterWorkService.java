@@ -1,4 +1,5 @@
 package com.brica.works.application;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.time.LocalDate;
 
@@ -12,6 +13,7 @@ import com.brica.works.application.port.WorkStore;
 import com.brica.clients.application.ClientNotFoundException;
 
 @Service
+@PreAuthorize("@accessPolicy.hasPermission('WORKS_WRITE')")
 public class RegisterWorkService {
 
     private final ClientStore clientRepository;

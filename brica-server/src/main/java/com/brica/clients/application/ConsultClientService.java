@@ -1,5 +1,6 @@
 
 package com.brica.clients.application;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.brica.clients.application.port.ClientStore;
 import com.brica.clients.domain.Client;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@PreAuthorize("@accessPolicy.hasPermission('CLIENTS_READ')")
 public class ConsultClientService {
 
     private final ClientStore clientStore;

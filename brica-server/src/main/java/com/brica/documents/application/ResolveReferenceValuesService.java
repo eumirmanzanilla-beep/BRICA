@@ -1,4 +1,5 @@
 package com.brica.documents.application;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@PreAuthorize("@accessPolicy.hasPermission('DOCUMENT_VALUES_READ')")
 public class ResolveReferenceValuesService {
     private final ReferenceFieldStore fields;
     private final WorkReferenceSource source;

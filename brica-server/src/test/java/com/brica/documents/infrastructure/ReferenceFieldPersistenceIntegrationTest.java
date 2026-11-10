@@ -45,6 +45,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @Testcontainers
+@org.springframework.security.test.context.support.WithMockUser(username = "IntegrationAdmin")
 class ReferenceFieldPersistenceIntegrationTest {
     @Container
     @ServiceConnection
@@ -61,6 +62,12 @@ class ReferenceFieldPersistenceIntegrationTest {
     @Autowired private ContractRepository contracts;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private EntityManager entityManager;
+    @Autowired private org.springframework.security.crypto.password.PasswordEncoder passwords;
+
+    @org.junit.jupiter.api.BeforeEach
+    void prepareSecurityAccount() {
+        com.brica.server.security.SecurityTestData.installAdmin(jdbc, passwords);
+    }
 
     @Test
     @Transactional

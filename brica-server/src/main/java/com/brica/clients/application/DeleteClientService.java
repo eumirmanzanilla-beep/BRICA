@@ -1,4 +1,5 @@
 package com.brica.clients.application;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@PreAuthorize("@accessPolicy.hasPermission('CLIENTS_WRITE')")
 public class DeleteClientService {
 
     private final ClientStore clientStore;

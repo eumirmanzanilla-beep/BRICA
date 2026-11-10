@@ -1,5 +1,6 @@
 
 package com.brica.works.application;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@PreAuthorize("@accessPolicy.hasPermission('WORKS_WRITE')")
 public class DeleteWorkService {
 
     private final WorkStore workStore;

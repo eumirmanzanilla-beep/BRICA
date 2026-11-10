@@ -74,10 +74,39 @@ public class ApiExceptionHandler {
     }
 
     private ProblemDetail problem(HttpStatus status, String code, String title, String detail, String suggestion) {
-        var result = ProblemDetail.forStatusAndDetail(status, detail);
-        result.setTitle(title);
-        result.setProperty("code", code);
-        result.setProperty("suggestion", suggestion);
-        return result;
+        return ApiProblems.problem(status, code, title, detail, suggestion);
+    }
+
+    @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
+    public ProblemDetail authentication(jakarta.servlet.http.HttpServletRequest request) {
+        var session = request.getSession(false);
+        if (session != null) { session.invalidate(); }
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        return problem(HttpStatus.UNAUTHORIZED, "AUTHENTICATION_REQUIRED", "Inicia sesión",
+                "No hay una sesión válida para esta operación.", "Inicia sesión con una cuenta activa.");
+    }
+
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ProblemDetail accessDenied() {
+        return problem(HttpStatus.FORBIDDEN, "ACCESS_DENIED", "Operación no autorizada",
+                "Tu rol no tiene el permiso necesario.", "Solicita el permiso al administrador.");
+    }
+
+    @ExceptionHandler(com.brica.documents.application.DuplicateReferenceKeyException.class)
+    public ProblemDetail duplicateReference() {
+        return problem(HttpStatus.CONFLICT, "DUPLICATE_REFERENCE_KEY", "Clave duplicada",
+                "La clave de referencia ya está registrada.", "Selecciona otra clave canónica.");
+    }
+
+    @ExceptionHandler(com.brica.documents.application.ReferenceFieldNotFoundException.class)
+    public ProblemDetail referenceNotFound() {
+        return problem(HttpStatus.NOT_FOUND, "REFERENCE_FIELD_NOT_FOUND", "Campo no encontrado",
+                "No existe el campo solicitado.", "Actualiza la lista de campos.");
+    }
+
+    @ExceptionHandler(com.brica.documents.application.ReferenceSourceException.class)
+    public ProblemDetail referenceSource() {
+        return problem(HttpStatus.SERVICE_UNAVAILABLE, "REFERENCE_SOURCE_UNAVAILABLE", "Consulta no disponible",
+                "No se pudieron leer los datos de origen.", "Vuelve a consultar antes de continuar.");
     }
 }

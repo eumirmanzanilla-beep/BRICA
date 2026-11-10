@@ -23,7 +23,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Real HTTP + real PostgreSQL, with no external URL or credentials. */
 @Testcontainers
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = "brica.security.allow-insecure-http=true")
 class ContractDockerHttpIntegrationTest {
     @Container
     @ServiceConnection
@@ -34,8 +35,33 @@ class ContractDockerHttpIntegrationTest {
     @Autowired
     private JdbcTemplate jdbc;
 
-    private final HttpClient http = HttpClient.newHttpClient();
+    private final HttpClient http = HttpClient.newBuilder()
+            .cookieHandler(new java.net.CookieManager(null, java.net.CookiePolicy.ACCEPT_ALL)).build();
     private static final JsonMapper JSON = JsonMapper.builder().build();
+    @Autowired private org.springframework.security.crypto.password.PasswordEncoder passwords;
+    private String csrfHeader;
+    private String csrfToken;
+
+    @org.junit.jupiter.api.BeforeEach
+    void authenticateRealUser() throws Exception {
+        com.brica.server.security.SecurityTestData.installAdmin(jdbc, passwords);
+        refreshCsrf();
+        var login = http.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/api/v1/auth/login"))
+                .header("Content-Type", "application/x-www-form-urlencoded").header(csrfHeader, csrfToken)
+                .POST(HttpRequest.BodyPublishers.ofString("username=IntegrationAdmin&password=TestUser123")).build(),
+                HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, login.statusCode(), login.body());
+        refreshCsrf();
+    }
+
+    private void refreshCsrf() throws Exception {
+        var response = http.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/api/v1/auth/csrf"))
+                .GET().build(), HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, response.statusCode(), response.body());
+        var token = JSON.readTree(response.body());
+        csrfHeader = token.path("headerName").asText();
+        csrfToken = token.path("token").asText();
+    }
 
     @Test
     void shouldPersistNullJsonAndRejectInvalidContractWithoutPartialWrite() throws Exception {
@@ -161,6 +187,7 @@ class ContractDockerHttpIntegrationTest {
                 .header("Content-Type", "application/json")
                 .method(method, body == null ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofString(body));
         if (tag != null) request.header("If-Match", tag);
+        if (!method.equals("GET")) request.header(csrfHeader, csrfToken);
         return request.build();
     }
 }
