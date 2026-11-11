@@ -11,5 +11,6 @@ public interface ReferenceFieldStore {
     boolean existsByKey(String key);
     Optional<ReferenceField> findById(Long id);
     List<ReferenceField> findAllById(Collection<Long> ids);
+    List<ReferenceField> findAllByKey(Collection<String> keys);
     List<ReferenceField> list(int page, int size);
 }

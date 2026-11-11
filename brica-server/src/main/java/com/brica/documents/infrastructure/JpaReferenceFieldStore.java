@@ -53,6 +53,11 @@ public class JpaReferenceFieldStore implements ReferenceFieldStore {
     }
 
     @Override
+    public List<ReferenceField> findAllByKey(Collection<String> keys) {
+        return keys.isEmpty() ? List.of() : repository.findByKeyIn(keys);
+    }
+
+    @Override
     public List<ReferenceField> list(int page, int size) {
         return repository.findAll(PageRequest.of(page, size, Sort.by("id"))).getContent();
     }

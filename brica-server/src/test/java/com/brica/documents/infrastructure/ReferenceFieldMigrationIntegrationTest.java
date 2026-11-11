@@ -43,13 +43,21 @@ class ReferenceFieldMigrationIntegrationTest {
                 WHERE table_schema = 'public' AND table_name = 'reference_fields' AND column_name = 'key'
                 """, Integer.class));
         assertEquals(0, Flyway.configure().dataSource(dataSource).target("5").load().migrate().migrationsExecuted);
-        var security = Flyway.configure().dataSource(dataSource).load().migrate();
+        var security = Flyway.configure().dataSource(dataSource).target("6").load().migrate();
         assertEquals(1, security.migrationsExecuted);
         assertEquals("6", security.targetSchemaVersion);
         assertEquals(before, snapshot(jdbc));
         assertEquals(8, jdbc.queryForObject("SELECT count(*) FROM permissions", Integer.class));
         assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM app_users", Integer.class));
         assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM roles", Integer.class));
+        var documents = Flyway.configure().dataSource(dataSource).load().migrate();
+        assertEquals(1, documents.migrationsExecuted);
+        assertEquals("7", documents.targetSchemaVersion);
+        assertEquals(before, snapshot(jdbc));
+        assertEquals(54, jdbc.queryForObject("""
+                SELECT character_maximum_length FROM information_schema.columns
+                WHERE table_name = 'template_version_fields' AND column_name = 'marker'
+                """, Integer.class));
     }
 
     private List<String> snapshot(JdbcTemplate jdbc) {
