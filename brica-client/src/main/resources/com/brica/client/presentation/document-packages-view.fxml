@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<VBox xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.brica.client.presentation.DocumentPackagesController" fx:id="pane" spacing="9" styleClass="content-card">
+    <padding><Insets top="12" right="16" bottom="12" left="16"/></padding>
+    <Label text="Paquetes por cliente" styleClass="content-title"/>
+    <ListView fx:id="packages" minHeight="65" prefHeight="95"/>
+    <HBox spacing="8"><Button text="Anterior" onAction="#previous"/><Button text="Siguiente" onAction="#next"/><Button text="Actualizar lista" onAction="#refresh"/>
+        <Button text="Abrir seleccionado" onAction="#open"/><Button text="Nuevo paquete" onAction="#newPackage"/></HBox>
+    <HBox spacing="10"><VBox spacing="3" HBox.hgrow="ALWAYS"><Label text="Nombre exacto, sin normalización"/><TextField fx:id="name"/></VBox>
+        <VBox spacing="3"><Label text="ID del cliente"/><TextField fx:id="clientId"/></VBox></HBox>
+    <Label fx:id="state" text="Borrador nuevo"/>
+    <Label text="Plantillas, ordenadas por nombre. Los borradores pueden conservar una selección todavía no elegible." wrapText="true"/>
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" minHeight="100"><content><VBox fx:id="templateChoices" spacing="8"/></content></ScrollPane>
+    <HBox spacing="8"><Button text="Cargar más plantillas" onAction="#moreTemplates"/><Button text="Registrar una plantilla" onAction="#registerTemplate"/>
+        <Label text="Vuelve a esta pestaña para continuar la captura." wrapText="true"/></HBox>
+    <HBox spacing="8"><Button text="Guardar borrador / cambios" onAction="#saveDraft"/><Button text="Confirmar paquete" onAction="#confirm"/>
+        <Button text="Descartar borrador guardado" onAction="#discard"/></HBox>
+    <Label fx:id="message" wrapText="true"/>
+</VBox>

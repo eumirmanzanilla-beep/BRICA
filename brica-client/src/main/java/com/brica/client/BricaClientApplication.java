@@ -30,6 +30,7 @@ public class BricaClientApplication extends Application {
     }
 
     private void showLogin() {
+        stage.setOnCloseRequest(null);
         try {
             var loader = loader("login-view.fxml");
             var scene = new Scene(loader.load());
@@ -44,6 +45,11 @@ public class BricaClientApplication extends Application {
             var scene = new Scene(loader.load());
             ((MainController) loader.getController()).configureSession(session,
                     () -> session.logout().whenComplete((ignored, error) -> Platform.runLater(this::showLogin)));
+            MainController controller = loader.getController();
+            stage.setOnCloseRequest(event -> {
+                event.consume();
+                controller.requestLeave(() -> { stage.hide(); Platform.exit(); });
+            });
             stage.setScene(scene);
         } catch (IOException failure) { throw new IllegalStateException("No se pudo abrir el escritorio.", failure); }
     }

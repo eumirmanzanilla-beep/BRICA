@@ -92,6 +92,9 @@
                 alignment="CENTER_LEFT"
                 styleClass="nav-button"/>
 
+            <Button fx:id="documentsNavButton" text="Documentación" onAction="#onNavigateDocuments"
+                    maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="nav-button"/>
+
             <Region VBox.vgrow="ALWAYS"/>
 
             <Button text="Cerrar sesión" onAction="#onLogout" maxWidth="Infinity" styleClass="nav-button"/>
