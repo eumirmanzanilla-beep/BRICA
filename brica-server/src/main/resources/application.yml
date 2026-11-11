@@ -29,6 +29,15 @@ server:
         same-site: strict
 
 brica:
+  documents:
+    python: ${BRICA_DOCUMENT_PYTHON:python3}
+    script: ${BRICA_DOCUMENT_SCRIPT:src/main/python/brica_docx.py}
+    # Límites conservadores para las pruebas construidas; no constituyen despliegue definitivo.
+    max-bytes: 1048576
+    max-expanded-bytes: 20971520
+    max-entries: 512
+    timeout-seconds: 20
+    storage-root: ${BRICA_DOCUMENT_STORAGE:./var/documents}
   security:
     # Solo para desarrollo local explícito; en operación se requiere HTTPS.
     allow-insecure-http: ${BRICA_ALLOW_HTTP:false}

@@ -6,8 +6,14 @@
 *.iml
 
 **/target
+**/.venv-documents
+**/var/documents
+**/__pycache__
 
 .env
+.env.local
+dbhub.toml
+opencode.json
 
 *.log
 .DS_Store
