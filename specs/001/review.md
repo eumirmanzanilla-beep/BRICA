@@ -1,12 +1,14 @@
 # Seguimiento de implementación — Spec 001
 
-**Inicio:** 2026-11-09. **Rama:** `main`. **Plan:** [plan.md](plan.md). **Spec:** [spec.md](spec.md).
+**Inicio:** 2026-11-09. **Rama actual:** `feat/23-documents-secure-reference-catalog`. **Plan:** [plan.md](plan.md). **Spec:** [spec.md](spec.md).
+
+**Última actualización:** 2026-11-11. La sección 14 conserva la evidencia de implementación del 2026-11-10; la sección 15 registra la sincronización documental y la 16, la organización en commits y nuevas verificaciones. Ninguna ejecución automática equivale a aceptación manual.
 
 Este archivo es el registro de avance, no una aprobación automática del módulo. Cerrar cada tarea únicamente cuando exista evidencia, indicando límites y pendientes. No confundir reglas internas probadas con un criterio aceptado de extremo a extremo.
 
 ## 1. Alcance autorizado y estado
 
-El responsable solicitó iniciar la implementación, mantener este registro y consultar decisiones no triviales. Tras revisar las fuentes, aprobó explícitamente:
+El responsable solicitó iniciar la implementación, mantener este registro y consultar decisiones no triviales. Las aprobaciones 1–13 son antecedentes sucesivos; la 14 y la sección 14 establecen la reanudación vigente:
 
 1. **F2 aislada primero:** catálogo y resolución internos con persistencia y pruebas, sin endpoints ni habilitación del módulo. F1 no se considera resuelta.
 2. **Solo dos atributos de texto:** `WORK_NAME` y `CLIENT_NAME`. Fechas e importes quedan pendientes.
@@ -21,8 +23,24 @@ El responsable solicitó iniciar la implementación, mantener este registro y co
 11. **D-04 en evaluación y D-06 diferida:** estudiar Python sin aprobar aún biblioteca o cambio de arquitectura; rutas, almacenamiento interno y despliegue definitivo pasan a otra iteración. No convertir esos aplazamientos en aceptación del flujo completo.
 12. **D-09 y F0-07/E1:** convenios/cambios contractuales fuera del flujo actual; no ampliar correcciones de fechas. Construir juntos una nueva plantilla sobre otros documentos por elegir. El presupuesto que posee el responsable se destina a extracción; no es una plantilla documental ni se ha identificado/analizado aquí su archivo. El acta demostrativa queda solo como fixture técnico.
 13. **Actualización documental autorizada:** ajustar esta spec, su plan/seguimiento y `MEMORY.md`; preservar el historial y el trabajo local. No modificar código, fuentes DOCX, Spec 002 ni añadir dependencias en esta tarea.
+14. **Reanudación funcional hasta F6:** D-03 conserva solo nombres; D-04 elige docxtpl y aprueba proceso Python local con JSON/timeout, sin servicio ni DB; D-06 autoriza prueba de almacenamiento del servidor aislada con casos construidos; D-12 reutiliza tipo documental. Captura manual en el flujo de la entidad de origen. Borrador/No disponible siguen visibles y administrables, pero no son elegibles para paquetes confirmados ni generación. Se autoriza avanzar técnicamente sin presentar como realizadas las comprobaciones manuales pendientes; no iniciar F7 ni el motor.
 
-**Estado general:** bloque F2 de nombres y base de seguridad de F1 verificados automáticamente. **53 tareas: 18 cerradas y 35 parciales, pendientes, bloqueadas o diferidas.** La actualización de decisiones no cierra tareas de implementación. Hay API de catálogo/valores protegida, acceso JavaFX y administración local implementados; F1-03/05 conservan pendientes manuales o documentales. Última suite existente: `test`, **130 servidor + 14 cliente = 144**, sin fallos/errores/omitidas, tras el arreglo independiente del login. El último `clean verify` registrado sigue siendo el anterior de **130 + 6**, con ambos módulos empaquetados. **F0/F1 completas siguen abiertas; F3 no iniciada; almacenamiento definitivo diferido.** No se ejecutó Maven durante esta actualización exclusivamente documental.
+**Estado general:** flujo preliminar implementado hasta F6; **53 tareas: 38 cerradas técnicamente y 15 parciales, en verificación, pendientes o diferidas**. Baseline de esta reanudación: 130 servidor + 14 cliente. Verificación final de la nueva entrega: **150 servidor + 18 cliente = 168 pruebas Maven**, sin fallos/errores/omitidas; una de ellas ejecuta además 9 pruebas Python. `clean verify` empaqueta ambos módulos. Carga real de los FXML en WSL y analizador dentro de Docker correctos. F0/F1 mantienen evidencia manual pendiente; fechas/importes, plantilla operativa, almacenamiento definitivo e historial del motor no se aceptan por esta entrega.
+
+### Resumen vigente por fase
+
+| Fase | Cerradas técnicamente / total | Pendiente para el cierre |
+|---|---|---|
+| F0 | 6/7 | Elegir y revisar conjuntamente la plantilla operativa; los fixtures no la sustituyen. |
+| F1 | 3/5 | Recorrido manual de acceso/consola y matriz de permisos desde el escritorio. |
+| F2 | 11/13 | Fechas/corrección de fechas e importes diferidos; no ampliar el mínimo de nombres. |
+| F3 | 5/5 | Bloque técnico verificado con casos construidos; revisión manual y formato operativo siguen pendientes de aceptación. |
+| F4 | 6/7 | Recorrido de recuperación/reinicio; almacenamiento definitivo y fallos operativos fuera del preliminar. |
+| F5 | 5/6 | Contrato de procedencia parcialmente verificado; historial de generaciones reales depende del motor. |
+| F6 | 2/5 | Retorno al paquete sin pérdida, revisión visual de valores/históricos y cierre/reapertura en Windows. |
+| F7 | 0/5 | Fuera del alcance autorizado; no iniciada como fase de aceptación e integración. |
+
+**Próxima acción del responsable:** ejecutar [manual-test.md](manual-test.md), registrar observaciones por escenario y las dos evidencias separadas de CA-35. Tratar D-06 mediante [storage-test.md](storage-test.md), sin decidir por ello el despliegue definitivo. Un cierre técnico de tarea no equivale a aceptar un CA de extremo a extremo.
 
 ## 2. Fuentes y línea base
 
@@ -30,8 +48,8 @@ El responsable solicitó iniciar la implementación, mantener este registro y co
 - ERS, DAS y Diccionario ahora contienen información. La nueva solicitud sustituye la exclusión temporal del DAS/Diccionario utilizada al redactar el plan. Extraído y leído el texto de los tres DOCX; no modificados ERS/DAS.
 - ERS: RF-03/05 y RNF-02/04 sustentan lectura desde fuente común; CU-03/RF-11/12/15, paquetes; CU-08/RF-13/14, versiones y análisis; RES-03, no alterar datos de obras al modificar plantillas; RF-26, roles.
 - DAS: presentación → aplicación → dominio, infraestructura por puertos; autorización en aplicación; usuario registrado, contraseña hasheada y un rol con permisos; archivos físicos en servidor y metadatos/ruta relativa/hash en PostgreSQL.
-- Diccionario: clave y nombre visible de campo máximo 50, tipo 30, origen 100, ruta 150. Su descripción de PAQUETE_DOCUMENTAL y atributo `operacion_etapa` son referencias heredadas incompatibles con la nueva D-02; no definir un catálogo para conservarlas. Tipos/identidad documental (D-12), identidad compuesta de versión y ARCHIVO siguen pendientes según fase. El DOCX no se modifica en esta actualización.
-- Entorno: WSL/Linux, Java 25.0.4.1, Wrapper Maven 3.8.7, Docker Desktop disponible, PostgreSQL 18.6.
+- Diccionario: clave y nombre visible de campo máximo 50, tipo 30, origen 100, ruta 150. Su descripción de PAQUETE_DOCUMENTAL y atributo `operacion_etapa` son referencias heredadas incompatibles con D-02; no definir un catálogo para conservarlas. D-12 quedó resuelta por tipo documental; la identidad compuesta de versión y los metadatos ARCHIVO se implementaron en V7. El despliegue definitivo sigue pendiente. El DOCX no se modifica en esta actualización.
+- Entorno del diagnóstico inicial: WSL/Linux, Java 25.0.4.1, Wrapper Maven 3.8.7, Docker Desktop disponible, PostgreSQL 18.6. El entorno de la reanudación se registra en la sección 14.
 - Baseline histórico DBHub: instancia contrastada con Docker, base `brica`, usuario `brica_mcp`, solo lectura; entonces V1–V4 y tablas de negocio. En el diagnóstico posterior del login ya se observaron V6 y cuentas/roles activos, sin consultar contraseñas ni escribir mediante DBHub. No confundir aquel baseline con el estado posterior.
 - Puerto de Compose observado durante el diagnóstico: 5432; su valor por defecto sigue siendo 5433. F1 inicial no editó `.env`; el arreglo independiente posterior añadió únicamente la opción local HTTP al archivo ignorado por Git. No se modificaron `dbhub.toml` ni la configuración de OpenCode.
 - Baseline previo a editar código: `./mvnw test` → **BUILD SUCCESS, 43 pruebas, 0 fallos, 0 errores, 0 omitidas**; cliente sin pruebas existentes. Advertencias previas de Jansi/Mockito/agentes dinámicos, no fallos.
@@ -46,10 +64,10 @@ Estados: **cerrada** = evidencia comprobada; **verificación** = implementada, p
 |---|---|---|
 | F0-01 | Revisar rama, diff, instrucciones y fuentes vigentes. | **Cerrada:** diagnóstico de sección 2; trabajo local preservado. |
 | F0-02 | Comprobar Java, Maven, Docker y destino de DBHub. | **Cerrada:** versiones e identidad contrastadas. |
-| F0-03 | Ejecutar baseline antes de cambios funcionales. | **Cerrada:** 43 pruebas exitosas. |
+| F0-03 | Ejecutar baseline antes de cambios funcionales. | **Cerrada:** baseline inicial de 43 pruebas y baseline de reanudación de 130 servidor + 14 cliente, ambos exitosos; evidencia separada en secciones 2 y 14. |
 | F0-04 | Resolver decisiones necesarias para el primer bloque. | **Cerrada:** cinco respuestas explícitas de sección 1. |
 | F0-05 | Alinear Diccionario y spec para marcador de 54. | **Cerrada:** una celda cambiada; un byte diferente en `word/document.xml`, resto de entradas ZIP idénticas, XML y ZIP válidos. |
-| F0-06 | Cerrar decisiones necesarias y registrar las diferidas según fase. | **Parcial:** D-02/D-07 resueltas; mínimo D-03/D-10 mantenido; D-05 implementada; D-06 diferida y D-09 fuera del flujo contractual. D-04 y D-12 requieren análisis/acuerdo; no se cierra F0 por aprobar la actualización documental. |
+| F0-06 | Cerrar decisiones necesarias y registrar las diferidas según fase. | **Cerrada para el preliminar:** aprobación 14; docxtpl/proceso local, almacenamiento de prueba aislado, identidad por tipo y estados confirmados. Precisión monetaria, servidor final y plantilla operativa no se inventan ni bloquean el avance técnico autorizado. |
 | F0-07 | Preparar DOCX representativos y fixtures de análisis/seguridad/estático. | **Parcial:** conservar los cuatro fixtures técnicos; no adoptar el acta como primera plantilla real. Falta elegir otro documento y construir juntos contenido/campos/obligatoriedad. Presupuesto disponible para extracción, aún no identificado/analizado en el repositorio; no es plantilla de salida. |
 
 ### F1 — Permisos y contratos base (parcial, validación manual pendiente)
@@ -59,8 +77,8 @@ Estados: **cerrada** = evidencia comprobada; **verificación** = implementada, p
 | F1-01 | Elegir mecanismo de autenticación, usuarios/roles y credenciales. | **Cerrada:** A1/B1/C1/D1 y parámetros confirmados; V6, contraseña/BCrypt y servicios de aprovisionamiento probados. Migración desde V4 conserva negocio y no crea cuentas por defecto. El responsable reportó crear dos cuentas por consola; su recorrido completo sigue pendiente en F1-03/sección 11. |
 | F1-02 | Implementar autorización por operación en aplicación y protección HTTP. | **Cerrada para casos de uso existentes:** permisos vigentes en Clientes/Obras/Contratos/campos/valores; HTTP real verifica 401/403, revocación/desactivación, CSRF y rechazo de llamadas de aplicación no autorizadas. HTTPS exigido salvo opción explícita de desarrollo. Las operaciones futuras deberán incorporar su permiso y sus pruebas. |
 | F1-03 | Acordar impacto en API existente, sesión/CSRF y autenticación del escritorio. | **Parcial:** 14 pruebas del cliente tras arreglo independiente, incluyendo cookie tardía y diagnóstico seguro de errores. Prueba cruzada con cliente HTTP real, Spring y PostgreSQL desechable correcta; no equivale a validación visual. Responsable usa WSL y reportó crear cuentas; no confirmó aún acceso correcto por interfaz. Recorrido completo de consola/JavaFX pendiente. |
-| F1-04 | Definir y publicar DTO/rutas/errores autorizados. | **Cerrada para contratos base:** autenticación, catálogo y valores publicados y probados, con `ProblemDetail` coherente en filtros/API. No se cierran los contratos futuros de versiones/paquetes de F3–F5. |
-| F1-05 | Verificar usuarios sin permiso, consulta, administración y ambos. | **Parcial:** matriz real PostgreSQL/HTTP correcta para campos/valores y rechazo de cambios no autorizados. Pendiente ampliar a versiones/paquetes cuando existan y completar recorrido manual; no equivale a CA-17/42 completos. |
+| F1-04 | Definir y publicar DTO/rutas/errores autorizados. | **Cerrada para contratos implementados:** catálogo, análisis multipart, versiones, operaciones recuperables, paquetes con ETag y selección/valores. HTTP real comprueba respuestas y `ProblemDetail` de revisión desactualizada. |
+| F1-05 | Verificar usuarios sin permiso, consulta, administración y ambos. | **Parcial por recorrido manual:** matriz real PostgreSQL/HTTP ampliada a plantillas, archivos, análisis, paquetes y opciones; mutaciones con CSRF y permisos independientes. Guía manual entregada; no declarar CA-17/42 aceptados integralmente. |
 
 ### F2 — Esquema, catálogo y resolución (parcial)
 
@@ -68,60 +86,60 @@ Estados: **cerrada** = evidencia comprobada; **verificación** = implementada, p
 |---|---|---|
 | F2-01 | Crear V5 para catálogo, conservando V1–V4. | **Cerrada:** tabla `reference_fields`, restricciones, unicidad y revisión optimista; Flyway e Hibernate validan. |
 | F2-02 | Validar migración limpia y upgrade V4 con datos de negocio. | **Cerrada:** PostgreSQL 18; comparación de filas completas de cliente/obra/contrato, segunda migración sin cambios. |
-| F2-03 | Implementar clave canónica y marcador exacto 50/54. | **Cerrada:** 33 pruebas de `ReferenceKey`, límites y sintaxis. No es aún analizador DOCX. |
+| F2-03 | Implementar clave canónica y marcador exacto 50/54. | **Cerrada:** validación exacta de dominio y ahora casos DOCX reales, incluidas claves de 50 y claves que empiezan por dígitos; sin cambiar la sintaxis para adaptarla a Jinja. |
 | F2-04 | Lista aprobada de nombres; derivar tipo, origen y ruta sin evaluación libre. | **Cerrada:** dominio y DB rechazan origen/tipo/ruta ajenos a la lista. |
 | F2-05 | Registrar campo y rechazar duplicados, incluidos concurrentes. | **Cerrada:** servicio, adaptador y restricción única; carrera real produce un éxito y un duplicado. |
 | F2-06 | Listar con paginación y renombrar sin cambiar semántica. | **Cerrada:** validación de nombre, orden estable, conservación de definición y rechazo de entidad obsoleta mediante `@Version`. |
 | F2-07 | Resolver valores de dos obras desde su cliente asociado, sin escrituras. | **Cerrada:** proyección de una consulta, recarga tras corrección y comparación de filas de negocio completas. |
 | F2-08 | Distinguir presente/faltante/inválido de fallo de lectura. | **Cerrada para texto:** dominio y adaptador probados; fallo de origen se propaga como error, no faltante. Otros tipos pendientes F2-12. |
 | F2-09 | Excluir obras y clientes eliminados de nuevas resoluciones. | **Cerrada:** filtros de ambos y conservación de contratos/filas probados. Archivos generados históricos se verificarán en F4/F7. |
-| F2-10 | Proteger semántica de campos vinculados a versiones reales. | **Pendiente:** F4; sin edición semántica en este bloque. CA-05 no aceptado todavía. |
-| F2-11 | Corregir fecha desde Obras manteniendo precondiciones. | **Diferida:** D-09 no incorpora cambios contractuales por convenio ni autoriza correcciones ordinarias de fechas. No ampliar `general-information`; CA-04 permanece pendiente. |
+| F2-10 | Proteger semántica de campos vinculados a versiones reales. | **Cerrada técnicamente:** asociaciones V7 reales, renombrado conserva vínculos/configuración, FK impide eliminar el campo y API rechaza edición semántica. CA-05/40 conservan recorrido manual pendiente. |
+| F2-11 | Corregir fecha desde Obras manteniendo precondiciones. | **Diferida:** D-09 no autoriza ampliar fechas ni convenios. CA-04 ahora habla de un campo genérico, no exige añadir fechas. Con solo nombres obligatorios no se inventa un faltante de negocio por SQL; su aceptación completa continúa pendiente. |
 | F2-12 | Resolver fechas/importes y acordar formato común. | **Diferida:** D-01/03/10 mantienen solo nombres para el preliminar y los formatos propuestos para la futura ampliación. Sin cálculo/redondeo inventados ni atributos habilitados anticipadamente. |
-| F2-13 | Verificar suite completa, empaquetado y diff. | **Cerrada para este bloque:** `test` y `clean verify` correctos, 114 pruebas y ambos módulos empaquetados; diff sin errores. |
+| F2-13 | Verificar suite completa, empaquetado y diff. | **Cerrada técnicamente:** primer bloque de 114 pruebas y verificación final de reanudación de 150 servidor + 18 cliente, con ambos módulos empaquetados; no confundir las ejecuciones históricas. Detalle en sección 14. |
 
-### F3 — Análisis DOCX y revisión (pendiente)
-
-| ID | Tarea | Estado / dependencia |
-|---|---|---|
-| F3-01 | Evaluar/aprobar biblioteca, integración y alcance de procesamiento. | **Bloqueada:** D-04 pasa a evaluación de Python; no hay biblioteca ni arquitectura elegidas. D-06 está diferida: cualquier prueba local debe acotarse aparte, no implementar almacenamiento definitivo por esa vía. |
-| F3-02 | Analizar cuerpo, tablas, encabezados/pies y runs con ubicaciones. | **Pendiente:** F3-01 y fixtures. |
-| F3-03 | Diagnosticar desconocidos, sintaxis, partes no soportadas y párrafos distintos. | **Pendiente:** no omitir marcadores por extracción plana. |
-| F3-04 | Proponer obligatoriedad heredada y exigir clasificar nuevos. | **Pendiente:** configuración por versión/campo. |
-| F3-05 | Confirmación explícita de estático y pruebas hostiles. | **Pendiente:** no confundir inválido con estático. |
-
-### F4 — Archivos y versiones (objetivo completo; almacenamiento diferido)
+### F3 — Análisis DOCX y revisión (verificada técnicamente con fixtures)
 
 | ID | Tarea | Estado / dependencia |
 |---|---|---|
-| F4-01 | Cerrar mapeo de versión, ARCHIVO y asociaciones. | **Pendiente:** identidad compuesta del Diccionario, marcador 54 ya acordado. |
-| F4-02 | Almacenamiento, metadatos, hash y comprobación de integridad. | **Diferida:** D-06, retomar en otra iteración. No elegir rutas/volumen/límites/retención ahora ni declarar aceptado el flujo completo con archivos temporales. |
-| F4-03 | Reanalizar y pedir nueva revisión cuando cambie archivo/catálogo. | **Pendiente:** CA-27. |
-| F4-04 | Estados pendiente/completado/fallido, recuperación e idempotencia. | **Pendiente:** dueño de recuperación, insumos conservados y política de limpieza. |
-| F4-05 | Numeración concurrente y última revisión válida seleccionable. | **Pendiente:** carrera y orden de completado comprobados en DB. |
-| F4-06 | Inactivación, eliminación lógica e histórico inmutable. | **Pendiente:** preservar archivos y asociaciones, incluidos negocios eliminados. |
-| F4-07 | Verificar fallos por frontera, pérdida de respuesta y reenvíos. | **Pendiente:** sin publicar estados incompletos como válidos. |
+| F3-01 | Evaluar/aprobar biblioteca, integración y alcance de procesamiento. | **Cerrada:** docxtpl 0.20.2 y proceso local aprobados, dependencias fijadas, timeout/salida/concurrencia acotados; intérprete ausente produce 503 seguro. |
+| F3-02 | Analizar cuerpo, tablas, encabezados/pies y runs con ubicaciones. | **Cerrada con fixtures:** cuatro apariciones reconocidas; copia normalizada y renderizado efímero con docxtpl verifican runs/tabla/encabezado/pie y escape XML. Original inalterado. |
+| F3-03 | Diagnosticar desconocidos, sintaxis, partes no soportadas y párrafos distintos. | **Cerrada:** diagnósticos estructurados; comentarios, texto oculto, instrucciones y cuadros de texto no se ignoran; entre párrafos se rechaza; catálogo vinculado en Java, sin Jinja libre. |
+| F3-04 | Proponer obligatoriedad heredada y exigir clasificar nuevos. | **Cerrada:** integración con dos versiones reales, conservados/nuevos/retirados y obligatoriedad revisable; primera versión incompleta rechazada; configuración anterior conservada. |
+| F3-05 | Confirmación explícita de estático y pruebas hostiles. | **Cerrada para prueba construida:** estático exige aceptación explícita; ZIP traversal/duplicados/límites, relaciones externas, XML con entidades y sintaxis Jinja rechazados. |
 
-### F5 — Paquetes y aplicabilidad (pendiente)
+### F4 — Archivos y versiones (implementada en almacenamiento aislado de prueba)
 
 | ID | Tarea | Estado / dependencia |
 |---|---|---|
-| F5-01 | Alta por cliente y unicidad exacta de nombres, sin operación/etapa. | **Pendiente:** D-02/D-07 resueltas en diseño; implementación depende de versiones/paquetes. No crear catálogo de etapas ni dar esta tarea por implementada. |
-| F5-02 | Borrador persistente, reapertura y descarte seguro. | **Pendiente:** conservar captura y referencias sin borrar plantillas. |
-| F5-03 | Confirmación y edición atómica con precondición de revisión. | **Pendiente:** no reasignar cliente tras confirmar; operación/etapa eliminada del modelo previsto. |
-| F5-04 | Opciones aplicables por cliente, filtros y orden visual nombre/ID. | **Pendiente:** sin borradores, inactivas o eliminadas; no imponer secuencia ni momento de generación. |
-| F5-05 | Selección única por documento y resolución vigente de sus campos. | **Bloqueada:** D-12 y versiones/paquetes. |
-| F5-06 | Verificar cambios entre selección/resolución y contrato de procedencia. | **Pendiente:** historial real con el motor, no generaciones ficticias. |
+| F4-01 | Cerrar mapeo de versión, ARCHIVO y asociaciones. | **Cerrada:** V7, identidad compuesta plantilla/número, FK al archivo y al campo, marcador 54. Flyway en vacío/upgrade y Hibernate validate correctos. |
+| F4-02 | Almacenamiento, metadatos, hash y comprobación de integridad. | **Cerrada solo para D-06 de prueba:** puerto y adaptador separados, raíz configurable, publicación atómica, metadatos/hash, lectura desde adaptador nuevo, traversal/symlinks rechazados e integridad comprobada. Despliegue final no aceptado. |
+| F4-03 | Reanalizar y pedir nueva revisión cuando cambie archivo/catálogo. | **Cerrada:** bytes distintos con mismo nombre o renombrado del catálogo devuelven nuevo análisis sin crear versión; contrato 409 `ProblemDetail` probado por HTTP. |
+| F4-04 | Estados pendiente/completado/fallido, recuperación e idempotencia. | **Cerrada técnicamente:** insumos durables antes de I/O, recuperación administrativa explícita, reenvío devuelve estado/resultado y UUID conflictivo se rechaza. Sin limpieza/retención automática no aprobada. |
+| F4-05 | Numeración concurrente y última revisión válida seleccionable. | **Cerrada:** PostgreSQL real, bloqueo por plantilla al completar; dos intenciones distintas reciben números distintos y dos reenvíos comparten operación. Última completada es seleccionable; fallo no reemplaza anterior. |
+| F4-06 | Inactivación, eliminación lógica e histórico inmutable. | **Cerrada técnicamente:** DRAFT/UNAVAILABLE siguen administrables y permiten versiones, fuera de nuevas selecciones; eliminada solo lectura. Archivo/versiones anteriores conservados. No existen aún archivos de generaciones de negocio. |
+| F4-07 | Verificar fallos por frontera, pérdida de respuesta y reenvíos. | **Parcial:** inyección antes de escribir, después de publicar y durante metadatos; rollback y recuperación sin duplicado; corrupción excluye selección y descarga. Reinicio/recorrido manual pendientes; no simula cortes de energía ni todos los fallos del almacenamiento definitivo. |
 
-### F6 — Escritorio (pendiente)
+### F5 — Paquetes y aplicabilidad (implementada; historial del motor pendiente)
 
 | ID | Tarea | Estado / dependencia |
 |---|---|---|
-| F6-01 | Navegación, clientes HTTP, DTO, vistas y diálogos pequeños. | **Pendiente:** API segura. |
-| F6-02 | Red/archivos asíncronos y actualizaciones en hilo JavaFX. | **Pendiente:** no bloquear interfaz. |
-| F6-03 | Registro de plantilla desde paquete y retorno sin pérdida. | **Pendiente:** persistencia y estado del editor. |
-| F6-04 | Valores/diagnósticos/obligatoriedad/históricos y revisión actualizada. | **Pendiente:** flujos y permisos reales. |
-| F6-05 | Cierre/reapertura de borradores, doble clic y validación Windows. | **Pendiente:** compilación no sustituye comprobación visual. |
+| F5-01 | Alta por cliente y unicidad exacta de nombres, sin operación/etapa. | **Cerrada:** restricciones V7 y pruebas de duplicado exacto, diferencias de mayúsculas/espacios; sin catálogo ni filtro de etapas. |
+| F5-02 | Borrador persistente, reapertura y descarte seguro. | **Cerrada en servidor:** guardado/carga posterior y descarte sin perder versiones; captura parcial permitida, nunca aplicable para uso. Recorrido de cierre del escritorio en F6-05. |
+| F5-03 | Confirmación y edición atómica con precondición de revisión. | **Cerrada técnicamente:** ETag/If-Match, edición obsoleta rechazada, cliente confirmado fijo y primera composición preservada. |
+| F5-04 | Opciones aplicables por cliente, filtros y orden visual nombre/ID. | **Cerrada técnicamente:** relación real obra/cliente, solo paquetes confirmados con opciones elegibles y archivos verificables; orden visual estable, sin secuencia de uso. |
+| F5-05 | Selección única por documento y resolución vigente de sus campos. | **Cerrada técnicamente:** identidad por tipo documental, una alternativa por tipo y versión compuesta vigente; valores solo de la versión, estáticos sin campos. |
+| F5-06 | Verificar cambios entre selección/resolución y contrato de procedencia. | **Parcial:** versión nueva y revisión de paquete obsoleta rechazadas; respuesta identifica plantilla/versión y solicitud identifica paquete. Historial persistido de generaciones reales reservado al motor, sin generaciones ficticias. |
+
+### F6 — Escritorio (implementado, recorrido Windows pendiente)
+
+| ID | Tarea | Estado / dependencia |
+|---|---|---|
+| F6-01 | Navegación, clientes HTTP, DTO, vistas y diálogos pequeños. | **Cerrada técnicamente:** cuatro pestañas, diálogo separado y DTO explícitos. FXML raíz/documental/diálogo cargados realmente con JavaFX 25 en WSL; no equivale a Windows. |
+| F6-02 | Red/archivos asíncronos y actualizaciones en hilo JavaFX. | **Cerrada técnicamente:** transporte y lectura de DOCX asíncronos, callbacks con `Platform.runLater`, controles durante petición y sin reintentos automáticos de escrituras; pruebas HTTP del cliente. |
+| F6-03 | Registro de plantilla desde paquete y retorno sin pérdida. | **Verificación:** navegación entre pestañas conserva editor/selección y recarga plantillas; protección de salida con guardar/descartar/cancelar. Pendiente recorrido manual. |
+| F6-04 | Valores/diagnósticos/obligatoriedad/históricos y revisión actualizada. | **Verificación:** pantallas implementadas, 409 renueva análisis sin confirmar y mantiene UUID para consultas/reenvíos. Pendiente revisión visual/funcional del responsable. |
+| F6-05 | Cierre/reapertura de borradores, doble clic y validación Windows. | **Parcial:** estado durable probado en servidor, cierre interceptado para guardar cambios, contrato FXML y carga WSL correctos; guía manual Windows entregada, sin afirmar que ya fue realizada. |
 
 ### F7 — Aceptación e integración (pendiente)
 
@@ -155,7 +173,7 @@ Estados: **cerrada** = evidencia comprobada; **verificación** = implementada, p
 | R-16 | El presupuesto mencionado por el responsable es insumo de extracción, no plantilla ni prueba de generación. No inferir su formato, campos o reglas hasta recibir/identificar el archivo y acordar su análisis. Se elegirá otro documento para construir la plantilla juntos. |
 | R-17 | Arreglo independiente de login: el backend HTTP exigía HTTPS; se habilitó explícitamente HTTP local en `.env` ignorado y se recreó solo el backend. El cliente distingue HTTPS/CSRF/conexión/credenciales sin mostrar secretos. Verificaciones de ese arreglo se resumen ahora con autorización para sincronizar documentación; no se atribuyen a esta tarea nuevas ejecuciones de Maven. |
 
-## 5. Cambios de esta entrega
+## 5. Cambios de las primeras entregas (histórico)
 
 - `brica-server/src/main/resources/db/migration/V5__create_reference_fields.sql`: solo catálogo de campos, sin modificar negocio existente ni crear anticipadamente paquetes/versiones.
 - `brica-server/src/main/java/com/brica/documents/domain/`: clave, atributo aprobado, campo, metadatos tipados y resultado de resolución de texto.
@@ -193,11 +211,11 @@ Trabajo local preexistente preservado: `AGENTS.md`, README, ERS/DAS, incorporaci
 
 ## 7. Estado de aceptación
 
-**Ningún CA se declara aceptado completamente todavía.** CA-01/02/03/26/40 tienen implementación parcial; ya hay API y seguridad para nombres, pero faltan interfaz documental, análisis o asociaciones reales según el criterio. CA-25 tiene únicamente semántica de texto y fallo de origen. CA-04/41, fechas/importes, diferidos explícitamente. CA-05/10/40 con referencias de versión reales esperan F4. CA-19/20 tienen evidencia HTTP real en el bloque de nombres; CA-17/42 tienen evidencia para campos y valores, no para versiones/paquetes aún inexistentes. F1 mantiene pendiente su recorrido manual. CA-14/21/22/23 en lo relativo a generaciones históricas esperan integración real con el motor.
+**Ningún CA se declara aceptado completamente de extremo a extremo todavía.** Hay catálogo, análisis, asociaciones/versiones reales, paquetes e interfaz, con evidencia automatizada y carga JavaFX en WSL. CA-17/19/20/42 cuentan con matriz de permisos reales ampliada a las nuevas API; el recorrido del responsable sigue pendiente. CA-05/40 ya tienen asociaciones reales e invariantes verificadas, no solo modelos simulados.
 
-Los demás criterios CA-06–CA-39 sin implementación en este bloque permanecen pendientes según las tareas y la matriz del plan. No se confunde la prueba de preservación de filas del catálogo con CA-35, que exige dos comprobaciones manuales separadas sobre versiones y paquetes.
+CA-04/10 no tienen un escenario manual de dato opcional ausente con los dos nombres obligatorios actuales; no se debilita negocio ni se introducen nulos por SQL para simular aceptación. CA-25/41 en sus tipos diferidos e historial de generaciones de CA-14/21/22/23 esperan sus entregas. CA-35 exige dos comprobaciones manuales separadas sobre versiones y paquetes, aunque la preservación automática de filas ya se verifica.
 
-El preliminar mantiene fechas/importes y D-06 diferidos. CA-13/16/31/32 y CD-005/006 se actualizan conforme a paquetes por cliente sin etapas, con comparación exacta de nombres y sin secuencia de generación. Se conserva su numeración y se mantienen los 42 criterios; no se declara aceptado ninguno por cambiar su redacción.
+Fechas/importes, plantilla conjunta y despliegue definitivo siguen pendientes. D-06 sí permite ahora la prueba de archivos del servidor aislada. Paquetes por cliente sin etapas, nombres exactos y selección por tipo están implementados. Los 42 criterios conservan numeración; la evidencia manual se recoge en [manual-test.md](manual-test.md), sin iniciar F7.
 
 ## 8. Bitácora
 
@@ -212,7 +230,7 @@ El preliminar mantiene fechas/importes y D-06 diferidos. CA-13/16/31/32 y CD-005
 
 ## 9. Siguiente punto de decisión
 
-El responsable priorizó F0/F1: **no avanzar a implementar F3**. Las decisiones D-02 y D-07 ya están resueltas; el mínimo de nombres se mantiene. Próximos pasos: elegir otro documento y diseñar juntos la plantilla, estudiar la viabilidad/conveniencia de Python para D-04 y resolver D-12 con ese formato. El presupuesto para extracción es un insumo separado aún por recibir/identificar. D-06 se retoma en otra iteración; quedan pendientes las verificaciones manuales de F1. No instalar bibliotecas ni cambiar arquitectura por esta actualización.
+Siguiente paso: ejecutar la guía Windows/Word, registrar ambos contrastes de CA-35 y escoger conjuntamente la plantilla operativa. D-04 y D-12 están resueltas; no volver a tratarlas como bloqueos. Tratar el despliegue definitivo de D-06 por separado. Conservar el límite F6 y no iniciar F7, extracción ni generación sin otra solicitud.
 
 ## 10. Entrega F1 — implementación verificada, aceptación parcial
 
@@ -239,7 +257,9 @@ Usar una base de prueba identificada, no datos de producción. El responsable ya
 
 Registrar fecha, sistema, caso, resultado y evidencia de cada recorrido. **Estado actual: parcial por reporte del responsable; recorrido completo pendiente.** Servicios probados por integración y transporte probado sin UI no equivalen a aceptación visual ni a consola completamente ejercitada.
 
-## 12. Decisiones de F0 — estado vigente y propuestas pendientes
+## 12. Decisiones de F0 — registro histórico anterior a la reanudación
+
+Las propuestas de esta sección conservan el razonamiento histórico. D-03/D-04/D-06/D-12 y la prohibición anterior de iniciar F3 quedan sustituidas por la aprobación 14, el plan actualizado y la sección 14; no son bloqueos vigentes.
 
 Las respuestas del responsable de la sección 1 sustituyen las propuestas anteriores indicadas abajo. Una decisión resuelta no equivale a código implementado. Se conserva en la bitácora la evidencia de entregas previas.
 
@@ -293,7 +313,7 @@ Las respuestas del responsable de la sección 1 sustituyen las propuestas anteri
 
 **D-02/D-07 resueltas; D-03/D-10 mantienen el mínimo; D-06 diferida; D-09 acotada; D-04/D-12 y la nueva plantilla siguen pendientes. D-05 está implementada con validación manual parcial; D-11 conserva alta/listado/renombrado. Esta actualización no autoriza implementar F3, una integración Python ni nuevas dependencias.**
 
-## 13. Cierre de la actualización documental
+## 13. Cierre histórico de la actualización documental
 
 - Actualizados `spec.md`, `plan.md` y este seguimiento con el alcance aprobado; memoria resumida en `../../MEMORY.md`.
 - Conservados los IDs de 53 tareas y los 42 criterios; 18 tareas siguen cerradas. Decisiones resueltas y trabajo diferido no se presentan como implementación terminada.
@@ -309,3 +329,54 @@ Las respuestas del responsable de la sección 1 sustituyen las propuestas anteri
 - DOCX fuente y fixtures: ZIP/XML válidos; fuentes de requisitos/diseño, no documentos operativos. Fixtures reproducidos sin diferencias y sin datos reales. Markdown, enlaces locales, FXML/controladores y espacios comprobados.
 - `.env` y `dbhub.toml` conservados localmente fuera de commits; respaldo privado con SHA-256. Solo dependencias de seguridad ya aprobadas; sin analizador Python ni generación/versiones/paquetes.
 - Pendiente: recorrido visual de JavaFX/Word en Windows y aceptación completa de F0/F1/Spec 001. Se mantienen los bloqueos y discrepancias registrados anteriormente.
+
+## 14. Reanudación aprobada hasta F6 — 2026-11-10
+
+### Decisiones aplicadas
+
+1. **D-03 / descripción:** mínimo de dos nombres; nuevas propuestas de fechas/importes se conservan en el plan sin implementarlas. **Impacto:** no ampliar Obras, DTO de negocio ni cálculos. **Solución:** texto desde origen y faltantes/invalidación aislados. **Pros/contras:** evita reglas monetarias inventadas, pero no permite aceptar todavía CA-04/10 con un origen opcional real ni CA-41.
+2. **D-04 / descripción:** docxtpl elegido. **Impacto:** requiere entorno Python. **Solución aprobada:** proceso local, JSON, timeout, salida acotada y dos trabajadores; sin servicio ni DB. **Pros/contras:** aislamiento del backend y biblioteca existente; coste de empaquetar dos runtimes y normalizar marcadores divididos. Solo admite la sintaxis canónica, no expresiones Jinja.
+3. **D-06 / descripción:** ruta del servidor para casos construidos, tratamiento independiente del despliegue. **Impacto:** archivo y base no comparten transacción. **Solución:** puerto/adaptador, archivo inmutable, operación durable y recuperación administrativa explícita; guía separada. **Pros/contras:** puede comprobarse el flujo sin elegir servidor final; no acredita respaldo, retención ni cortes de energía. Sin limpieza automática de huérfanos.
+4. **D-12 / descripción:** tipo documental suficiente. **Impacto:** agrupa alternativas sin otra entidad. **Solución:** comparación exacta y una selección por tipo. **Pros/contras:** mínimo modelo; exige que el administrador use coherentemente el mismo tipo para alternativas del mismo documento.
+5. **Estados y captura manual:** Vigente/Borrador/No disponible son válidos y administrables; solo Vigente es elegible para uso. Borrador/No disponible permiten agregar versiones y conservan composición/historial. Eliminada es solo lectura. La captura manual pasa por la entidad de origen y sus permisos; no hay overrides documentales.
+
+### Archivos y evidencia
+
+- Código en `documents/{domain,application,api,infrastructure}`, puerto/adaptador de archivos separado y proceso en `brica-server/src/main/python/`. Nueva V7; V1–V6 conservadas. No se modifican fuentes DOCX ni Spec 002.
+- Cliente: DTO/transporte documental y controladores/vistas separados de campos, plantillas, diálogo de versión, paquetes y valores. Conserva la paleta y estilos administrativos existentes; no añade dependencias visuales.
+- Baseline antes de editar: `./mvnw test --no-transfer-progress`, **130 servidor + 14 cliente**, todo correcto. Java 25.0.5.0.3, Python 3.14.4 y Docker 29.9.2 en este entorno.
+- Preparación Python en `/tmp/opencode/brica-docx-venv`: `venv` no tenía ensurepip en WSL; se instalaron las dependencias fijadas con `uv pip` en ese entorno aislado, sin modificar paquetes del sistema.
+- Pruebas de la nueva entrega con `BRICA_DOCUMENT_PYTHON` explícita: primera suite `test`, 145 servidor + 18 cliente; primer `clean verify` ampliado, 149 + 18; `clean verify` final tras añadir regresión de timeout, **150 servidor + 18 cliente = 168**, sin fallos/errores/omitidas. Nueve casos Python se ejecutan dentro de una prueba Maven; no sumar dos veces esa prueba envolvente. Logs locales de baseline/final: `/tmp/opencode/brica-f0-baseline.log` y `/tmp/opencode/brica-documents-final-verify.log`.
+- `DocumentConfigurationIntegrationTest`: PostgreSQL 18/HTTP real, análisis y confirmación multipart, reanálisis, estático explícito, herencia/nuevos/retirados, conservación de versión anterior/filas de negocio, FK de campos, UUID repetido/conflictivo, carreras reales, recuperación, rollback, integridad y matriz de permisos.
+- `PythonDocxAnalyzerTest`/suite Python: proceso real, parser seguro, claves 50/54 y numéricas, runs/tablas/encabezados/pies, desconocidos en Java, entre párrafos/regiones rechazados, ZIP/XML hostiles y renderizado efímero con escape. Ese renderizado es una prueba de compatibilidad, no el motor implementado.
+- `ServerDocumentFileStoreTest`: lectura desde adaptador nuevo, inmutabilidad, traversal y symlinks. Las pruebas no apuntan al almacenamiento ni a las cuentas de desarrollo.
+- Cliente: errores 409 con análisis actualizado sin auto-confirmación/reintento, multipart/CSRF, nombres exactos, revisión de paquete, límite previo de carga y contrato FXML. Carga real con JavaFX en WSL de raíz documental (incluye sus cuatro pantallas), diálogo de versión y vista principal correcta. No es aceptación visual Windows.
+- `docker compose build brica-server` y proceso analizador dentro de la imagen correctos: cuatro apariciones, cero diagnósticos. Escritura/lectura de archivo construido y eliminación de ese mismo archivo correctas en el volumen de prueba con UID 10001. No se recreó el backend de desarrollo ni se aplicó V7 manualmente a esa base. Se añadió únicamente el volumen de desarrollo para archivos construidos.
+- Guías entregadas: [manual-test.md](manual-test.md) y [storage-test.md](storage-test.md). Pendiente que el responsable registre resultado/evidencia manual y diseñe la plantilla operativa; F7 y motor fuera del alcance. Sin commit, push, PR ni merge en esta reanudación.
+
+## 15. Sincronización del seguimiento — 2026-11-11
+
+- Consolidado el resumen por fases, conservando las 53 tareas, los 42 criterios de la spec y el conteo de 38 cierres técnicos / 15 tareas no cerradas.
+- Diferenciados el baseline inicial, el de reanudación y la suite final; actualizadas referencias que todavía presentaban D-12 y el mapeo de versiones/ARCHIVO como pendientes.
+- Conservadas las decisiones y evidencias históricas. No se declara ejecutado el recorrido Windows/Word, ni aceptada la plantilla operativa, el despliegue definitivo o el historial del motor.
+- Cambio limitado a este archivo; comprobados enlaces locales, conteos del ledger y espacios. Sin nuevas pruebas Maven, cambios de código, commits ni publicación.
+
+## 16. Organización autorizada en commits — 2026-11-11
+
+El responsable canceló la adaptación de los documentos recién subidos y autorizó guardar la implementación existente en cinco commits por alcance sobre `feat/23-documents-secure-reference-catalog`. No se amplía funcionalidad ni se crea el TXT propuesto. Cada commit usa `Refs #23`; no se cierra el issue ni se hace push, PR o merge.
+
+| Commit | Alcance | Verificación del estado exacto preparado |
+|---|---|---|
+| `27044d1` · `feat(documents): add restricted DOCX analysis` | Proceso Python, dependencias fijadas, adaptador, contratos/errores compartidos y pruebas del analizador. | 134 servidor + 14 cliente; cero fallos, errores u omisiones. |
+| `cc81f00` · `feat(documents): add recoverable versions and document packages` | Dominio, persistencia, servicios/API, V7 y pruebas de versiones/archivos/paquetes/selección. Se mantienen juntos por sus dependencias y esquema compartido. | 150 servidor + 14 cliente; cero fallos, errores u omisiones. |
+| `c9dc595` · `chore(server): package document processing runtime` | Docker, propiedades documentales, almacenamiento de prueba y exclusiones de archivos locales. | 150 servidor + 14 cliente; Compose válido, imagen construida y pruebas de analizador/almacenamiento con UID 10001 y red deshabilitada. |
+| `14b8228` · `feat(desktop): add document configuration workflows` | DTO/HTTP, controladores/FXML, navegación, protección de salida y pruebas del escritorio. | 150 servidor + 18 cliente; cero fallos, errores u omisiones. Carga real de FXML en WSL correcta. |
+| Este commit · `docs(documents): record implementation status and test procedures` | Spec/plan/review, guías manual/de almacenamiento/fixtures, README y memoria. | Enlaces, 53 tareas (38 cierres técnicos), 42 criterios y memoria de hasta 50 líneas comprobados; aceptación manual sigue pendiente. |
+
+- Antes de cada commit de código se exportó el índice a una copia temporal privada y se ejecutó `./mvnw -Dbrica.documents.python=<intérprete aislado> test --no-transfer-progress`, con `BRICA_DOCUMENT_PYTHON` explícita. Se comprobó que el árbol probado coincidiera con el árbol confirmado; no se usaron los archivos todavía no preparados para hacer pasar un estado intermedio.
+- El intérprete de esta verificación es Python 3.12.16, con las mismas dependencias fijadas; no se confunde con Python 3.14.4 de la entrega anterior ni se modifican los paquetes del sistema.
+- El primer intento del tercer estado, ejecutado junto al build Docker, falló por conexión rechazada al PostgreSQL desechable de Testcontainers al iniciar Flyway. La repetición secuencial pasó sin cambiar fuentes ni omitir pruebas. No se atribuye una causa raíz no demostrada ni se borra la evidencia del intento fallido.
+- Verificación final del conjunto: `clean verify`, **150 servidor + 18 cliente = 168**, sin fallos/errores/omisiones y ambos módulos empaquetados. La suite Python de 9 casos permanece incorporada a Maven. Las verificaciones no utilizaron la base de desarrollo ni aplicaron V7 allí.
+- Respaldo privado previo y comprobación SHA-256: los contenidos funcionales originales se conservan; solo este seguimiento y `MEMORY.md` reciben notas de organización. `main` no cambia. No se ejecuta reset, limpieza de trabajo local ni reescritura de commits anteriores.
+- Fuera de los commits y conservados sin modificación: `docs/Plantilla_Prueba_BRICA.docx`, `docs/PPTO 01 041126.pdf`, `docs/PPTO 01 041126.xlsx`, `.env`, `dbhub.toml` y configuración personal de OpenCode. No se copian datos empresariales de los documentos a las guías ni a fixtures.
+- Se mantienen las 38 tareas cerradas técnicamente y las 15 parciales/en verificación/pendientes/diferidas. La organización del historial no completa F0/F1 manualmente, no inicia F7 ni el motor y no autoriza publicar los nuevos commits.

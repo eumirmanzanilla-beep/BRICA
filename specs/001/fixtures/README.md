@@ -1,6 +1,6 @@
 # Fixtures DOCX — prototipos técnicos
 
-**Estado:** prototipos técnicos, no formatos operativos aprobados. E1 dispone construir conjuntamente una nueva plantilla sobre otro documento, no continuar el acta demostrativa. No se ha iniciado F3 ni elegido biblioteca DOCX.
+**Estado:** fixtures técnicos utilizados por el analizador docxtpl y sus pruebas, no formatos operativos aprobados. E1 mantiene pendiente construir conjuntamente una nueva plantilla sobre otro documento; el acta demostrativa no se adopta como formato de negocio. Recorrido: [prueba manual](../manual-test.md).
 
 ## Propuesta inicial
 
@@ -29,4 +29,4 @@ Se usa únicamente la biblioteca estándar de Python para construir paquetes OOX
 3. Confirmar obligatoriedad para esta versión; otras plantillas pueden tener distinta clasificación.
 4. Acordar qué información adicional hace falta y añadirla mediante el flujo de su entidad de origen.
 
-Los fixtures prueban capacidades técnicas futuras; no acreditan aceptación visual ni documental de producción.
+Las pruebas Python verifican además compatibilidad mediante renderizado efímero de una copia normalizada, con escape XML. No hay motor/API de generación ni salida definitiva. Los fixtures no acreditan aceptación visual ni documental de producción.

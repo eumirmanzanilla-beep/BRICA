@@ -14,14 +14,14 @@ La primera entrega admite plantillas DOCX y permite registrar campos a partir de
 
 ### Recorte preliminar vigente
 
-- Mantener el mínimo funcional con nombres de obra y cliente (`WORK_NAME` y `CLIENT_NAME`), ambos texto. Fechas e importes siguen diferidos; para su futura incorporación se conserva el formato común acordado: fecha `dd/MM/uuuu` e importe con dos decimales y punto, sin agrupación ni moneda. Las reglas de cálculo y redondeo no se presuponen.
+- Mantener el mínimo funcional con nombres de obra y cliente (`WORK_NAME` y `CLIENT_NAME`), ambos texto y sin alterar contenido. Fechas, importes, moneda y reglas de cálculo/redondeo siguen diferidos. Las propuestas futuras de D-03 quedan registradas en el plan, sin habilitar esos atributos ni consolidar ahora sus diferencias de precisión.
 - Los paquetes siguen asociados a un cliente. Se elimina completamente operación/etapa como clasificación, filtro o condición de uso. Sus plantillas pueden utilizarse en cualquier orden y momento, siempre que el usuario tenga permiso y la selección sea elegible; esto no elimina validaciones de datos, estado o versión.
-- Evaluar bibliotecas Python para el procesamiento documental. No hay lenguaje de implementación definitivo, biblioteca, integración entre procesos ni servicio Python aprobados todavía; la arquitectura Java actual no cambia por esta decisión exploratoria.
-- Posponer D-06 (rutas, almacenamiento interno y despliegue definitivo) a otra iteración. Los requisitos completos de conservación de archivos/versiones permanecen como objetivo, no como implementados o aceptados en el preliminar. Cualquier prueba local futura necesitará alcance propio aprobado.
+- D-04 aprobada: usar `docxtpl` mediante un proceso Python local invocado únicamente por el backend, con protocolo JSON y tiempo límite. Python no accede a PostgreSQL, y JavaFX continúa usando exclusivamente la API. No se incorpora otro servicio ni el motor de Spec 002.
+- D-06 acotada: probar archivos construidos mediante almacenamiento en una ruta configurable del servidor, aislado detrás de un puerto. La raíz, el respaldo, la retención y el despliegue definitivos se tratarán por separado. Las pruebas locales no equivalen a aceptación del servidor de producción.
 - Construir conjuntamente una plantilla distinta del acta demostrativa existente. El responsable dispone de un presupuesto destinado a una futura extracción de datos; no se ha identificado ni analizado su archivo en esta tarea y no constituye una plantilla de salida. El formato y la obligatoriedad de la nueva plantilla siguen pendientes.
 - Los cambios contractuales por convenio quedan fuera del flujo. No se amplía el caso de uso actual de corrección de información general ni se da por satisfecho CA-04.
 
-Las referencias heredadas a operación/etapa en ERS/DAS/Diccionario o Spec 002 deben alinearse mediante un cambio separado. La decisión funcional vigente para paquetes es la descrita aquí; esta actualización no modifica esos archivos fuente ni autoriza migraciones. La identidad que agrupa plantillas alternativas del mismo documento (D-12) sigue sin resolver.
+Las referencias heredadas a operación/etapa en ERS/DAS/Diccionario o Spec 002 deben alinearse mediante un cambio separado. La identidad que agrupa plantillas alternativas del mismo documento (D-12) es el **tipo de documento** ya existente; no se crea otra entidad. Las nuevas tablas del flujo se incorporan mediante migraciones posteriores a V6, sin modificar migraciones previas ni fuentes DOCX.
 
 ## 2. Actores y precondiciones
 
@@ -36,9 +36,11 @@ Las referencias heredadas a operación/etapa en ERS/DAS/Diccionario o Spec 002 d
 |---|---|---|
 | Campo de referencia | Define una clave canónica única, un nombre visible, un tipo, un origen lógico y la ruta de un atributo admitido. | `NOMBRE_OBRA` representa el nombre registrado de la obra. |
 | Valor de referencia | Resultado de resolver el campo para una obra y su cliente asociado. Se obtiene de la fuente vigente. | Para la obra 17, `NOMBRE_OBRA` resuelve a «Rehabilitación de la cancha». |
-| Plantilla documental | Identidad reutilizable de un formato. Tiene nombre y tipo de documento. | Acta de inicio. |
+| Plantilla documental | Identidad reutilizable de un formato. Tiene nombre, tipo de documento y estado [Vigente, borrador, No disponible]. | Acta de inicio. |
 | Versión de plantilla | Archivo registrado y relación con los campos, marcadores y obligatoriedad usados en esa revisión. | Versión 2 del acta, con `{{NOMBRE_OBRA}}` obligatorio. |
 | Paquete documental | Conjunto de plantillas asociado a un cliente, sin clasificación temporal ni secuencia obligatoria. | Paquete documental del cliente A. |
+
+Los estados **Vigente**, **Borrador** y **No disponible** son válidos. Todos permiten consultar y administrar la plantilla, incluido agregar versiones. Solo **Vigente**, no eliminada y con última versión completada verificable, permite confirmar su incorporación a un paquete y seleccionarla para uso. Una plantilla que cambia de estado sigue visible en los paquetes existentes, pero queda fuera de nuevas selecciones. La eliminación lógica es independiente y deja todo el registro en solo lectura. En esta spec, «activa» significa «Vigente y no eliminada».
 
 La **obligatoriedad se define por versión y campo**. Un campo puede ser obligatorio en un acta y opcional en otro documento. El paquete reúne **identidades de plantilla**. Para cada documento de una generación, el usuario interno elige una sola plantilla activa de entre las aplicables. La única versión seleccionable para una generación nueva es la revisión más reciente registrada correctamente de esa plantilla. El sistema muestra su número para que el usuario confirme la selección. Cambiar de plantilla antes de confirmar sustituye la selección anterior. La generación confirmada conserva la plantilla y la versión exactas que se utilizaron.
 
@@ -53,7 +55,7 @@ Como usuario autorizado, quiero registrar los campos que las plantillas pueden u
 | CA-01 | Un atributo aprobado de Obra o Cliente | Registro una clave y un nombre visible, y selecciono el atributo de la lista | BRICA asigna el origen y el tipo del atributo y habilita el campo para su uso en marcadores. |
 | CA-02 | Una clave ya registrada o una solicitud que envía una ruta libre, un origen no admitido o un tipo incompatible | Intento confirmar la definición | El servidor rechaza la solicitud, identifica el problema y conserva la configuración previa. |
 | CA-03 | Una obra con nombre y cliente registrados | Consulto los valores de dos campos que apuntan a esos datos | BRICA muestra el nombre de la obra y el del cliente asociado, con su origen. Al consultar otra obra, resuelve sus propios valores. |
-| CA-04 | Una fecha que todavía no se ha capturado | Consulto el campo correspondiente | BRICA lo muestra como faltante. Si corrijo el dato desde el flujo de obra y vuelvo a consultar, aparece el valor actualizado. |
+| CA-04 | Un campo que todavía no se ha capturado | Consulto el campo correspondiente | BRICA lo muestra como faltante. Si corrijo el dato desde el flujo de obra y vuelvo a consultar, aparece el valor actualizado. |
 | CA-05 | Una clave ya vinculada con una versión registrada | Intento cambiar su clave, tipo, origen o ruta | BRICA conserva la definición vinculada. Puedo registrar otra clave para configuraciones futuras. |
 
 ### HU-02 · Registrar una plantilla y agregar versiones
@@ -66,8 +68,8 @@ Como usuario autorizado, quiero cargar una plantilla y comprobar que sus marcado
 | CA-07 | Un DOCX con uno o más marcadores desconocidos o mal formados | Intento confirmar | BRICA señala los marcadores pendientes y bloquea el registro hasta que corrija y vuelva a validar el archivo. |
 | CA-08 | Una versión registrada | Cargo y confirmo una nueva revisión válida | BRICA registra una versión distinta y la ofrece para nuevas generaciones. La versión anterior conserva su archivo y sus campos para consulta histórica. |
 | CA-09 | Un archivo inválido o un fallo al guardar su archivo o metadatos | Intento registrar la versión | BRICA informa el problema y la versión incompleta no queda disponible para un paquete. Las versiones previas siguen accesibles. |
-| CA-10 | Una versión válida con un campo obligatorio y una obra que todavía carece de su valor | Consulto los valores para esa obra | BRICA marca el valor como faltante y obligatorio. La versión sigue siendo válida para otras obras que sí tienen ese dato. |
-| CA-11 | Un DOCX con marcadores conocidos en el cuerpo, una celda, un encabezado y un pie, incluido un marcador dividido en fragmentos dentro de un mismo párrafo | Analizo y confirmo la versión | BRICA reconoce y vincula todas las apariciones y permite registrar la versión. |
+| CA-10 | Una versión válida con un campo obligatorio y una obra que todavía carece de su valor | Consulto los valores para esa obra | BRICA marca el valor como faltante y obligatorio y permite completar el dato mediante el flujo de su entidad de origen, con sus permisos y validaciones; no crea un valor documental independiente. La versión sigue siendo válida para otras obras que sí tienen ese dato. |
+| CA-11 | Un DOCX con marcadores conocidos en el cuerpo, una celda, un encabezado y un pie de página, incluido un marcador dividido en fragmentos dentro de un mismo párrafo | Analizo y confirmo el guardado de la versión | BRICA reconoce y vincula todas las apariciones de los marcadores y permite registrar la versión. |
 | CA-12 | Un marcador en una región no admitida o dividido entre párrafos distintos | Analizo el archivo | BRICA indica dónde está el marcador y bloquea el registro hasta que se corrija. |
 
 ### HU-03 · Configurar y consultar paquetes
@@ -76,14 +78,14 @@ Como usuario autorizado, quiero agrupar las plantillas que necesita un cliente y
 
 | ID | Dado | Cuando | Entonces |
 |---|---|---|---|
-| CA-13 | Un cliente registrado y dos plantillas elegibles | Creo un paquete con ambas | BRICA guarda la identificación y la composición, y lo muestra al consultar paquetes para ese cliente, sin requerir operación/etapa ni orden de generación. |
+| CA-13 | Un cliente registrado y dos plantillas elegibles | Creo un paquete con ambas plantillas | BRICA guarda la identificación y la composición, y lo muestra al consultar paquetes para ese cliente, sin requerir operación/etapa ni orden de generación. |
 | CA-14 | Un paquete existente | Agrego una plantilla y retiro otra, y confirmo | La nueva composición queda disponible para operaciones futuras. Las generaciones anteriores conservan la referencia al paquete y muestran las plantillas y versiones que utilizaron. |
 | CA-15 | Un paquete vacío, un cliente inexistente o una plantilla duplicada o inelegible | Intento confirmar | BRICA identifica qué debe corregirse y conserva la configuración anterior. |
 | CA-16 | Un paquete de otro cliente y un paquete aplicable con una plantilla activa y otra desactivada | Consulto la configuración para mi obra | BRICA excluye el paquete ajeno. Para la nueva selección solo ofrece la plantilla activa y su revisión más reciente, sin filtro por operación/etapa ni requisito de haber generado otro documento antes. |
 | CA-17 | Un usuario sin permiso de administración | Intenta registrar una versión, modificar un campo o guardar un paquete | El servidor rechaza la operación y conserva los datos previos. |
 | CA-18 | Varias plantillas activas aplicables a un documento | Selecciono una plantilla y confirmo la versión ofrecida, y después cambio de opción | El flujo conserva una única selección de plantilla y versión. El servidor rechaza una plantilla desactivada o eliminada, una revisión anterior, una versión que pertenece a otra plantilla o más de una selección para el mismo documento. |
 | CA-19 | Un usuario autenticado con permiso global de consulta y sin permiso de administración | Solicito valores para dos obras registradas | BRICA devuelve en cada caso los datos de la obra y de su cliente asociado. El permiso de consulta no habilita cambios de configuración. |
-| CA-20 | Una solicitud sin autenticación o de un usuario sin permiso de consulta | Solicito valores por identificador de obra directamente a la API | El servidor rechaza la solicitud antes de devolver valores de la obra o del cliente. |
+| CA-20 | Una solicitud sin autenticación o de un usuario sin permiso de consulta | Solicito valores por identificador de obra directamente a la API | El servidor rechaza la solicitud. |
 
 ### HU-04 · Verificar la resolución y el historial
 
@@ -94,11 +96,12 @@ Como usuario autorizado, quiero que las opciones vigentes y el historial muestre
 | CA-21 | Una plantilla activa cuya versión 1 ya se usó | Se confirma el registro de la versión 2 | Las nuevas generaciones solo ofrecen la versión 2. El historial conserva el vínculo con la versión 1. Un intento fallido de registrar otra versión conserva la última revisión válida como seleccionable. |
 | CA-22 | Una plantilla eliminada de forma lógica que ya tiene referencias históricas | Consulto su historial o intento seleccionarla, editarla o registrar una versión nueva | BRICA permite consultar su registro y versiones en modo de solo lectura. La excluye de nuevas selecciones y rechaza las operaciones de modificación o uso. |
 | CA-23 | Una generación que utilizó una parte de las plantillas de un paquete | Cambio la composición del paquete y consulto esa generación | El historial muestra el paquete de origen y solo las plantillas y versiones efectivamente utilizadas. La composición actual se consulta por separado. |
-| CA-24 | Una obra y una versión aplicable que requiere algunos campos del catálogo | Solicito resolver la selección para generar un documento | BRICA devuelve únicamente los campos de esa versión, con marcador, clave, tipo, valor como texto, origen, obligatoriedad y estado. Rechaza una versión o plantilla que ya no sea elegible para el paquete. |
-| CA-25 | Un importe cero permitido, un texto compuesto solo por espacios y un valor que incumple una regla aplicable | Resuelvo los campos | BRICA devuelve respectivamente presente, faltante e inválido. Si falla la lectura, informa un error de consulta en lugar de clasificar los datos como faltantes. |
+| CA-24 | Una obra y una versión de plantilla aplicable que requiere algunos campos del catálogo | Solicito resolver la selección de la plantilla para generar un documento | BRICA devuelve únicamente los campos de esa versión. Rechaza una versión o plantilla que ya no sea elegible para el paquete. |
+| CA-25 | Un importe cero permitido, un texto compuesto solo por espacios y un valor que incumple una regla aplicable | Resuelvo los campos | BRICA distingue y devuelve respectivamente presente, faltante e inválido. Si falla la lectura, informa un error de consulta en lugar de clasificar los datos como faltantes. |
 | CA-26 | Una clave canónica de 50 caracteres y una clave con minúsculas, espacios o caracteres fuera del conjunto permitido | Registro los campos y valido sus marcadores | BRICA admite la clave canónica y su marcador completo de 54 caracteres. Rechaza las claves inválidas y exige coincidencia exacta con la sintaxis canónica dentro del DOCX. |
 
 ### HU-05 · Confirmar archivos y editar paquetes sin perder cambios
+Como administrador de BRICA, quiero confirmar archivos previamente analizados, registrar sus versiones de forma segura y editar paquetes existentes
 
 | ID | Dado | Cuando | Entonces |
 |---|---|---|---|
@@ -111,6 +114,7 @@ Como usuario autorizado, quiero que las opciones vigentes y el historial muestre
 | CA-33 | Dos confirmaciones distintas y válidas para la misma plantilla | Se procesan de forma simultánea | Cada registro exitoso obtiene una versión distinta. Solo la última versión registrada correctamente queda seleccionable. |
 
 ### HU-06 · Revisar y retomar la configuración
+Como administrador de BRICA, quiero revisar la configuración de plantillas y paquetes, conservar la información entre versiones y recuperar configuraciones incompletas, para garantizar la integridad de los datos.
 
 | ID | Dado | Cuando | Entonces |
 |---|---|---|---|
@@ -150,7 +154,7 @@ Como usuario autorizado, quiero que las opciones vigentes y el historial muestre
 - Mantener una sola fuente para cada dato de negocio. La consulta en configuración documental lee el valor. Los formularios de obra y cliente son los puntos para corregirlo en esta entrega.
 - Los paquetes se asocian a un cliente concreto, según confirmación del responsable. Los paquetes generales sin cliente quedan fuera del alcance.
 - Si falta una plantilla para componer el paquete, se puede abrir su registro y volver a la selección. El usuario autorizado puede guardar el paquete incompleto como **borrador persistente**, reabrirlo tras cerrar la aplicación y continuar o descartarlo. El borrador conserva la captura y las selecciones realizadas. Solo un paquete confirmado y válido se ofrece para generación.
-- Mantener los módulos del cliente y del servidor, el acceso mediante API y las migraciones con Flyway si se requiere ampliar el esquema. La alternativa Python sigue en evaluación y no autoriza acceso directo desde JavaFX ni cambios de arquitectura. El plan técnico debe comprobar qué entidades y permisos existen antes de definir las tareas de implementación.
+- Mantener los módulos del cliente y del servidor, el acceso mediante API y las migraciones con Flyway. El proceso local Python aprobado se limita al adaptador documental; no introduce acceso directo desde JavaFX, un servicio independiente ni acceso a PostgreSQL desde Python.
 
 ### Confirmación, recuperación y edición
 
@@ -170,7 +174,7 @@ Como usuario autorizado, quiero que las opciones vigentes y el historial muestre
 
 ## 7. Condición de entrega
 
-Esta sección conserva la condición de aceptación del flujo completo. El recorte preliminar no la da por satisfecha: D-06, la integración documental y la nueva plantilla conjunta siguen pendientes; los criterios de fechas/importes se retoman con su entrega específica.
+Esta sección conserva la condición de aceptación del flujo completo. La implementación con casos construidos no sustituye el recorrido manual, la plantilla operativa conjunta ni el despliegue definitivo de D-06. Los criterios de fechas/importes y el historial de generaciones reales se retoman con sus entregas específicas. Guía ejecutable: [manual-test.md](manual-test.md); almacenamiento aislado: [storage-test.md](storage-test.md).
 
 Con una obra y su cliente de prueba, registrar un campo de referencia y comprobar su valor, cargar un DOCX que lo utilice, registrar una segunda versión y crear un paquete que contenga la plantilla. Al consultar la configuración aplicable, deben verse la composición, la última revisión seleccionable de cada plantilla activa y los valores de los campos de la versión consultada. La aceptación también debe demostrar el rechazo de un marcador desconocido, la detección de un valor obligatorio faltante, la conservación de una versión anterior, la detección de marcadores en encabezados y pies, la selección única de plantilla y versión y el rechazo de solicitudes sin el permiso correspondiente.
 

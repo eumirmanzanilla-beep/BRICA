@@ -10,13 +10,13 @@ El repositorio ya contiene:
 - Clientes: registro, listado paginado, consulta, actualización y eliminación lógica.
 - Obras: registro, listado paginado, consulta, corrección de información general y eliminación lógica. La corrección utiliza `ETag` / `If-Match` para detectar cambios concurrentes.
 - Contratos: registro mediante `POST /api/v1/contracts`, asociado a una obra, con datos JSON almacenados en PostgreSQL. No incluye carga ni extracción de PDF.
-- Persistencia JPA, validaciones del servidor, errores `ProblemDetail` y migraciones Flyway V1–V6.
+- Persistencia JPA, validaciones del servidor, errores `ProblemDetail` y migraciones Flyway V1–V7.
 - Autenticación por sesión de servidor, BCrypt coste 10, CSRF y autorización por permisos vigentes en los casos de uso de negocio. Inicio/cierre de sesión en JavaFX y administración local inicial de cuentas/roles.
-- API de catálogo documental: atributos aprobados, registro, listado, renombrado y resolución de nombres de obra/cliente. Las pantallas documentales todavía no están implementadas.
+- Configuración documental por API y JavaFX: catálogo de nombres, análisis DOCX mediante docxtpl, versiones inmutables, recuperación/idempotencia, paquetes por cliente con borradores y concurrencia, opciones y resolución por tipo documental.
 - Escritorio con panel de inicio, pantallas de clientes y obras y comprobación de conexión. La sección Contratos todavía muestra un contenido provisional; no existe su formulario FXML.
 - Pruebas unitarias, de API y de persistencia/HTTP con PostgreSQL en Testcontainers.
 
-**Todavía no implementado:** pantallas del catálogo de campos de referencia, almacenamiento documental, plantillas versionadas, paquetes y motor de generación. La configuración documental completa aún no está aceptada. La validación visual del nuevo acceso JavaFX sigue pendiente en Windows.
+**Pendiente de aceptación:** recorrido manual Windows/Word, plantilla operativa conjunta y despliegue definitivo del almacenamiento. Se prueban casos construidos; fechas/importes, extracción PDF, previsualización, motor y generaciones definitivas siguen fuera de esta entrega.
 
 ## Stack y estructura
 
@@ -29,13 +29,13 @@ Java 25, Maven Wrapper, Spring Boot 4.1.1, JavaFX 25.0.2 y PostgreSQL 18.
 | `brica-server/src/main/resources/db/migration/` | Migraciones SQL versionadas; no modificar las ya aplicadas. |
 | `specs/001/` | Configuración documental: campos, plantillas, versiones y paquetes. |
 | `specs/002/` | Motor documental: extracción de PDF y generación. |
-| `docs/constitution.md` (previsto, aún ausente) | Principios de BRICA. |
+| `docs/constitution.md` | Principios de BRICA. |
 
 Las versiones y la configuración efectiva están en los POM, `compose.yml` y `brica-server/src/main/resources/application.yml`.
 
 ## Desarrollo local
 
-Requiere JDK 25 y Docker activo para PostgreSQL y las pruebas de integración. Usar WSL para desarrollo y pruebas; validar visualmente JavaFX en Windows. Ejecutar los comandos desde la raíz.
+Requiere JDK 25, Docker activo y un entorno Python con las dependencias de `brica-server/src/main/python/requirements.txt` para análisis y pruebas. Prepararlo y exportar `BRICA_DOCUMENT_PYTHON`/`BRICA_DOCUMENT_SCRIPT` como indica la [guía manual](specs/001/manual-test.md). La imagen Docker ya incluye ese entorno. Usar WSL para desarrollo/pruebas y Windows para validar JavaFX; comandos desde la raíz.
 
 ### 1. Preparar PostgreSQL
 
@@ -108,7 +108,7 @@ La sesión no caduca por tiempo, según la política aprobada. Cookie y CSRF per
 
 ## Verificación
 
-Desde WSL, con Docker activo:
+Desde WSL, con Docker activo y `BRICA_DOCUMENT_PYTHON` apuntando al entorno preparado:
 
 ```bash
 ./mvnw test
@@ -118,14 +118,14 @@ git diff --check
 
 Las pruebas de integración usan PostgreSQL 18 en Testcontainers; no necesitan apuntar a la base de desarrollo. La ejecución manual del backend sí requiere sus variables de conexión. Compilar no sustituye abrir y verificar las pantallas en Windows. Registrar por separado las comprobaciones ejecutadas y las pendientes.
 
-## Próxima entrega: configuración documental
+## Configuración documental — preliminar hasta F6
 
 La [Spec 001](specs/001/spec.md) define el catálogo de campos, la consulta de valores por obra, el análisis de DOCX, las versiones de plantilla y los paquetes documentales. Su [plan de trabajo](specs/001/plan.md) detalla fases, archivos, funciones, validaciones y criterios de salida. La aceptación completa requiere permisos reales comprobados en el servidor.
 
-El [registro de avance](specs/001/review.md) enumera las tareas abiertas/cerradas, las decisiones aprobadas y la evidencia de pruebas. F0/F1 tienen prioridad antes de F3. Hay [fixtures técnicos DOCX](specs/001/fixtures/README.md), no formatos operativos aprobados; la nueva plantilla se diseñará conjuntamente sobre otro documento. Fechas, importes y el flujo completo siguen pendientes.
+El [seguimiento](specs/001/review.md) separa implementación, evidencia automática y aceptación pendiente. El [recorrido manual](specs/001/manual-test.md) cubre permisos, estados, análisis, versiones, borradores, concurrencia y valores; la [prueba de almacenamiento](specs/001/storage-test.md) mantiene D-06 aislada del despliegue definitivo. Los [fixtures](specs/001/fixtures/README.md) no son formatos operativos aprobados.
 
 La [Spec 002](specs/002/spec.md) corresponde al motor documental posterior. No confundir la consulta de valores de la configuración documental con una previsualización renderizada o una generación definitiva.
 
 ## Reglas de contribución
 
-Consultar [AGENTS.md](AGENTS.md). La constitución está prevista en `docs/constitution.md`, todavía ausente. Presentar y aprobar el plan antes de cambios no triviales, conservar el trabajo local y consultar antes de incorporar dependencias o cambiar la arquitectura. No hacer commits, push ni abrir PR sin solicitud expresa.
+Consultar [AGENTS.md](AGENTS.md) y la [constitución](docs/constitution.md). Presentar y aprobar el plan antes de cambios no triviales, conservar el trabajo local y consultar antes de incorporar dependencias o cambiar la arquitectura. No hacer commits, push ni abrir PR sin solicitud expresa.

@@ -4,14 +4,14 @@
 
 **Fecha:** 2026-11-09.
 
-**Estado:** ejecución de F0/F1 priorizada antes de F3. Aprobados sesiones de servidor, seguridad de todas las API de negocio, BCrypt, aprovisionamiento local y prototipos de prueba. El bloque de nombres de F2 se integra con esa seguridad.
+**Estado:** retomado con aprobación expresa para implementar hasta F6 con casos construidos. Catálogo/seguridad, análisis, versiones, paquetes y escritorio implementados; verificación final de 150 pruebas de servidor y 18 de cliente correcta, más suite Python incorporada. Aceptación manual pendiente. No se inicia F7 ni el motor de Spec 002.
 **Especificación:** [spec.md](spec.md), requisitos CD-001–CD-007 y criterios CA-01–CA-42.
 
 **Seguimiento:** [review.md](review.md), con tareas individuales, decisiones confirmadas y evidencia de cada avance.
 
-**Punto de control F1:** seguridad de servidor y API del bloque de nombres verificadas automáticamente; acceso JavaFX y consola administrativa pendientes de recorrido manual. F1 no se declara completa ni habilita F3. Las propuestas restantes de F0 y la lista manual están en las secciones 11–12 del seguimiento.
+**Punto de control:** se permite avanzar técnicamente con fixtures construidos y permisos reales en PostgreSQL desechable. F0/F1 no se declaran aceptadas de extremo a extremo mientras falten la plantilla conjunta y el recorrido manual. Los estados Borrador/No disponible siguen visibles y administrables, pero no son elegibles para confirmar paquetes ni generar.
 
-**Actualización de alcance aprobada:** paquetes por cliente sin operación/etapa ni orden obligatorio; nombres por comparación exacta. Se mantiene el mínimo de nombres de obra/cliente. Python es una alternativa a evaluar, no una integración autorizada. D-06 se difiere a otra iteración. La primera plantilla se diseñará conjuntamente sobre un documento distinto del acta demostrativa; el presupuesto disponible se destina a extracción, no a generación. Esta actualización es documental y no inicia F3–F5.
+**Actualización aprobada:** D-03 conserva solo nombres; D-04 elige docxtpl y proceso local Python con JSON/timeout; D-06 permite almacenamiento aislado en una ruta del servidor para casos construidos, no decide despliegue definitivo; D-12 reutiliza tipo documental. La captura manual corrige la entidad de origen. La plantilla de negocio sigue pendiente de diseño conjunto. Se preserva la evidencia de las entregas anteriores sin atribuirle las nuevas capacidades.
 
 ## 1. Objetivo, fuentes y límites
 
@@ -26,7 +26,7 @@ Fuentes efectivas: `AGENTS.md`, `docs/constitution.md`, únicamente la spec 001,
 - Catálogo con claves canónicas, atributos aprobados y edición descriptiva.
 - Resolución administrativa de valores y resolución de una selección aplicable al motor.
 - Análisis DOCX, clasificación por campo, documentos estáticos y confirmación revisable.
-- Versiones inmutables, archivos, recuperación e idempotencia como objetivo completo; su implementación/aceptación dependiente de almacenamiento queda pendiente de retomar D-06.
+- Versiones inmutables, archivos, recuperación e idempotencia mediante adaptador de archivos del servidor; validación preliminar con casos construidos, sin aceptación del despliegue definitivo.
 - Plantillas activas/inactivas, eliminación lógica e historial de versiones.
 - Paquetes asociados a un cliente, sin operación/etapa ni secuencia de generación; borradores persistentes y edición concurrente como objetivo del flujo completo.
 - API y cliente JavaFX, pruebas y permisos reales como condición de habilitación.
@@ -37,7 +37,7 @@ Fuentes efectivas: `AGENTS.md`, `docs/constitution.md`, únicamente la spec 001,
 - Ejecuciones de generación y su historial completo: definir el contrato ahora, persistirlo con el motor. No crear generaciones ficticias para declarar aprobados sus criterios.
 - Paquetes generales sin cliente, el concepto de operación/etapa documental, reglas contractuales por convenio y cambios amplios de Clientes, Obras o Contratos.
 - Nuevas fuentes libres, expresiones evaluadas, acceso a PostgreSQL o archivos desde JavaFX.
-- En el preliminar: fechas/importes, almacenamiento y despliegue definitivo. No convertir su aplazamiento en aceptación de criterios aún no verificados.
+- En el preliminar: fechas/importes, almacenamiento y despliegue definitivos. No convertir su aplazamiento en aceptación de criterios aún no verificados.
 
 ## 2. Diagnóstico contrastado con el repositorio
 
@@ -67,16 +67,16 @@ La aprobación para redactar este documento no aprueba automáticamente estas pr
 |---|---|---|
 | D-01 | **Aprobado:** comenzar solo con `WORK_NAME` → `Work.name`, `CLIENT_NAME` → `Work.client.name`, ambos texto. | Fechas e importes diferidos expresamente. Las claves de usuario pueden ser otras, como `NOMBRE_OBRA`; estos son identificadores de atributo del servidor. |
 | D-02 | **Resuelta:** eliminar completamente operación/etapa documental. Cada paquete sigue asociado a un cliente; sus plantillas se pueden generar en cualquier orden y momento, sujetas a permisos/elegibilidad. | Sustituye la antigua propuesta `START/ESTIMATE/AGREEMENT/CLOSURE`. Quitar ese dato de los futuros DTO, filtros y restricciones; no crear el catálogo. Las fuentes heredadas se alinearán por separado, sin editar DOCX ni Spec 002 en esta tarea. |
-| D-03 | **Propuesta mínima mantenida:** texto sin alterar contenido; inicialmente solo nombres. Para fechas/importes futuros: `dd/MM/uuuu`, dos decimales con punto, sin agrupación ni moneda. | Fechas/importes continúan diferidos junto a D-10. Reglas de cálculo/redondeo requieren acuerdo antes de incorporarlos; no inferir moneda ni leer importes desde JSON libre. |
-| D-04 | **En evaluación:** investigar bibliotecas Python para el procesamiento DOCX y si conviene un módulo en otro lenguaje. POI deja de ser la implementación propuesta por defecto; no se ha elegido sustituta. | Comparar soporte real y coste de integración antes de pedir aprobación de biblioteca/versiones/arquitectura. `python-docx` y `docxtpl` son candidatas, no dependencias autorizadas. Ver sección 4.4. |
+| D-03 | **Aprobado para esta entrega:** mantener texto sin alterar contenido y únicamente nombres. Se conservan las propuestas futuras del responsable: fecha `{{dd}} de {{mes (1 - enero, ..., 12 - diciembre)}} del {{aaaa}}` (12 de octubre de 2029); importes con cuatro decimales y MXN/USD, visualización de 2 decimales, cálculo interno de 6 y redondeo hacia arriba de 1 centavo. | Fechas, importes, moneda y sus cálculos se difieren; las distintas precisiones y su relación con DECIMAL(15,2) deben cerrarse al retomar esa entrega. No se aplican ahora ni se interpretan como sintaxis de nuevos marcadores. |
+| D-04 | **Aprobada:** docxtpl 0.20.2 mediante proceso Python local del backend, protocolo JSON por stdin/stdout, sin servicio adicional ni acceso a PostgreSQL. | Dependencias fijadas en `brica-server/src/main/python/requirements.txt`. Normalizar marcadores divididos solo en copia privada; validar sintaxis canónica antes de usar docxtpl. No implementar generación de Spec 002. |
 | D-05 | **Aprobado A1/B1/C1/D1:** sesiones en memoria de servidor, cookies/CSRF, protección de todas las API de negocio, BCrypt y administración local. Un rol por usuario y permisos por rol según Diccionario/DAS. | Sin vencimiento por inactividad ni límite temporal absoluto. Contraseña mínima 8 caracteres, mayúscula y número; coste 10; máximo técnico 72 bytes sin truncar. Identificador de usuario exacto. Usuario ACTIVE/INACTIVE; rol 1/0. Comprobar permisos/estados vigentes por operación. |
-| D-06 | **Diferida expresamente a otra iteración:** rutas, almacenamiento interno y despliegue definitivo; el responsable no dispone aún del servidor de destino. | No elegir ahora raíz/volumen/límites/retención ni presentar propuestas numéricas anteriores como aprobadas. El flujo completo de archivos/versiones continúa sin aceptación; una futura prueba local se acotará y autorizará aparte. |
+| D-06 | **Prueba aislada aprobada:** ruta configurable del servidor, archivos construidos y metadatos persistentes. Puerto `DocumentFileStore`, adaptador `ServerDocumentFileStore` y guía `storage-test.md`. | La prueba local usa raíz configurable y volumen Docker exclusivamente de desarrollo. No decide servidor final, retención, limpieza ni respaldo. Los límites conservadores de procesamiento son controles del preliminar, no capacidad operativa aceptada. |
 | D-07 | **Resuelta:** comparación exacta del nombre de paquete, dentro del mismo cliente. No recortar extremos ni convertir mayúsculas automáticamente. | Sustituye la normalización propuesta. Preservar las validaciones de presencia/longitud del Diccionario; operación/etapa ya no participa en unicidad. |
 | D-08 | **Aprobado:** no se permiten operaciones futuras sobre una obra o cliente eliminado; se deben conservar todos los archivos históricos generados con su información. | La resolución nueva excluye obra y cliente eliminados. No implementar cascadas de borrado; la verificación de archivos históricos reales corresponde a fases posteriores. |
-| D-09 | **Alcance confirmado:** cambios contractuales por convenio fuera del flujo, para una entrega futura. | No ampliar `general-information` ni asumir aprobada la corrección ordinaria de fechas. CA-04 permanece diferido con las fechas; no se declara satisfecho. |
+| D-09 | **Alcance confirmado:** cambios contractuales por convenio fuera del flujo, para una entrega futura. | No ampliar `general-information` ni asumir aprobada la corrección ordinaria de fechas. CA-04 ahora es genérico: falta un origen opcional real para aceptarlo con el mínimo de nombres obligatorios. |
 | D-10 | **Estructura resuelta por Diccionario:** OBRA contiene `monto_contratado`, `monto_antes_iva` e `iva`, DECIMAL(15,2), nullable. Todavía no están implementados en `Work`. | No preguntar de nuevo si existirán. Falta planificar su incorporación y la regla de validación/formato; se mantiene el recorte aprobado de solo nombres hasta esa entrega. No usar JSON de Contrato como fuente alternativa. |
-| D-11 | **Aprobado para este bloque:** alta, listado y renombrado; nombre visible de hasta 50 según Diccionario. Persistir clave, tipo, origen y ruta asignados por atributos aprobados. Sin edición semántica ni borrado por ahora. | Verificación con asociaciones reales para CA-05/40 pendiente de F4; no asumir aprobada una regla de edición de campos aún no vinculados. |
-| D-12 | **Pendiente:** definir tipos/identidad que agrupa alternativas del mismo documento para exigir una única selección. | Eliminar operación/etapa no resuelve esta identidad. Acordarla con la nueva plantilla antes de F5 y del contrato con el motor, sin añadir entidades por suposición. |
+| D-11 | **Aprobado para este bloque:** alta, listado y renombrado; nombre visible de hasta 50 según Diccionario. Persistir clave, tipo, origen y ruta asignados por atributos aprobados. Sin edición semántica ni borrado por ahora. | Asociaciones V7 reales comprobadas; CA-05/40 mantienen recorrido manual pendiente. No ampliar la edición semántica de campos no vinculados. |
+| D-12 | **Resuelta:** tipo documental es identidad suficiente para agrupar alternativas y exigir una selección por tipo. | Reutilizar `document_type`, sin nueva entidad ni catálogo de operaciones. Los valores se comparan exactamente, sin normalización automática. |
 | D-13 | **Aprobado:** alinear `VERSION_PLANTILLA_CAMPO.marcador` de 50 a 54 en el Diccionario, conservando el resto del DOCX. | Aplicado mediante modificación mínima de una celda; verificar que futuras asociaciones SQL admitan 54. No se crea todavía esa tabla. |
 
 Si un bloqueo no está resuelto, se pueden desarrollar las reglas aisladas cuyo alcance se apruebe, pero no habilitar la funcionalidad incompleta ni marcarla aceptada. Las decisiones nuevas sustituyen propuestas anteriores, no su evidencia histórica. El Diccionario aún describe `PAQUETE_DOCUMENTAL.operacion_etapa` y la Spec 002 aún exige compatibilidad por operación: dejar registrada esa discrepancia para una alineación separada, sin arrastrar el concepto eliminado al diseño nuevo.
@@ -106,7 +106,7 @@ Otros archivos previstos:
 - `brica-server/src/main/resources/db/migration/V5__create_document_configuration.sql` y migraciones siguientes si se divide por fases: esquema nuevo; nunca editar V1–V4. Numeración ilustrativa, volver a comprobar antes de crear.
 - `brica-server/src/main/resources/application.yml`: propiedades documentales y límites aprobados, sin secretos.
 - `brica-server/pom.xml`: dependencias DOCX/seguridad aprobadas y sus pruebas; no modificar las versiones base sin necesidad autorizada.
-- `compose.yml`, `brica-server/Dockerfile`, `.env.example`: almacenamiento futuro diferido por D-06. F1 añadió la opción explícita `BRICA_ALLOW_HTTP`; un arreglo independiente posterior la habilitó en el `.env` local ignorado por Git y recreó solo el backend. No se versionaron secretos ni se cambiaron las cuentas.
+- `compose.yml` y `brica-server/Dockerfile`: entorno Python y volumen de archivos exclusivamente de prueba; almacenamiento definitivo diferido por D-06. No modificar `.env`, cuentas ni configuración personal. Se conserva la opción explícita de HTTP local de la entrega F1 anterior.
 - Cambios al flujo de fechas de Obras únicamente en una entrega aprobada para D-09, con DTO, servicio, API, cliente y pruebas propios.
 
 ### 4.2 Cliente
@@ -124,18 +124,18 @@ Otros archivos previstos:
 - `brica-client/src/test/java/com/brica/client/`: serialización, interpretación de errores y estado del flujo donde no requiera entorno gráfico.
 - `specs/001/plan.md`: decisiones aprobadas y evidencia por fase. `README.md`: instrucciones realmente implementadas. Contrato con `specs/002/spec.md`: actualizar mediante aprobación cuando se implemente el consumidor.
 
-### 4.4 Evaluación pendiente de Python
+### 4.4 Integración Python aprobada
 
-1. **Descripción:** es técnicamente posible delegar el procesamiento DOCX desde el backend Java a Python, pero falta demostrar que sea conveniente para BRICA. No se ha aprobado implementar esa delegación.
+1. **Descripción:** el responsable eligió docxtpl y aprobó la invocación como proceso local. El backend mantiene autorización, catálogo, clasificación por versión y acceso a datos; Python recibe únicamente los bytes del DOCX y límites de procesamiento.
 2. **Efecto:** añade intérprete, empaquetado de dependencias, protocolo de entrada/salida, manejo de fallos y pruebas entre lenguajes. Mantener permisos y resolución de datos de negocio en Java, sin acceso directo desde JavaFX a Python o PostgreSQL.
-3. **Propuesta de análisis:** comparar `python-docx` y `docxtpl` con los fixtures existentes y la futura plantilla conjunta. Verificar marcadores exactos y repetidos, runs divididos, tablas anidadas, encabezados/pies, diagnósticos de regiones no soportadas, formato preservado y documentos estáticos. Comparar proceso local y servicio separado; un proceso local es una alternativa preliminar, no una decisión de arquitectura.
-4. **Pros y contras:** Python puede simplificar el procesamiento, pero mantener dos entornos añade coste. La documentación consultada de `docxtpl` restringe etiquetas habituales a un mismo run: no asumir que cumple CA-11 sin prueba/adaptación. `python-docx` tampoco convierte una sustitución de texto plano en un analizador completo. No modificar la sintaxis `{{CLAVE}}` ni sus límites para encajar una biblioteca sin nueva aprobación.
+3. **Solución aprobada:** adaptador `PythonDocxAnalyzer`, máximo dos procesos simultáneos, timeout configurable, salida acotada y errores sin rutas/trazas. El analizador inspecciona OOXML y permite únicamente claves canónicas; docxtpl verifica la copia normalizada. Las pruebas renderizan esa copia solo para demostrar compatibilidad/escape; no hay endpoint ni ejecución persistente de generación.
+4. **Pros y contras:** reutiliza docxtpl y evita otro servicio, pero requiere instalar/verificar Python además de Java. Las restricciones de runs se resuelven con una copia normalizada y aliases internos, conservando original y formato fuera del marcador. Se rechazan Jinja libre, regiones no soportadas, macros, relaciones externas y ZIP/XML inseguros. La sintaxis pública sigue siendo `{{CLAVE}}`, incluso claves que empiezan por dígitos.
 
-Referencias consultadas para la evaluación preliminar: [python-docx](https://python-docx.readthedocs.io/en/latest/) y [restricciones de docxtpl](https://docxtpl.readthedocs.io/en/latest/#restrictions). No se fijaron versiones ni se instalaron dependencias. La extracción del presupuesto es otro flujo: no confundir evaluación DOCX con haber elegido una biblioteca de extracción o implementado el motor de Spec 002.
+Referencias: [python-docx](https://python-docx.readthedocs.io/en/latest/) y [restricciones de docxtpl](https://docxtpl.readthedocs.io/en/latest/#restrictions), consultadas mediante Context7. Versiones fijadas y entorno aislado de pruebas instalado; Python también se empaqueta en Docker. La extracción del presupuesto sigue siendo otro flujo.
 
 ## 5. Modelo persistente e integridad
 
-Diseño objetivo a cerrar tras las decisiones de la sección 3; archivos/versiones completos dependen de retomar D-06 y no son entregables aceptados del preliminar actual:
+Diseño implementado en V7 para casos construidos; su aceptación manual y el despliegue definitivo de D-06 siguen pendientes:
 
 1. **Campo:** ID, clave única, nombre visible, atributo aprobado, origen y tipo determinados por el servidor. Clave `^[A-Z0-9_]{1,50}$`. No evaluar rutas libres/reflexión arbitraria. Mantener la semántica de campos vinculados; cambiar nombre visible no rompe asociaciones.
 2. **Plantilla:** identidad, nombre, tipo documental, condición activa y `deleted_at`. La eliminación es lógica y cierra las modificaciones; versiones y archivos permanecen consultables.
@@ -178,14 +178,14 @@ Usar `/api/v1`, DTO explícitos y el contrato de errores actual. Confirmar nombr
 | Plantillas y detalle | `GET/POST /document-templates`, `GET/PUT/DELETE /document-templates/{id}` | Administración. |
 | Análisis / confirmación | `POST /document-templates/{id}/analyses`, `POST /document-templates/{id}/versions` | Administración; carga multipart y clave de confirmación según contrato aprobado. |
 | Versiones / solicitudes técnicas de registro | `GET /document-templates/{id}/versions`, `GET /document-templates/{id}/versions/{versionId}`, `GET /document-registrations/{id}` | Administración. |
-| Paquetes y borradores | `GET/POST /document-packages`, `GET/PUT /document-packages/{id}`, `POST /document-packages/{id}/confirm`, `DELETE /document-packages/{id}/draft` | Administración; edición con `ETag` / `If-Match` propuestos. |
+| Paquetes y borradores | `GET/POST /document-packages`, `GET/PUT /document-packages/{id}`, `DELETE /document-packages/{id}/draft`; confirmar mediante `confirm: true` en POST/PUT | Administración; edición/descarte con `ETag` / `If-Match`. |
 | Opciones / selección para motor | `GET /works/{id}/document-options`, `POST /works/{id}/document-selection/resolve` | Consulta de valores; no concede generación o administración. Sin parámetro de operación/etapa. |
 
 Cada ruta se entiende prefijada por `/api/v1`. Lista de campos no debe incluir valores de obras. El usuario con consulta sin administración necesita las opciones y los valores, no acceso al CRUD del catálogo. El permiso para generar se definirá con Spec 002.
 
 Respuesta por campo: `marker`, `key`, `type`, `textValue`, `origin`, `required`, `status`; incluir identificadores de plantilla/versión y contexto de selección. Distinguir valor ausente de fallo de lectura. Para documento estático, indicar esa condición expresamente y devolver `fields: []`.
 
-Errores previstos: 400 entrada/archivo/marcadores inválidos; 401 no autenticado; 403 sin permiso; 404 recurso inexistente; 409 unicidad, confirmación desactualizada o selección no vigente; 412 revisión de paquete obsoleta; 428 falta precondición. Estado pendiente de registro consultable sin crear otra versión. Devolver instrucciones seguras; acordar 200/201/202 de idempotencia/operación pendiente en el contrato final y cubrirlos con pruebas.
+Errores: 400 entrada/archivo/marcadores inválidos; 401 no autenticado; 403 sin permiso; 404 recurso inexistente; 409 unicidad, confirmación desactualizada o selección no vigente; 412 revisión de paquete obsoleta; 428 falta precondición; 503 analizador/almacenamiento no disponibles o completado pendiente. El registro devuelve 200 con la operación y su estado, también en reenvíos, sin crear otra versión. Crear plantilla/paquete devuelve 201; 409 de revisión incluye análisis actualizado en `ProblemDetail`. Recuperación administrativa explícita mediante `POST /document-registrations/{id}/recover`.
 
 ## 7. DOCX, confirmación y recuperación
 
@@ -196,15 +196,15 @@ Errores previstos: 400 entrada/archivo/marcadores inválidos; 401 no autenticado
 - Inspeccionar partes/regiones fuera del soporte, por ejemplo cuadros de texto, notas y comentarios. No ignorar silenciosamente marcadores que una extracción de texto de alto nivel no devuelve.
 - Validar llaves, mayúsculas, clave de 1–50 y coincidencia exacta; repetidos vinculan al mismo campo. Distinguir desconocido, mal formado y región no soportada.
 - DOCX sin marcadores es candidato estático, no aprobación automática: un marcador inválido o fuera de soporte impide tratarlo como estático.
-- Como objetivo de seguridad del procesamiento futuro: probar límites de carga/descompresión/entradas/tiempo y rechazar relaciones externas, traversal, macros o formatos no admitidos. D-06 queda diferida; no fijar límites numéricos ahora ni interpretar su aplazamiento como permiso para procesar archivos sin controles. Una prueba local requerirá su alcance aprobado.
+- Controles de procesamiento del preliminar: carga máxima 1 MiB, ZIP expandido 20 MiB, 512 entradas, timeout 20 segundos y dos procesos simultáneos. Rechazar relaciones externas, traversal, macros y XML inseguro. Configurables en el servidor; no representan capacidad ni despliegue definitivo aceptados.
 - Mantener reglas de reconocimiento accesibles al motor futuro dentro del servidor; no duplicar un parser de reglas distintas en JavaFX o Spec 002.
 
-### Confirmación y concurrencia — diseño objetivo, dependiente de retomar D-06
+### Confirmación y concurrencia — implementadas para casos construidos
 
 1. Analizar archivo y emitir una referencia/huella del análisis que incluya bytes, asociaciones semánticas y propuesta revisada; definir también qué cambios descriptivos invalidan la revisión.
 2. Recibir confirmación identificada, clasificación de todos los campos y aceptación explícita de estático cuando proceda. Volver a analizar en servidor.
 3. Si el contenido o asociaciones no coinciden con lo revisado, devolver análisis actualizado y aviso; no consumir la nueva revisión como confirmada automáticamente. La siguiente confirmación debe identificar inequívocamente lo revisado y su intención.
-4. Registrar durablemente la operación pendiente y sus insumos recuperables; guardar en área temporal controlada, verificar hash y reservar número por plantilla bajo bloqueo/estrategia atómica.
+4. Registrar durablemente la operación pendiente y sus insumos recuperables; publicar el archivo en área controlada y verificar hash. Asignar el número al completar bajo bloqueo por plantilla: así el orden de numeración coincide con el de versiones completadas.
 5. Completar metadatos, asociaciones y publicación del archivo; marcar completado solo cuando todo sea verificable. Mantener la última versión completada seleccionable durante cualquier fallo.
 6. Clave repetida con misma solicitud: devolver operación/resultado original. Misma clave con otro contenido: rechazar. Dos intenciones distintas simultáneas: números diferentes y una regla de ordenación inequívoca para la última versión completada. Proponer serializar el registro por plantilla y probar completado fuera de orden; no asumir que el mayor ID es siempre el último éxito.
 7. Si el proceso se interrumpe en cualquier frontera archivo/DB, la recuperación inspecciona lo conservado y reanuda sin duplicar. Si falta evidencia, marca fallido; definir propietario de recuperación (inicio, tarea o acción administrativa) y limpieza segura tras aprobación de retención.
@@ -235,14 +235,14 @@ Errores previstos: 400 entrada/archivo/marcadores inválidos; 401 no autenticado
 
 ### F3 — Análisis DOCX y revisión
 
-- Antes de implementar: resolver la evaluación Python de D-04 y aprobar el alcance de prueba con la nueva plantilla; no dar esa integración por aprobada por esta actualización.
+- D-04 e integración local aprobadas expresamente. Se prueban fixtures construidos sin adoptar el acta como formato de negocio ni sustituir la plantilla conjunta pendiente.
 - Implementar adaptador, fixtures y diagnóstico estructurado por aparición; validar todas las regiones y entradas hostiles.
 - Proponer obligatoriedad, clasificar nuevos y confirmar estático explícitamente.
 - **Salida:** CA-06/07/11/12/26/36/37 demostrados, sin registrar versiones ante análisis inválido.
 
-### F4 — Archivos y registro de versiones (objetivo completo; almacenamiento diferido)
+### F4 — Archivos y registro de versiones (prueba aislada)
 
-- D-06 se retoma en otra iteración. No elegir rutas, volumen o retención ni cerrar esta fase con pruebas de memoria o archivos temporales; las tareas siguientes se conservan como objetivo futuro.
+- D-06 permite ahora el adaptador de archivos del servidor y la prueba construida. No se cierra el despliegue definitivo mediante pruebas temporales ni se decide retención; ver `storage-test.md`.
 - Implementar almacenamiento, metadatos, estados, nueva confirmación ante cambio, idempotencia y recuperación. Serializar/coordinar registros concurrentes por plantilla.
 - Implementar última revisión seleccionable, historial inmutable, inactivación y borrado lógico.
 - **Salida:** pruebas de fallos antes/después de cada escritura, pérdida de respuesta, reenvío y dos cargas simultáneas; última válida conservada y archivos históricos consultables. CA-08/09/21/22/27/28/29/33/39.
@@ -267,7 +267,7 @@ Errores previstos: 400 entrada/archivo/marcadores inválidos; 401 no autenticado
 - Actualizar README solo con capacidades existentes y marcar pendientes por criterio.
 - **Salida:** todos los criterios propios de configuración verificados; dependencias de motor, fuentes, formatos/orígenes y permisos claramente resueltas o pendientes. No declarar aceptación completa con pendientes bloqueantes.
 
-Orden actualizado por el responsable: cerrar decisiones/evidencias de **F0 y F1 antes de F3**, conservando el bloque interno de F2 ya verificado. Después continuar F2 pendiente → F3 → F4 → F5 → F6 → F7 según dependencias. No incorporar el analizador DOCX ni nuevas bibliotecas documentales mientras ese punto de control siga abierto.
+Orden aprobado en esta reanudación: verificar F0/F1/F2 hasta su alcance automatizable y continuar F3 → F4 → F5 → F6 con casos construidos. Las comprobaciones manuales pendientes permanecen abiertas y no se declaran realizadas para habilitar el avance técnico. **F6 es el límite: no implementar F7, extracción ni motor de Spec 002.**
 
 ## 9. Matriz de trazabilidad y pruebas
 
@@ -303,7 +303,7 @@ Capas de pruebas: unitarias para invariantes, resolución, formato y propuestas;
 git diff --check
 ```
 
-Docker activo para integración. No configurar Testcontainers contra datos de producción. Maven no carga `.env`; solo el backend manual necesita sus `DB_*` correspondientes. Registrar comando, entorno, resultado y criterios cubiertos; si algo no se pudo ejecutar, informar motivo y no marcarlo como aprobado.
+Docker activo para integración. Antes de Maven, preparar Python y exportar `BRICA_DOCUMENT_PYTHON` como indica [manual-test.md](manual-test.md): las regresiones Python forman parte de Maven y no se omiten si faltan dependencias. No configurar Testcontainers contra datos de producción. Maven no carga `.env`; solo el backend manual necesita sus `DB_*`. Registrar resultados sin declarar una comprobación no ejecutada.
 
 ### Recorrido manual de aceptación en Windows
 
