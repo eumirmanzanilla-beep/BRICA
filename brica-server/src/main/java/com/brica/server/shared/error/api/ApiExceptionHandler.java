@@ -17,6 +17,22 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+    @ExceptionHandler(com.brica.documents.domain.DocumentRuleException.class)
+    public ProblemDetail documentRule(com.brica.documents.domain.DocumentRuleException exception) {
+        return problem(HttpStatus.CONFLICT, exception.code(), "Configuración documental",
+                exception.getMessage(), "Revisa el estado y la selección antes de continuar.");
+    }
+    @ExceptionHandler(com.brica.documents.application.DocumentException.class)
+    public ProblemDetail document(com.brica.documents.application.DocumentException exception) {
+        return problem(HttpStatus.valueOf(exception.status()), exception.code(), "Configuración documental",
+                exception.getMessage(), "Revisa la selección o consulta su estado antes de reintentar.");
+    }
+
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ProblemDetail uploadTooLarge() {
+        return problem(HttpStatus.PAYLOAD_TOO_LARGE, "UPLOAD_TOO_LARGE", "Archivo demasiado grande",
+                "La carga supera el límite configurado.", "Selecciona un DOCX más pequeño.");
+    }
     @ExceptionHandler(ClientNotFoundException.class)
     public ProblemDetail clientNotFound(ClientNotFoundException exception) {
         return problem(HttpStatus.NOT_FOUND, "CLIENT_NOT_FOUND", "Cliente no encontrado",
