@@ -17,7 +17,7 @@ public class ServerDocumentFileStore implements DocumentFileStore {
     public ServerDocumentFileStore(String root) { this(root, 1048576); }
     @org.springframework.beans.factory.annotation.Autowired
     public ServerDocumentFileStore(@Value("${brica.documents.storage-root:./var/documents}") String root,
-            @Value("${brica.documents.max-bytes:1048576}") int maxBytes) {
+            @Value("${brica.documents.storage-max-bytes:10485760}") int maxBytes) {
         this.root = Path.of(root).toAbsolutePath().normalize();
         this.maxBytes = maxBytes;
     }

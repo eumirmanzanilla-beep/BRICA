@@ -21,9 +21,10 @@ public class DocumentSelectionService {
     public List<PackageOption> options(Long workId, int page, int size) {
         TemplateManagementService.pagination(page, size);
         Long client = store.workClient(workId).orElseThrow(() -> new WorkNotFoundException(workId));
-        return store.packages(page, size, client, true).stream().map(p -> {
+        return store.packages(page, size, client, true).stream()
+                .filter(p -> p.getWorkId() == null || p.getWorkId().equals(workId)).map(p -> {
             var templates = p.getTemplateIds().stream().map(id -> store.template(id, false))
-                    .filter(DocumentTemplate::isEligible)
+                    .filter(t -> t.isEligible() && t.appliesTo(client, workId))
                     .sorted(Comparator.comparing(DocumentTemplate::getName).thenComparing(DocumentTemplate::getId))
                     .map(t -> store.latest(t.getId()).filter(this::available)
                             .map(v -> new TemplateOption(t.getId(), t.getName(), t.getDocumentType(), v.getId().number())).orElse(null))
@@ -35,6 +36,7 @@ public class DocumentSelectionService {
         Long client = store.workClient(workId).orElseThrow(() -> new WorkNotFoundException(workId));
         var p = store.documentPackage(packageId, false);
         if (p.getState() != DocumentPackage.State.CONFIRMED || !Objects.equals(p.getClientId(), client)
+                || p.getWorkId() != null && !p.getWorkId().equals(workId)
                 || !Objects.equals(p.getRevision(), packageRevision)) { throw stale(); }
         if (selections == null || selections.isEmpty() || selections.stream().anyMatch(Objects::isNull)) {
             throw new DocumentException(400, "EMPTY_SELECTION", "Selecciona al menos una plantilla.");
@@ -44,7 +46,7 @@ public class DocumentSelectionService {
         for (var selection : selections) {
             if (selection.templateId() == null || selection.version() == null) { throw stale(); }
             var t = store.template(selection.templateId(), false);
-            if (!p.getTemplateIds().contains(t.getId()) || !t.isEligible() || !types.add(t.getDocumentType())) { throw stale(); }
+            if (!p.getTemplateIds().contains(t.getId()) || !t.isEligible() || !t.appliesTo(client, workId) || !types.add(t.getDocumentType())) { throw stale(); }
             var v = store.latest(t.getId()).orElseThrow(this::stale);
             if (!v.getId().number().equals(selection.version()) || !available(v)) { throw stale(); }
             result.add(resolveVersion(workId, t.getId(), v.getId().number()));
@@ -64,7 +66,7 @@ public class DocumentSelectionService {
         var result = new ArrayList<ResolvedField>();
         for (int i = 0; i < resolved.size(); i++) {
             var v = resolved.get(i);
-            result.add(new ResolvedField(v.marker(), v.key(), v.type(), v.textValue(), v.origin(),
+            result.add(new ResolvedField(v.marker(), v.key(), v.type(), v.textValue(), v.presentationValue(), v.origin(),
                     required.get(bindings.get(i).getFieldId()), v.status()));
         }
         return new ResolvedDocument(templateId, number, version.isStaticDocument(), result);
@@ -80,7 +82,7 @@ public class DocumentSelectionService {
     public record TemplateOption(Long id, String name, String documentType, int version) { }
     public record PackageOption(Long id, String name, Long revision, List<TemplateOption> templates) { }
     public record Selection(Long templateId, Integer version) { }
-    public record ResolvedField(String marker, String key, ReferenceDataType type, String textValue,
+    public record ResolvedField(String marker, String key, ReferenceDataType type, String textValue, String presentationValue,
             ReferenceOrigin origin, boolean required, ResolutionStatus status) { }
     public record ResolvedDocument(Long templateId, int version, boolean staticDocument, List<ResolvedField> fields) { }
 }

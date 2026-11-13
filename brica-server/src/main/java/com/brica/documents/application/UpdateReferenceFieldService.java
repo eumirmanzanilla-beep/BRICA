@@ -24,4 +24,17 @@ public class UpdateReferenceFieldService {
         field.rename(visibleName);
         return store.save(field);
     }
+
+    @Transactional
+    public void delete(Long id) {
+        InputRules.positiveId("fieldId", id);
+        if (store.findById(id).isEmpty()) { throw new ReferenceFieldNotFoundException(id); }
+        store.delete(id);
+    }
+    @Transactional
+    public ReferenceField alignName(Long id) {
+        InputRules.positiveId("fieldId", id);
+        var field = store.findById(id).orElseThrow(() -> new ReferenceFieldNotFoundException(id));
+        field.rename(field.getKey()); return store.save(field);
+    }
 }

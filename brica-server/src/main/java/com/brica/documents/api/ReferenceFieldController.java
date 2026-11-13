@@ -45,16 +45,32 @@ public class ReferenceFieldController {
     @PostMapping("/reference-fields")
     @ResponseStatus(HttpStatus.CREATED)
     public FieldResponse register(@Valid @RequestBody RegisterFieldRequest request) {
-        return FieldResponse.from(register.register(request.key(), request.visibleName(), request.attribute()));
+        ReferenceAttribute.forKey(request.key()).ifPresent(internal -> {
+            if (request.attribute() != null && request.attribute() != internal) {
+                throw new com.brica.server.shared.validation.domain.InvalidDataException(java.util.Map.of("key", "Esta clave tiene un origen interno predefinido."));
+            }
+        });
+        if ((request.attribute() == null) == (request.additionalType() == null)) {
+            throw new com.brica.server.shared.validation.domain.InvalidDataException(java.util.Map.of(
+                    "attribute", "Selecciona un atributo existente o un tipo de campo adicional."));
+        }
+        return FieldResponse.from(request.attribute() != null
+                ? register.register(request.key(), request.key(), request.attribute())
+                : register.registerInternal(request.key(), request.additionalType()));
     }
 
     @PutMapping("/reference-fields/{id}")
     public FieldResponse rename(@PathVariable("id") Long id, @Valid @RequestBody RenameFieldRequest request) {
-        return FieldResponse.from(update.rename(id, request.visibleName()));
+        return FieldResponse.from(update.alignName(id));
     }
 
+    @DeleteMapping("/reference-fields/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable("id") Long id) { update.delete(id); }
+
     public record RegisterFieldRequest(@NotBlank @Size(max = 50) String key,
-            @NotBlank @Size(max = 50) String visibleName, @NotNull ReferenceAttribute attribute) { }
+            @Size(max = 50) String visibleName, ReferenceAttribute attribute,
+            ReferenceDataType additionalType) { }
     public record RenameFieldRequest(@NotBlank @Size(max = 50) String visibleName) { }
     public record AttributeResponse(ReferenceAttribute id, String label, ReferenceDataType type,
             ReferenceOrigin origin, String sourcePath) { }

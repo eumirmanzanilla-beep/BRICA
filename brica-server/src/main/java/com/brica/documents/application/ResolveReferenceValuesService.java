@@ -45,7 +45,7 @@ public class ResolveReferenceValuesService {
             if (field == null) {
                 throw new ReferenceFieldNotFoundException(id);
             }
-            return ReferenceValue.resolveText(field, data.valueOf(field.getAttribute()));
+            return ReferenceValue.resolve(field, data.valueOf(field));
         }).toList();
     }
 }

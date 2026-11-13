@@ -15,11 +15,16 @@ public class TemplateManagementService {
     private final DocumentConfigurationStore store;
     private final DocumentFileStore files;
     private final ReferenceFieldStore fields;
-    public TemplateManagementService(DocumentConfigurationStore store, DocumentFileStore files, ReferenceFieldStore fields) {
-        this.store = store; this.files = files; this.fields = fields;
+    private final DocumentContextService context;
+    public TemplateManagementService(DocumentConfigurationStore store, DocumentFileStore files, ReferenceFieldStore fields, DocumentContextService context) {
+        this.store = store; this.files = files; this.fields = fields; this.context = context;
     }
     public TemplateView create(String name, String type, TemplateState state) {
-        var template = new DocumentTemplate(name, type, state);
+        return create(name, type, state, null, null);
+    }
+    public TemplateView create(String name, String type, TemplateState state, Long clientId, Long workId) {
+        Long client = context.client(clientId, workId);
+        var template = new DocumentTemplate(name, type, state, client, workId);
         store.add(template); store.flush();
         return view(template);
     }
@@ -34,11 +39,25 @@ public class TemplateManagementService {
     public TemplateView get(Long id) { InputRules.positiveId("templateId", id); return view(store.template(id, false)); }
     @Transactional(readOnly = true)
     public List<TemplateView> list(int page, int size) {
+        return list(page, size, false);
+    }
+    @Transactional(readOnly = true)
+    public List<TemplateView> list(int page, int size, boolean includeDeleted) {
         pagination(page, size);
-        var templates = store.templates(page, size);
+        var templates = store.templates(page, size, includeDeleted);
         var latest = store.latestNumbers(templates.stream().map(DocumentTemplate::getId).toList());
         return templates.stream().map(t -> new TemplateView(t.getId(), t.getName(), t.getDocumentType(), t.getState(),
-                t.getDeletedAt() != null, latest.get(t.getId()))).toList();
+                t.getDeletedAt() != null, latest.get(t.getId()), t.getClientId(), t.getWorkId())).toList();
+    }
+    @Transactional(readOnly = true)
+    public List<TemplateView> list(int page, int size, boolean includeDeleted, Long clientId, Long workId) {
+        if (clientId == null && workId == null) { return list(page, size, includeDeleted); }
+        pagination(page, size);
+        Long client = context.client(clientId, workId);
+        var result = store.scopedTemplates(page, size, includeDeleted, client, workId);
+        var latest = store.latestNumbers(result.stream().map(DocumentTemplate::getId).toList());
+        return result.stream().map(t -> new TemplateView(t.getId(), t.getName(), t.getDocumentType(), t.getState(),
+                t.getDeletedAt() != null, latest.get(t.getId()), t.getClientId(), t.getWorkId())).toList();
     }
     @Transactional(readOnly = true)
     public List<VersionView> versions(Long templateId) {
@@ -58,7 +77,7 @@ public class TemplateManagementService {
     }
     private TemplateView view(DocumentTemplate t) {
         return new TemplateView(t.getId(), t.getName(), t.getDocumentType(), t.getState(), t.getDeletedAt() != null,
-                store.latest(t.getId()).map(v -> v.getId().number()).orElse(null));
+                store.latest(t.getId()).map(v -> v.getId().number()).orElse(null), t.getClientId(), t.getWorkId());
     }
     private VersionView versionView(TemplateVersion v) {
         var bindings = store.versionFields(v.getId());
@@ -75,7 +94,7 @@ public class TemplateManagementService {
             throw new DocumentException(400, "INVALID_PAGINATION", "Usa una página positiva y entre 1 y 100 elementos.");
         }
     }
-    public record TemplateView(Long id, String name, String documentType, TemplateState state, boolean deleted, Integer latestVersion) { }
+    public record TemplateView(Long id, String name, String documentType, TemplateState state, boolean deleted, Integer latestVersion, Long clientId, Long workId) { }
     public record VersionField(Long id, String key, String visibleName, String marker, boolean required) { }
     public record VersionView(Long templateId, int number, String status, boolean staticDocument, String originalName,
             String sha256, List<VersionField> fields, String analysisJson) { }

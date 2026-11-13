@@ -11,7 +11,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface WorkReferenceRepository extends Repository<Work, Long> {
     @Query("""
-            SELECT new com.brica.documents.application.WorkReferenceData(w.name, c.name)
+            SELECT new com.brica.documents.application.WorkReferenceData(w)
             FROM Work w JOIN w.client c
             WHERE w.id = :workId AND w.deletedAt IS NULL AND c.deletedAt IS NULL
             """)

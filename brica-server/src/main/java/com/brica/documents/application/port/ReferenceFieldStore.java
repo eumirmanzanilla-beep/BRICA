@@ -13,4 +13,5 @@ public interface ReferenceFieldStore {
     List<ReferenceField> findAllById(Collection<Long> ids);
     List<ReferenceField> findAllByKey(Collection<String> keys);
     List<ReferenceField> list(int page, int size);
+    void delete(Long id);
 }

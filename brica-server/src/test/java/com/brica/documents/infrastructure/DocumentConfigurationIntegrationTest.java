@@ -99,6 +99,189 @@ class DocumentConfigurationIntegrationTest {
                 UUID.randomUUID(), "a.docx", fixture("acta-inicio-prototipo"), r.fingerprint(), Map.of(), false)));
         assertTrue(as(() -> templates.versions(id)).isEmpty());
     }
+    @Test void shouldKeepWorkAndClientDocumentScopesSeparate() {
+        long clientId = client(), a = work(clientId), b = work(clientId), otherClient = client();
+        long scoped = as(() -> templates.create("Obra " + UUID.randomUUID(), "ACTA", TemplateState.CURRENT, null, a)).id();
+        register(scoped);
+        var workPackage = as(() -> packages.createFromWork(a, "Paquete exclusivo", List.of(scoped), true));
+        assertEquals(a, workPackage.workId());
+        assertThrows(DocumentException.class, () -> as(() -> packages.createFromWork(b, "Ajeno", List.of(scoped), true)));
+        assertThrows(DocumentException.class, () -> as(() -> packages.create(clientId, "No ampliar ámbito", List.of(scoped), true)));
+        assertTrue(as(() -> selection.options(b, 0, 100)).stream().noneMatch(p -> p.id().equals(workPackage.id())));
+        assertThrows(DocumentException.class, () -> as(() -> selection.resolve(b, workPackage.id(), workPackage.revision(),
+                List.of(new DocumentSelectionService.Selection(scoped, 1)))));
+        long shared = as(() -> templates.create("Cliente " + UUID.randomUUID(), "COMPARTIDA", TemplateState.CURRENT, clientId, null)).id();
+        register(shared);
+        var clientPackage = as(() -> packages.create(clientId, "Paquete del cliente", List.of(shared), true));
+        assertTrue(as(() -> selection.options(a, 0, 100)).stream().anyMatch(p -> p.id().equals(clientPackage.id())));
+        assertTrue(as(() -> selection.options(b, 0, 100)).stream().anyMatch(p -> p.id().equals(clientPackage.id())));
+        assertThrows(DocumentException.class, () -> as(() -> packages.create(otherClient, "No otro cliente", List.of(shared), true)));
+    }
+    @Test void shouldCreateTemplateInsidePackageAndRequireItsVersionBeforeConfirmation() {
+        long clientId = client(), workId = work(clientId);
+        var draft = as(() -> packages.createFromWork(workId, "Primero nombre", List.of(), false));
+        var result = as(() -> packages.createTemplate(draft.id(), DocumentPackageService.etag(draft.revision()), "Dentro " + UUID.randomUUID(), "ACTA"));
+        assertEquals(clientId, result.template().clientId()); assertEquals(workId, result.template().workId());
+        assertEquals(List.of(result.template().id()), result.documentPackage().templates().stream().map(DocumentPackageService.PackageTemplate::id).toList());
+        assertThrows(DocumentException.class, () -> as(() -> packages.updateFromWork(draft.id(), DocumentPackageService.etag(result.documentPackage().revision()),
+                workId, draft.name(), List.of(result.template().id()), true)));
+        register(result.template().id());
+        var saved = as(() -> packages.updateFromWork(draft.id(), DocumentPackageService.etag(result.documentPackage().revision()),
+                workId, draft.name(), List.of(result.template().id()), true));
+        assertEquals(DocumentPackage.State.CONFIRMED, saved.state());
+    }
+    @Test void shouldCreateMinimalWorkAndAtomicallyEditItsCompleteInformation() throws Exception {
+        var admin = new Session(); admin.login("IntegrationAdmin");
+        var created = admin.send("POST", "/works", "{\"clientId\":" + client() + ",\"name\":\"Obra mínima\",\"description\":\"Descripción\"}", true);
+        assertEquals(201, created.statusCode(), created.body());
+        long id = JSON.readTree(created.body()).path("id").asLong();
+        var initial = admin.get("/works/" + id + "/information");
+        String etag = initial.headers().firstValue("ETag").orElseThrow();
+        var info = Map.of("name", "Nombre editado", "location", "Ubicación opcional", "description", "Nueva descripción", "documentInformation",
+                Map.of("status", "ON_HOLD", "additionalValues", Map.of(), "contractedAmount", "1.186"));
+        var saved = admin.sendWithEtag("PUT", "/works/" + id + "/information", JSON.writeValueAsString(info), etag);
+        assertEquals(200, saved.statusCode(), saved.body());
+        assertEquals("Nombre editado", JSON.readTree(saved.body()).path("work").path("name").asText());
+        assertEquals("1.186", jdbc.queryForObject("SELECT contracted_amount::text FROM works WHERE id_work=?", String.class, id));
+        assertEquals(412, admin.sendWithEtag("PUT", "/works/" + id + "/information", JSON.writeValueAsString(info), etag).statusCode());
+        var invalid = new LinkedHashMap<String, Object>(info); invalid.put("name", " ");
+        assertEquals(400, admin.sendWithEtag("PUT", "/works/" + id + "/information", JSON.writeValueAsString(invalid), saved.headers().firstValue("ETag").orElseThrow()).statusCode());
+        assertEquals("Nombre editado", jdbc.queryForObject("SELECT name FROM works WHERE id_work=?", String.class, id));
+    }
+    @Test void shouldPersistAndDownloadAttachmentsOnlyForTheirWork() throws Exception {
+        long workId = work(client()), other = work(client()); var admin = new Session(); admin.login("IntegrationAdmin");
+        byte[] pdf = "%PDF-1.7\nDocumento construido de prueba\n%%EOF".getBytes(StandardCharsets.UTF_8);
+        var upload = admin.attachment(workId, "CONTRACT", "contrato.pdf", pdf);
+        assertEquals(201, upload.statusCode(), upload.body());
+        long id = JSON.readTree(upload.body()).path("id").asLong();
+        var download = admin.http.send(HttpRequest.newBuilder(admin.uri("/works/" + workId + "/attachments/" + id + "/file")).GET().build(), HttpResponse.BodyHandlers.ofByteArray());
+        assertEquals(200, download.statusCode()); assertArrayEquals(pdf, download.body());
+        assertEquals(404, admin.get("/works/" + other + "/attachments/" + id + "/file").statusCode());
+        assertEquals(400, admin.attachment(workId, "CONTRACT", "fake.pdf", new byte[]{1, 2, 3}).statusCode());
+        assertEquals(201, admin.attachment(workId, "BASE_BUDGET", "base.docx", fixture("documento-estatico")).statusCode());
+        byte[] larger = new byte[1048576 + 100]; System.arraycopy(pdf, 0, larger, 0, pdf.length);
+        var largeUpload = admin.attachment(workId, "BASE_BUDGET", "presupuesto-grande.pdf", larger);
+        assertEquals(201, largeUpload.statusCode(), largeUpload.body());
+        long largeId = JSON.readTree(largeUpload.body()).path("id").asLong();
+        var largeDownload = admin.http.send(HttpRequest.newBuilder(admin.uri("/works/" + workId + "/attachments/" + largeId + "/file")).GET().build(), HttpResponse.BodyHandlers.ofByteArray());
+        assertEquals(200, largeDownload.statusCode()); assertArrayEquals(larger, largeDownload.body());
+        String reader = "AttachmentReader" + UUID.randomUUID().toString().replace("-", "");
+        SecurityTestData.install(jdbc, passwords, reader, "WORKS_READ"); var session = new Session(); session.login(reader);
+        assertEquals(200, session.get("/works/" + workId + "/attachments").statusCode());
+        assertEquals(403, session.attachment(workId, "CONTRACT", "otro.pdf", pdf).statusCode());
+    }
+    @Test void shouldDeleteAnUnlinkedFieldAndProtectLinkedFieldOverHttp() throws Exception {
+        var free = as(() -> registerFields.register("FREE_" + UUID.randomUUID().toString().replace("-", "").toUpperCase(),
+                "Campo sin vínculos", ReferenceAttribute.WORK_NAME));
+        var admin = new Session(); admin.login("IntegrationAdmin");
+        assertEquals(204, admin.send("DELETE", "/reference-fields/" + free.getId(), "", true).statusCode());
+        assertEquals(0L, jdbc.queryForObject("select count(*) from reference_fields where id_reference_field = ?", Long.class, free.getId()));
+        long template = template("DELETE_FIELD"); var r = review(template); register(template);
+        Long linkedId = r.fields().getFirst().id();
+        var response = admin.send("DELETE", "/reference-fields/" + linkedId, "", true);
+        assertEquals(409, response.statusCode(), response.body());
+        assertEquals("REFERENCE_FIELD_IN_USE", JSON.readTree(response.body()).path("code").asText());
+        assertEquals(1L, jdbc.queryForObject("select count(*) from reference_fields where id_reference_field = ?", Long.class, linkedId));
+        as(() -> { templates.delete(template); return null; });
+        var historical = admin.send("DELETE", "/reference-fields/" + linkedId, "", true);
+        assertEquals(409, historical.statusCode(), historical.body());
+        assertTrue(JSON.readTree(historical.body()).path("detail").asText().contains("históricos"));
+        String username = "ReaderDelete" + UUID.randomUUID().toString().replace("-", "");
+        SecurityTestData.install(jdbc, passwords, username, "DOCUMENT_VALUES_READ");
+        var reader = new Session(); reader.login(username);
+        assertEquals(403, reader.send("DELETE", "/reference-fields/" + linkedId, "", true).statusCode());
+    }
+    @Test void shouldDeleteEachUnlinkedApprovedAttributeAndAdditionalTypeOverHttp() throws Exception {
+        var admin = new Session(); admin.login("IntegrationAdmin");
+        String prefix = "DEL_" + UUID.randomUUID().toString().replace("-", "").substring(0, 10).toUpperCase() + "_";
+        for (var attribute : ReferenceAttribute.values()) {
+            var created = admin.send("POST", "/reference-fields", JSON.writeValueAsString(Map.of(
+                    "key", prefix + attribute.name(), "visibleName", "Campo borrable", "attribute", attribute.name())), true);
+            assertEquals(201, created.statusCode(), created.body());
+            long id = JSON.readTree(created.body()).path("id").asLong();
+            var deleted = admin.send("DELETE", "/reference-fields/" + id, "", true);
+            assertEquals(204, deleted.statusCode(), attribute + ": " + deleted.body());
+            assertEquals(0L, jdbc.queryForObject("SELECT count(*) FROM reference_fields WHERE id_reference_field=?", Long.class, id));
+        }
+        for (var type : ReferenceDataType.values()) {
+            var created = admin.send("POST", "/reference-fields", JSON.writeValueAsString(Map.of(
+                    "key", prefix + type.name(), "visibleName", "Adicional borrable", "additionalType", type.name())), true);
+            assertEquals(201, created.statusCode(), created.body());
+            long id = JSON.readTree(created.body()).path("id").asLong();
+            var deleted = admin.send("DELETE", "/reference-fields/" + id, "", true);
+            assertEquals(204, deleted.statusCode(), type + ": " + deleted.body());
+            assertEquals(0L, jdbc.queryForObject("SELECT count(*) FROM reference_fields WHERE id_reference_field=?", Long.class, id));
+        }
+    }
+    @Test void shouldPersistPreciseAndTypedWorkValuesWithoutChangingOtherWorks() throws Exception {
+        long client = client(), first = work(client), second = work(client);
+        var admin = new Session(); admin.login("IntegrationAdmin");
+        String key = "IMPORTE_" + UUID.randomUUID().toString().replace("-", "").toUpperCase();
+        var created = admin.send("POST", "/reference-fields", "{\"key\":\"" + key
+                + "\",\"visibleName\":\"Importe adicional\",\"additionalType\":\"AMOUNT\"}", true);
+        assertEquals(201, created.statusCode(), created.body());
+        long id = JSON.readTree(created.body()).path("id").asLong();
+        var current = admin.get("/works/" + first + "/document-information");
+        assertEquals(200, current.statusCode(), current.body());
+        String etag = current.headers().firstValue("ETag").orElseThrow();
+        String body = "{\"contractNumber\":\"001\",\"contractor\":\"Prueba\",\"contractedAmount\":1.186123456789,"
+                + "\"amountBeforeTax\":1.184,\"taxAmount\":0,\"startDate\":\"2005-07-16\",\"endDate\":null,"
+                + "\"actualEndDate\":null,\"status\":\"ON_HOLD\",\"additionalValues\":{\"" + key + "\":\"1.186\"}}";
+        var saved = admin.sendWithEtag("PUT", "/works/" + first + "/document-information", body, etag);
+        assertEquals(200, saved.statusCode(), saved.body());
+        assertEquals("1.186123456789", jdbc.queryForObject("select contracted_amount::text from works where id_work = ?", String.class, first));
+        assertEquals("IN_PROGRESS", jdbc.queryForObject("select status from works where id_work = ?", String.class, second));
+        assertEquals(412, admin.sendWithEtag("PUT", "/works/" + first + "/document-information", body, etag).statusCode());
+        var value = admin.send("POST", "/reference-values/resolve", "{\"workId\":" + first + ",\"fieldIds\":[" + id + "]}", true);
+        assertEquals(200, value.statusCode(), value.body());
+        assertEquals("1.186", JSON.readTree(value.body()).path(0).path("textValue").asText());
+        var absent = admin.send("POST", "/reference-values/resolve", "{\"workId\":" + second + ",\"fieldIds\":[" + id + "]}", true);
+        assertEquals("MISSING", JSON.readTree(absent.body()).path(0).path("status").asText());
+        assertEquals(204, admin.send("DELETE", "/reference-fields/" + id, "", true).statusCode());
+        String latestEtag = saved.headers().firstValue("ETag").orElseThrow();
+        var unchanged = admin.sendWithEtag("PUT", "/works/" + first + "/document-information", body, latestEtag);
+        assertEquals(200, unchanged.statusCode(), unchanged.body());
+        String omitted = body.replace("\"" + key + "\":\"1.186\"", "");
+        var retained = admin.sendWithEtag("PUT", "/works/" + first + "/document-information", omitted,
+                unchanged.headers().firstValue("ETag").orElseThrow());
+        assertEquals(200, retained.statusCode(), retained.body());
+        assertEquals("1.186", JSON.readTree(retained.body()).path("additionalValues").path(key).asText());
+        var altered = admin.sendWithEtag("PUT", "/works/" + first + "/document-information", body.replace("1.186\"", "2.000\""),
+                retained.headers().firstValue("ETag").orElseThrow());
+        assertEquals(400, altered.statusCode(), altered.body());
+    }
+    @Test void shouldEnforceExactTemplateNamesInPostgres() {
+        String name = "Formato_" + UUID.randomUUID();
+        as(() -> templates.create(name, "ACTA", TemplateState.DRAFT));
+        assertThrows(org.springframework.dao.DataIntegrityViolationException.class,
+                () -> as(() -> templates.create(name, "OTHER", TemplateState.DRAFT)));
+        assertNotNull(as(() -> templates.create(name.toLowerCase(java.util.Locale.ROOT), "ACTA", TemplateState.DRAFT)));
+        assertNotNull(as(() -> templates.create(name.replace("_", ""), "ACTA", TemplateState.DRAFT)));
+    }
+    @Test void shouldDerivePackageClientFromWorkAndRequireWorkRead() throws Exception {
+        long clientId = client(), workId = work(clientId);
+        var admin = new Session(); admin.login("IntegrationAdmin");
+        String request = "{\"workId\":" + workId + ",\"name\":\"Desde obra\",\"templateIds\":[],\"confirm\":false}";
+        var created = admin.send("POST", "/document-packages", request, true);
+        assertEquals(201, created.statusCode(), created.body());
+        var body = JSON.readTree(created.body());
+        assertEquals(clientId, body.path("clientId").asLong());
+        long packageId = body.path("id").asLong();
+        var updated = admin.sendWithEtag("PUT", "/document-packages/" + packageId,
+                request.replace("Desde obra", "Desde obra editado"), created.headers().firstValue("ETag").orElseThrow());
+        assertEquals(200, updated.statusCode(), updated.body());
+        assertEquals(412, admin.sendWithEtag("PUT", "/document-packages/" + packageId,
+                request, created.headers().firstValue("ETag").orElseThrow()).statusCode());
+        assertEquals(400, admin.send("POST", "/document-packages", request.replace("\"workId\":", "\"clientId\":" + clientId + ",\"workId\":"), true).statusCode());
+        String username = "DocOnly" + UUID.randomUUID().toString().replace("-", "");
+        SecurityTestData.install(jdbc, passwords, username, "DOCUMENT_CONFIG_ADMIN");
+        var docOnly = new Session(); docOnly.login(username);
+        assertEquals(403, docOnly.send("POST", "/document-packages", request, true).statusCode());
+        assertEquals(403, docOnly.get("/works").statusCode());
+        assertEquals(403, docOnly.get("/clients").statusCode());
+        jdbc.update("UPDATE works SET deleted_at=now() WHERE id_work=?", workId);
+        assertEquals(404, admin.send("POST", "/document-packages", request, true).statusCode());
+    }
     @Test void shouldRegisterImmutableVersionsReplayOriginalResponseAndProtectLinkedFields() {
         long id = template("ACTA");
         var r = review(id); var key = UUID.randomUUID();
@@ -115,6 +298,8 @@ class DocumentConfigurationIntegrationTest {
         assertEquals(2, as(() -> templates.versions(id)).size());
         assertEquals(2L, jdbc.queryForObject("select count(*) from template_version_fields where field_id = ? and template_id = ?", Long.class, field, id));
         assertThrows(org.springframework.dao.DataIntegrityViolationException.class, () -> jdbc.update("delete from reference_fields where id_reference_field = ?", field));
+        var inUse = assertThrows(DocumentRuleException.class, () -> as(() -> { updateFields.delete(field); return null; }));
+        assertEquals("REFERENCE_FIELD_IN_USE", inUse.code());
     }
     @Test void shouldRequireNewReviewOnContentOrCatalogueChangeAndExplicitStaticAcceptance() {
         long id = template("STATIC");
@@ -237,6 +422,8 @@ class DocumentConfigurationIntegrationTest {
             assertEquals(DocumentPackage.State.DRAFT, as(() -> packages.create(null, "Draft", List.of(id), false)).state());
         }
         as(() -> { templates.delete(id); return null; });
+        assertTrue(as(() -> templates.list(0, 100)).stream().noneMatch(t -> t.id().equals(id)));
+        assertTrue(as(() -> templates.list(0, 100, true)).stream().anyMatch(t -> t.id().equals(id) && t.deleted()));
         assertArrayEquals(fixture("acta-inicio-prototipo"), as(() -> templates.download(id, 1)));
         assertThrows(DocumentRuleException.class, () -> as(() -> templates.update(id, "Edit", "STATUS", TemplateState.CURRENT)));
         assertThrows(DocumentRuleException.class, () -> review(id));
@@ -309,7 +496,7 @@ class DocumentConfigurationIntegrationTest {
             assertEquals(permissions.contains("DOCUMENT_VALUES_READ") ? 200 : 403,
                     session.get("/works/" + work + "/document-options").statusCode());
             assertEquals(403, session.send("POST", "/document-templates", "{\"name\":\"No CSRF\",\"documentType\":\"X\",\"state\":\"CURRENT\"}", false).statusCode());
-            assertEquals(admin ? 201 : 403, session.send("POST", "/document-templates", "{\"name\":\"HTTP\",\"documentType\":\"X\",\"state\":\"DRAFT\"}", true).statusCode());
+            assertEquals(admin ? 201 : 403, session.send("POST", "/document-templates", "{\"name\":\"HTTP_" + username + "\",\"documentType\":\"X\",\"state\":\"DRAFT\"}", true).statusCode());
         }
     }
     @Test void shouldRoundTripMultipartConfirmationAndReturnUpdatedReviewWithProblemDetails() throws Exception {
@@ -356,6 +543,11 @@ class DocumentConfigurationIntegrationTest {
             if (csrf) { builder.header(header, token); }
             return http.send(builder.build(), HttpResponse.BodyHandlers.ofString());
         }
+        HttpResponse<String> sendWithEtag(String method, String path, String body, String etag) throws Exception {
+            return http.send(HttpRequest.newBuilder(uri(path)).header("Content-Type", "application/json")
+                    .header(header, token).header("If-Match", etag)
+                    .method(method, HttpRequest.BodyPublishers.ofString(body)).build(), HttpResponse.BodyHandlers.ofString());
+        }
         HttpResponse<String> multipart(String path, byte[] bytes, Object metadata) throws Exception {
             String boundary = "test-" + UUID.randomUUID(); var body = new java.io.ByteArrayOutputStream();
             body.write(("--" + boundary + "\r\nContent-Disposition: form-data; name=\"file\"; filename=\"a.docx\"\r\nContent-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document\r\n\r\n").getBytes(StandardCharsets.UTF_8));
@@ -368,6 +560,14 @@ class DocumentConfigurationIntegrationTest {
             return http.send(HttpRequest.newBuilder(uri(path)).header(header, token)
                     .header("Content-Type", "multipart/form-data; boundary=" + boundary)
                     .POST(HttpRequest.BodyPublishers.ofByteArray(body.toByteArray())).build(), HttpResponse.BodyHandlers.ofString());
+        }
+        HttpResponse<String> attachment(long workId, String kind, String filename, byte[] content) throws Exception {
+            String boundary = "test-" + UUID.randomUUID(); var body = new java.io.ByteArrayOutputStream();
+            body.write(("--" + boundary + "\r\nContent-Disposition: form-data; name=\"kind\"\r\n\r\n" + kind + "\r\n").getBytes(StandardCharsets.UTF_8));
+            body.write(("--" + boundary + "\r\nContent-Disposition: form-data; name=\"file\"; filename=\"" + filename + "\"\r\nContent-Type: application/octet-stream\r\n\r\n").getBytes(StandardCharsets.UTF_8));
+            body.write(content); body.write(("\r\n--" + boundary + "--\r\n").getBytes(StandardCharsets.UTF_8));
+            return http.send(HttpRequest.newBuilder(uri("/works/" + workId + "/attachments")).header(header, token)
+                    .header("Content-Type", "multipart/form-data; boundary=" + boundary).POST(HttpRequest.BodyPublishers.ofByteArray(body.toByteArray())).build(), HttpResponse.BodyHandlers.ofString());
         }
     }
 }

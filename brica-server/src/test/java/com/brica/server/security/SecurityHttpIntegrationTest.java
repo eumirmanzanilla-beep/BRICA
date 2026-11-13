@@ -45,6 +45,24 @@ class SecurityHttpIntegrationTest {
     private static final JsonMapper JSON = JsonMapper.builder().build();
 
     @Test
+    void standardRolesEnforceReadOnlyAndAdministrativeAccess() throws Exception {
+        for (String role : List.of("Gerencial", "Administrativo", "Practicante", "Invitado")) {
+            String username = "RoleTest" + UUID.randomUUID().toString().replace("-", "");
+            jdbc.update("""
+                    INSERT INTO app_users (role_id, username, password_hash, name, status)
+                    SELECT id_role, ?, ?, ?, 'ACTIVE' FROM roles WHERE name = ?
+                    """, username, passwords.encode("TestUser123"), username, role);
+            var session = login(username);
+            assertEquals(200, session.get("/clients").statusCode(), role);
+            assertEquals(200, session.get("/works").statusCode(), role);
+            boolean administrator = role.equals("Gerencial") || role.equals("Administrativo");
+            assertEquals(administrator ? 201 : 403, session.json("POST", "/reference-fields", fieldBody(), true).statusCode(), role);
+            assertEquals(administrator ? 201 : 403, session.json("POST", "/clients",
+                    "{\"name\":\"Cliente prueba\",\"legalRepresentative\":\"Representante\"}", true).statusCode(), role);
+        }
+    }
+
+    @Test
     void shouldKeepOnlyHealthAndLoginPreparationPublic() throws Exception {
         var anonymous = new SessionClient();
         assertEquals(200, anonymous.get("/health").statusCode());

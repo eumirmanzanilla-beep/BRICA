@@ -26,12 +26,17 @@ public class TemplateController {
     }
     @GetMapping("/document-templates")
     public List<TemplateManagementService.TemplateView> list(@RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "size", defaultValue = "50") int size) { return templates.list(page, size); }
+            @RequestParam(name = "size", defaultValue = "50") int size,
+            @RequestParam(name = "includeDeleted", defaultValue = "false") boolean includeDeleted,
+            @RequestParam(name = "clientId", required = false) Long clientId,
+            @RequestParam(name = "workId", required = false) Long workId) {
+        return templates.list(page, size, includeDeleted, clientId, workId);
+    }
     @GetMapping("/document-templates/{id}")
     public TemplateManagementService.TemplateView get(@PathVariable("id") Long id) { return templates.get(id); }
     @PostMapping("/document-templates") @ResponseStatus(HttpStatus.CREATED)
     public TemplateManagementService.TemplateView create(@Valid @RequestBody TemplateRequest request) {
-        return templates.create(request.name(), request.documentType(), request.state());
+        return templates.create(request.name(), request.documentType(), request.state(), request.clientId(), request.workId());
     }
     @PutMapping("/document-templates/{id}")
     public TemplateManagementService.TemplateView update(@PathVariable("id") Long id, @Valid @RequestBody TemplateRequest request) {
@@ -78,7 +83,8 @@ public class TemplateController {
     public RegisterTemplateVersionService.OperationView recover(@PathVariable("id") UUID id) { return versions.recover(id); }
 
     public record TemplateRequest(@NotBlank @Size(max = 150) String name,
-            @NotBlank @Size(max = 100) String documentType, @NotNull TemplateState state) { }
+            @NotBlank @Size(max = 100) String documentType, @NotNull TemplateState state,
+            @Positive Long clientId, @Positive Long workId) { }
     public record ConfirmationRequest(@NotNull UUID confirmationId, @NotBlank String fingerprint,
             @NotNull @Size(max = 5000) Map<@Positive Long, @NotNull Boolean> required, boolean staticAccepted) { }
     public record WorkRequest(@NotNull @Positive Long workId) { }

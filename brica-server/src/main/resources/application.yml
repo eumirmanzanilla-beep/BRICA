@@ -6,6 +6,11 @@ spring:
     deserialization:
       fail-on-unknown-properties: true
 
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 11MB
+
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:${POSTGRES_PORT:5433}/${POSTGRES_DB:brica}}
     username: ${DB_USER:brica}
@@ -34,6 +39,7 @@ brica:
     script: ${BRICA_DOCUMENT_SCRIPT:src/main/python/brica_docx.py}
     # Límites conservadores para las pruebas construidas; no constituyen despliegue definitivo.
     max-bytes: 1048576
+    storage-max-bytes: 10485760
     max-expanded-bytes: 20971520
     max-entries: 512
     timeout-seconds: 20

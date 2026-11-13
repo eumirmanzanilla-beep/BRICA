@@ -58,6 +58,7 @@ class WorkControllerTest {
 
     @MockitoBean
     private DeleteWorkService deleteWorkService;
+    @MockitoBean private com.brica.works.application.DocumentInformationService documentInformationService;
 
     @Test
     void shouldListWorks() throws Exception {

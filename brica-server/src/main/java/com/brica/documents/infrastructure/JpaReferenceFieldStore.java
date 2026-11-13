@@ -61,4 +61,22 @@ public class JpaReferenceFieldStore implements ReferenceFieldStore {
     public List<ReferenceField> list(int page, int size) {
         return repository.findAll(PageRequest.of(page, size, Sort.by("id"))).getContent();
     }
+
+    @Override
+    public void delete(Long id) {
+        try {
+            repository.deleteById(id);
+            repository.flush();
+        } catch (DataIntegrityViolationException exception) {
+            for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
+                if (cause instanceof ConstraintViolationException violation
+                        && "template_version_fields_field_id_fkey".equals(violation.getConstraintName())) {
+                    throw new com.brica.documents.domain.DocumentRuleException("REFERENCE_FIELD_IN_USE",
+                            "El campo está vinculado a una versión registrada y no puede eliminarse, "
+                                    + "aunque su plantilla ya no esté vigente o esté eliminada. Sus vínculos históricos se conservan.");
+                }
+            }
+            throw exception;
+        }
+    }
 }
