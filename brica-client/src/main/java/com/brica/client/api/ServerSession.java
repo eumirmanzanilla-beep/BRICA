@@ -106,6 +106,20 @@ public final class ServerSession {
     }
 
     private CompletableFuture<HttpResponse<String>> raw(HttpRequest request) {
+        return raw(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+    }
+    public CompletableFuture<HttpResponse<byte[]>> sendBytes(HttpRequest request) {
+        if (!request.method().equals("GET")) { return CompletableFuture.failedFuture(new IllegalArgumentException("La descarga requiere GET.")); }
+        long epoch = generation.get();
+        return raw(request, HttpResponse.BodyHandlers.ofByteArray()).thenApply(response -> {
+            if (epoch != generation.get()) { throw new IllegalStateException("La sesión cambió; vuelve a consultar."); }
+            if (response.statusCode() == 401) {
+                boolean authenticated = user != null; clear(); if (authenticated) { onSessionEnded.run(); }
+            }
+            return response;
+        });
+    }
+    private <T> CompletableFuture<HttpResponse<T>> raw(HttpRequest request, HttpResponse.BodyHandler<T> handler) {
         URI uri = request.uri();
         if (!base.getScheme().equalsIgnoreCase(uri.getScheme()) || !base.getAuthority().equals(uri.getAuthority())) {
             return CompletableFuture.failedFuture(new IllegalArgumentException("Destino ajeno a la sesión del servidor."));
@@ -126,7 +140,7 @@ public final class ServerSession {
         } catch (IOException failure) {
             return CompletableFuture.failedFuture(new IllegalStateException("No se pudo preparar la sesión."));
         }
-        return http.sendAsync(outgoing, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)).thenApply(response -> {
+        return http.sendAsync(outgoing, handler).thenApply(response -> {
             synchronized (this) {
                 if (epoch == generation.get()) {
                     try { cookies.put(uri, response.headers().map()); }

@@ -16,7 +16,10 @@ public final class DocumentDtos {
     public record Field(Long id, String key, String visibleName, String type, String origin, String sourcePath) {
         @Override public String toString() { return key + " — " + visibleName; }
     }
-    public record Template(Long id, String name, String documentType, TemplateState state, boolean deleted, Integer latestVersion) {
+    public record Template(Long id, String name, String documentType, TemplateState state, boolean deleted, Integer latestVersion, Long clientId, Long workId) {
+        public Template(Long id, String name, String documentType, TemplateState state, boolean deleted, Integer latestVersion) {
+            this(id, name, documentType, state, deleted, latestVersion, null, null);
+        }
         @Override public String toString() { return name + " · " + (deleted ? "Eliminada" : state) + " · " + documentType; }
     }
     public record VersionField(Long id, String key, String visibleName, String marker, boolean required) { }
@@ -32,15 +35,19 @@ public final class DocumentDtos {
             List<Diagnostic> diagnostics, boolean staticDocument) { }
     public record Operation(String id, Long templateId, String status, Integer versionNumber, String failure) { }
     public record PackageTemplate(Long id, String name, TemplateState state, boolean deleted) { }
-    public record Package(Long id, Long clientId, String name, String state, Long revision, List<PackageTemplate> templates) {
+    public record Package(Long id, Long clientId, String name, String state, Long revision, List<PackageTemplate> templates, Long workId) {
+        public Package(Long id, Long clientId, String name, String state, Long revision, List<PackageTemplate> templates) {
+            this(id, clientId, name, state, revision, templates, null);
+        }
         @Override public String toString() { return (name == null || name.isBlank() ? "Sin nombre" : name) + " · " + state + " · #" + id; }
     }
+    public record CreatedPackageTemplate(Package documentPackage, Template template) { }
     public record TemplateOption(Long id, String name, String documentType, int version) {
         @Override public String toString() { return name + " · v" + version; }
     }
     public record PackageOption(Long id, String name, Long revision, List<TemplateOption> templates) {
         @Override public String toString() { return name; }
     }
-    public record ResolvedField(String marker, String key, String type, String textValue, String origin, boolean required, String status) { }
+    public record ResolvedField(String marker, String key, String type, String textValue, String presentationValue, String origin, boolean required, String status) { }
     public record ResolvedDocument(Long templateId, int version, boolean staticDocument, List<ResolvedField> fields) { }
 }

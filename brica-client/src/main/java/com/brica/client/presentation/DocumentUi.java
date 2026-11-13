@@ -9,6 +9,15 @@ import javafx.scene.control.Label;
 
 final class DocumentUi {
     private DocumentUi() { }
+    static void style(javafx.scene.control.Dialog<?> dialog) {
+        var css = DocumentUi.class.getResource("styles/app.css");
+        if (css != null) { dialog.getDialogPane().getStylesheets().add(css.toExternalForm()); }
+        dialog.getDialogPane().getStyleClass().add("client-dialog");
+    }
+    static void style(javafx.scene.Scene scene) {
+        var css = DocumentUi.class.getResource("styles/app.css");
+        if (css != null) { scene.getStylesheets().add(css.toExternalForm()); }
+    }
     static Throwable cause(Throwable error) {
         while (error instanceof java.util.concurrent.CompletionException && error.getCause() != null) { error = error.getCause(); }
         return error;

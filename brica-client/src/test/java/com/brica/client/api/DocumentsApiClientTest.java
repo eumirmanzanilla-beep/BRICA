@@ -48,6 +48,13 @@ class DocumentsApiClientTest {
         api.savePackage(draft, 2L, draft.name(), List.of(1L), false).join();
         assertEquals("\"4\"", ifMatch.get()); assertEquals(2, calls.get());
     }
+    @Test void shouldSendWorkContextWithoutInventingItsClient() throws Exception {
+        api.savePackage(null, null, 12L, "Desde obra", List.of(), false).join();
+        var body = new ObjectMapper().readTree(requestBody.get());
+        assertEquals(12, body.path("workId").asLong());
+        assertTrue(body.path("clientId").isNull());
+        assertNull(ifMatch.get());
+    }
     @Test void shouldReturnUpdatedAnalysisWithoutAutomaticallyConfirmingOrRetrying() {
         server.createContext("/api/v1/document-templates/1/versions", e -> {
             calls.incrementAndGet(); requestBody.set(new String(e.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
@@ -68,5 +75,15 @@ class DocumentsApiClientTest {
     @Test void shouldRejectOversizedUploadsBeforeSendingThem() throws Exception {
         var file = directory.resolve("too-large.docx"); Files.write(file, new byte[1048577]);
         assertThrows(CompletionException.class, () -> api.analyze(1, file).join()); assertEquals(0, calls.get());
+    }
+    @Test void shouldAcceptAnEmptySuccessfulDeleteResponse() {
+        server.createContext("/api/v1/reference-fields/9", exchange -> {
+            calls.incrementAndGet();
+            assertEquals("DELETE", exchange.getRequestMethod());
+            assertEquals("token", exchange.getRequestHeaders().getFirst("X-CSRF-TOKEN"));
+            exchange.sendResponseHeaders(204, -1); exchange.close();
+        });
+        assertNull(api.deleteField(9).join());
+        assertEquals(1, calls.get());
     }
 }

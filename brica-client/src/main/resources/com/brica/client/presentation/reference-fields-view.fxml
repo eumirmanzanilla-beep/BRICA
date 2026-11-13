@@ -6,12 +6,9 @@
       fx:controller="com.brica.client.presentation.ReferenceFieldsController" fx:id="pane" spacing="10" styleClass="content-card">
     <padding><Insets top="16" right="16" bottom="16" left="16"/></padding>
     <Label text="Catálogo de campos" styleClass="content-title"/>
-    <Label text="Solo nombres de obra y cliente. La clave y su origen no se modifican al renombrar." wrapText="true"/>
+    <Label text="Datos fijos de obra y cliente con origen interno, y nuevos campos adicionales. La clave es el nombre visible. Los valores se capturan en cada obra." wrapText="true"/>
     <ListView fx:id="fields" VBox.vgrow="ALWAYS" minHeight="100"/>
-    <HBox spacing="8"><Button text="Anterior" onAction="#previous"/><Label fx:id="pageLabel"/><Button text="Siguiente" onAction="#next"/><Button text="Actualizar" onAction="#refresh"/></HBox>
-    <HBox spacing="10"><VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Clave canónica"/><TextField fx:id="key" promptText="NOMBRE_OBRA"/></VBox>
-        <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Nombre visible"/><TextField fx:id="visibleName"/></VBox></HBox>
-    <Label text="Atributo de origen para un campo nuevo"/><ComboBox fx:id="attribute" maxWidth="Infinity"/>
-    <HBox spacing="8"><Button text="Registrar campo nuevo" onAction="#create"/><Button text="Renombrar seleccionado" onAction="#rename"/></HBox>
+    <HBox spacing="8"><Button fx:id="previousButton" text="Anterior" onAction="#previous" visible="false" managed="false"/><Label fx:id="pageLabel"/><Button fx:id="nextButton" text="Siguiente" onAction="#next" visible="false" managed="false"/><Button text="Actualizar" onAction="#refresh"/></HBox>
+    <HBox spacing="8"><Button text="Crear campo" onAction="#create"/><Button text="Eliminar seleccionado" onAction="#delete"/></HBox>
     <Label fx:id="message" wrapText="true"/>
 </VBox>

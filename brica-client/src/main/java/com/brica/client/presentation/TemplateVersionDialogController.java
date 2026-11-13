@@ -38,7 +38,7 @@ public class TemplateVersionDialogController {
         stage.setOnCloseRequest(event -> { if (busy) { event.consume(); message.setText("Espera el resultado antes de cerrar."); } });
     }
     @FXML private void choose() {
-        var chooser = new FileChooser(); chooser.setTitle("Seleccionar DOCX de prueba");
+        var chooser = new FileChooser(); chooser.setTitle("Seleccionar plantilla DOCX");
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Plantilla DOCX", "*.docx"));
         var selected = chooser.showOpenDialog(stage);
         if (selected == null) { return; }
@@ -77,6 +77,7 @@ public class TemplateVersionDialogController {
             confirmationId = UUID.randomUUID(); lastRequired = Map.copyOf(required); lastStatic = staticAccepted.isSelected();
         }
         confirmation.setText(confirmationId.toString());
+        stage.hide();
         run(() -> api.confirm(templateId, file, confirmationId, review, required, staticAccepted.isSelected()), this::showOperation);
     }
     @FXML private void status() {
@@ -89,6 +90,7 @@ public class TemplateVersionDialogController {
     private void showOperation(Operation operation) {
         message.setText(operation.status() + (operation.failure() == null ? "" : " · " + operation.failure()));
         if ("COMPLETED".equals(operation.status())) { completed.run(); stage.close(); }
+        else { stage.show(); }
     }
     private <T> void run(java.util.function.Supplier<java.util.concurrent.CompletableFuture<T>> action, java.util.function.Consumer<T> success) {
         if (busy) { return; } busy = true; pane.setDisable(true); message.setText("Procesando…");
@@ -101,6 +103,7 @@ public class TemplateVersionDialogController {
                 var cause = DocumentUi.cause(error);
                 if (cause instanceof DocumentsApiClient.DocumentApiException apiError && apiError.updatedAnalysis() != null) { showReview(apiError.updatedAnalysis()); }
                 message.setText(cause.getMessage());
+                if (!stage.isShowing()) { stage.show(); }
             }
         }));
     }

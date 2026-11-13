@@ -6,11 +6,15 @@
       fx:controller="com.brica.client.presentation.ReferenceValuesController" fx:id="pane" spacing="10" styleClass="content-card">
     <padding><Insets top="16" right="16" bottom="16" left="16"/></padding>
     <Label text="Valores de la configuración aplicable" styleClass="content-title"/>
-    <HBox spacing="8"><Label text="ID de obra"/><TextField fx:id="workId"/><Button text="Consultar opciones" onAction="#load"/></HBox>
+    <Button fx:id="openButton" text="Consultar valores por obra" onAction="#openDialog"/>
+    <Label fx:id="accessMessage" wrapText="true"/>
+    <VBox fx:id="form" spacing="10">
+    <HBox spacing="8"><Label text="Obra"/><ComboBox fx:id="workChoice" prefWidth="240"/><Button text="Cargar obras" onAction="#loadWorks"/><Button text="Anterior" onAction="#previousWorks"/><Button text="Siguiente" onAction="#nextWorks"/><Button text="Consultar opciones" onAction="#load"/></HBox>
     <Label text="Paquete confirmado del cliente asociado"/><ComboBox fx:id="packageChoice" maxWidth="Infinity"/>
     <ScrollPane fitToWidth="true" prefHeight="150"><content><VBox fx:id="choices" spacing="10"/></content></ScrollPane>
     <Button text="Consultar valores de la selección" onAction="#resolve"/>
     <TextArea fx:id="values" editable="false" wrapText="true" VBox.vgrow="ALWAYS"/>
-    <Label text="Corrige o completa nombres desde Obras o Clientes y vuelve a consultar. Esta pantalla no guarda valores independientes ni genera documentos." wrapText="true"/>
+    <Label text="Corrige datos desde Obras o Clientes y vuelve a consultar. Esta pantalla no guarda valores independientes ni genera documentos." wrapText="true"/>
     <Label fx:id="message" wrapText="true"/>
+    </VBox>
 </VBox>

@@ -27,15 +27,38 @@ public final class DocumentsApiClient {
     public CompletableFuture<Field> createField(String key, String name, String attribute) {
         return request("POST", "/reference-fields", Map.of("key", key, "visibleName", name, "attribute", attribute), null, new TypeReference<>() { });
     }
+    public CompletableFuture<Field> createAdditionalField(String key, String name, String type) {
+        return request("POST", "/reference-fields", Map.of("key", key, "visibleName", name, "additionalType", type), null, new TypeReference<>() { });
+    }
     public CompletableFuture<Field> renameField(long id, String name) {
         return request("PUT", "/reference-fields/" + id, Map.of("visibleName", name), null, new TypeReference<>() { });
     }
-    public CompletableFuture<List<Template>> templates(int page) { return request("GET", "/document-templates?page=" + page + "&size=50", null, null, new TypeReference<>() { }); }
+    public CompletableFuture<Void> deleteField(long id) {
+        return request("DELETE", "/reference-fields/" + id, null, null, new TypeReference<>() { });
+    }
+    public CompletableFuture<List<Template>> templates(int page) { return templates(page, false); }
+    public CompletableFuture<List<Template>> templates(int page, boolean includeDeleted) {
+        return request("GET", "/document-templates?page=" + page + "&size=50&includeDeleted=" + includeDeleted, null, null, new TypeReference<>() { });
+    }
     public CompletableFuture<Template> saveTemplate(Long id, String name, String type, TemplateState state) {
         return request(id == null ? "POST" : "PUT", "/document-templates" + (id == null ? "" : "/" + id),
                 Map.of("name", name, "documentType", type, "state", state.name()), null, new TypeReference<>() { });
     }
+    public CompletableFuture<List<Package>> packages(int page, Long clientId, Long workId) {
+        return request("GET", "/document-packages?page=" + page + "&size=50" + context(clientId, workId), null, null, new TypeReference<>() { });
+    }
+    public CompletableFuture<List<Template>> templates(int page, Long clientId, Long workId) {
+        return request("GET", "/document-templates?page=" + page + "&size=50" + context(clientId, workId), null, null, new TypeReference<>() { });
+    }
+    private String context(Long clientId, Long workId) {
+        return workId != null ? "&workId=" + workId : clientId != null ? "&clientId=" + clientId : "";
+    }
+    public CompletableFuture<CreatedPackageTemplate> createTemplate(Package value, String name, String type) {
+        return request("POST", "/document-packages/" + value.id() + "/templates", Map.of("name", name, "documentType", type),
+                "\"" + value.revision() + "\"", new TypeReference<>() { });
+    }
     public CompletableFuture<Void> deleteTemplate(long id) { return request("DELETE", "/document-templates/" + id, null, null, new TypeReference<>() { }); }
+    public CompletableFuture<Template> template(long id) { return request("GET", "/document-templates/" + id, null, null, new TypeReference<>() { }); }
     public CompletableFuture<List<Version>> versions(long id) { return request("GET", "/document-templates/" + id + "/versions", null, null, new TypeReference<>() { }); }
     public CompletableFuture<Review> analyze(long id, Path file) { return multipart("/document-templates/" + id + "/analyses", file, null, new TypeReference<>() { }); }
     public CompletableFuture<Operation> confirm(long id, Path file, UUID confirmationId, Review review, Map<Long, Boolean> required, boolean staticAccepted) {
@@ -49,8 +72,12 @@ public final class DocumentsApiClient {
     public CompletableFuture<List<Package>> packages(int page) { return request("GET", "/document-packages?page=" + page + "&size=50", null, null, new TypeReference<>() { }); }
     public CompletableFuture<Package> documentPackage(long id) { return request("GET", "/document-packages/" + id, null, null, new TypeReference<>() { }); }
     public CompletableFuture<Package> savePackage(Package previous, Long client, String name, List<Long> ids, boolean confirm) {
+        return savePackage(previous, client, null, name, ids, confirm);
+    }
+    public CompletableFuture<Package> savePackage(Package previous, Long client, Long workId, String name, List<Long> ids, boolean confirm) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("clientId", client); body.put("name", name); body.put("templateIds", ids); body.put("confirm", confirm);
+        if (workId != null) { body.put("workId", workId); }
         return request(previous == null ? "POST" : "PUT", "/document-packages" + (previous == null ? "" : "/" + previous.id()),
                 body, previous == null ? null : "\"" + previous.revision() + "\"", new TypeReference<>() { });
     }
@@ -77,10 +104,10 @@ public final class DocumentsApiClient {
     private <T> CompletableFuture<T> multipart(String path, Path file, Object metadata, TypeReference<T> type) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                if (Files.size(file) > 1048576) { throw new IllegalArgumentException("El DOCX debe ocupar como máximo 1 MiB en esta prueba."); }
+                if (Files.size(file) > 1048576) { throw new IllegalArgumentException("La plantilla DOCX debe ocupar como máximo 1 MiB."); }
                 byte[] bytes;
                 try (var in = Files.newInputStream(file)) { bytes = in.readNBytes(1048577); }
-                if (bytes.length > 1048576) { throw new IllegalArgumentException("El DOCX supera el límite de prueba."); }
+                if (bytes.length > 1048576) { throw new IllegalArgumentException("La plantilla DOCX supera el límite de 1 MiB."); }
                 String boundary = "brica-" + UUID.randomUUID();
                 var output = new ByteArrayOutputStream();
                 // Do not interpolate arbitrary paths or CR/LF into multipart headers.

@@ -28,8 +28,9 @@ public class DocumentConfigurationController {
             fieldsController.configure(api);
             templatesController.configure(api, packagesController::loadTemplates);
             packagesController.configure(api, () -> tabs.getSelectionModel().select(templatesTab));
+            packagesController.selectorPermissions(session.user().can("CLIENTS_READ"), session.user().can("WORKS_READ"));
         }
-        if (!valuesTab.isDisable()) { valuesController.configure(api); }
+        if (!valuesTab.isDisable()) { valuesController.configure(api, session.user().can("WORKS_READ")); }
         tabs.getSelectionModel().select(admin ? fieldsTab : valuesTab);
     }
     public void requestLeave(Runnable continuation) { if (admin) { packagesController.leave(continuation); } else { continuation.run(); } }

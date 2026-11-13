@@ -8,11 +8,8 @@
     <Label text="Plantillas y versiones" styleClass="content-title"/>
     <Label text="Borrador y No disponible se conservan para administrar y consultar; solo Vigente se ofrece para uso." wrapText="true"/>
     <ListView fx:id="templates" minHeight="75" prefHeight="120" VBox.vgrow="ALWAYS"/>
-    <HBox spacing="8"><Button text="Anterior" onAction="#previous"/><Label fx:id="pageLabel"/><Button text="Siguiente" onAction="#next"/><Button text="Actualizar" onAction="#refresh"/></HBox>
-    <HBox spacing="8"><VBox spacing="3" HBox.hgrow="ALWAYS"><Label text="Nombre"/><TextField fx:id="name"/></VBox>
-        <VBox spacing="3" HBox.hgrow="ALWAYS"><Label text="Tipo de documento (identidad)"/><TextField fx:id="type"/></VBox>
-        <VBox spacing="3"><Label text="Estado"/><ComboBox fx:id="state"/></VBox></HBox>
-    <HBox spacing="8"><Button text="Crear plantilla" onAction="#create"/><Button text="Guardar seleccionada" onAction="#update"/>
+    <HBox spacing="8"><Button text="Anterior" onAction="#previous"/><Label fx:id="pageLabel"/><Button text="Siguiente" onAction="#next"/><Button text="Actualizar" onAction="#refresh"/><CheckBox fx:id="includeDeleted" text="Incluir eliminadas (historial)" onAction="#changeDeletedFilter"/></HBox>
+    <HBox spacing="8"><Button text="Crear plantilla" onAction="#create"/><Button text="Editar seleccionada" onAction="#update"/>
         <Button text="Eliminar lógicamente" onAction="#delete"/><Button text="Agregar versión" onAction="#addVersion"/></HBox>
     <HBox spacing="12" VBox.vgrow="ALWAYS"><ListView fx:id="versions" minWidth="180" prefWidth="210"/>
         <TextArea fx:id="detail" editable="false" wrapText="true" HBox.hgrow="ALWAYS" prefHeight="110"/></HBox>

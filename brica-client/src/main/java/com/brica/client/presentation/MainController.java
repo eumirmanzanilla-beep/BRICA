@@ -30,7 +30,7 @@ public class MainController {
         clientsNavButton.setDisable(!user.can("CLIENTS_READ"));
         worksNavButton.setDisable(!user.can("WORKS_READ"));
         contractsNavButton.setDisable(!user.can("CONTRACTS_READ") && !user.can("CONTRACTS_WRITE"));
-        documentsNavButton.setDisable(!user.can("DOCUMENT_CONFIG_ADMIN") && !user.can("DOCUMENT_VALUES_READ"));
+        documentsNavButton.setDisable(!user.can("DOCUMENT_CONFIG_ADMIN"));
     }
 
     @FXML
@@ -101,7 +101,7 @@ public class MainController {
                 "Aquí aparecerá el módulo de obras."
         ),
 
-        DOCUMENTS("Documentación", "Campos, plantillas, versiones y paquetes", "document-configuration-view.fxml", "Configuración documental"),
+        DOCUMENTS("Catálogo de campos", "Definición de campos reutilizables", "reference-fields-view.fxml", "Catálogo de campos"),
 
         CONTRACTS(
                 "Contratos",
@@ -211,8 +211,8 @@ public class MainController {
 
         Parent view = loader.load();
         if (section == Section.DOCUMENTS) {
-            documentController = loader.getController();
-            documentController.configure(session);
+            ReferenceFieldsController controller = loader.getController();
+            controller.configure(new com.brica.client.api.DocumentsApiClient(ClientConfig.serverBaseUri(), session));
             documentView = view;
         }
 
