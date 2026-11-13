@@ -5,6 +5,8 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.LinkedHashMap;
 import java.util.Objects;
+import java.math.BigDecimal;
+import java.util.Map;
 
 import com.brica.clients.domain.Client;
 import com.brica.server.shared.validation.domain.InputRules;
@@ -36,17 +38,36 @@ public class Work {
     @Column(name = "name", nullable = false, length = 255)
     private String name;
 
-    @Column(name = "location", nullable = false, length = 255)
+    @Column(name = "location", length = 255)
     private String location;
 
     @Column(name = "description")
     private String description;
 
-    @Column(name = "start_date", nullable = false)
+    @Column(name = "start_date")
     private LocalDate startDate;
 
     @Column(name = "end_date")
     private LocalDate endDate;
+
+    @Column(name = "contract_number", length = 50)
+    private String contractNumber;
+    @Column(name = "contractor", length = 200)
+    private String contractor;
+    @Column(name = "contracted_amount", columnDefinition = "numeric")
+    private BigDecimal contractedAmount;
+    @Column(name = "amount_before_tax", columnDefinition = "numeric")
+    private BigDecimal amountBeforeTax;
+    @Column(name = "tax_amount", columnDefinition = "numeric")
+    private BigDecimal taxAmount;
+    @Column(name = "actual_end_date")
+    private LocalDate actualEndDate;
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private WorkStatus status = WorkStatus.IN_PROGRESS;
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
+    @Column(name = "additional_values", nullable = false, columnDefinition = "jsonb")
+    private Map<String, String> additionalValues = new LinkedHashMap<>();
 
     @Column(name = "deleted_at")
     private OffsetDateTime deletedAt;
@@ -93,6 +114,28 @@ public class Work {
         this.description = description;
     }
 
+    public void updateDocumentInformation(String contractNumber, String contractor, BigDecimal contractedAmount,
+            BigDecimal amountBeforeTax, BigDecimal taxAmount, LocalDate startDate, LocalDate endDate, LocalDate actualEndDate, WorkStatus status,
+            Map<String, String> additionalValues) {
+        var errors = new LinkedHashMap<String, String>();
+        if (contractNumber != null && contractNumber.length() > 50) { errors.put("contractNumber", "Máximo 50 caracteres."); }
+        if (contractor != null && contractor.length() > 200) { errors.put("contractor", "Máximo 200 caracteres."); }
+        if (status == null) { errors.put("status", "Selecciona el estado de la obra."); }
+        if (additionalValues == null) { errors.put("additionalValues", "Indica los valores adicionales."); }
+        InputRules.rejectErrors(errors);
+        validate(name, location, startDate, endDate);
+        this.contractNumber = contractNumber;
+        this.contractor = contractor;
+        this.contractedAmount = contractedAmount;
+        this.amountBeforeTax = amountBeforeTax;
+        this.taxAmount = taxAmount;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.actualEndDate = actualEndDate;
+        this.status = status;
+        this.additionalValues = new LinkedHashMap<>(additionalValues);
+    }
+
     public void markDeleted(OffsetDateTime deletedAt) {
         this.deletedAt = Objects.requireNonNull(
                 deletedAt,
@@ -109,14 +152,9 @@ public class Work {
         var errors = new LinkedHashMap<String, String>();
 
         InputRules.requiredText(errors, "name", name, 255);
-        InputRules.requiredText(errors, "location", location, 255);
+        if (location != null && location.length() > 255) { errors.put("location", "Máximo 255 caracteres."); }
 
-        if (start == null) {
-            errors.put(
-                    "startDate",
-                    "La fecha de inicio es obligatoria."
-            );
-        } else if (end != null && end.isBefore(start)) {
+        if (start != null && end != null && end.isBefore(start)) {
             errors.put(
                     "endDate",
                     "La fecha de terminación no puede ser anterior al inicio."
@@ -157,4 +195,13 @@ public class Work {
     public OffsetDateTime getDeletedAt() {
         return deletedAt;
     }
+
+    public String getContractNumber() { return contractNumber; }
+    public String getContractor() { return contractor; }
+    public BigDecimal getContractedAmount() { return contractedAmount; }
+    public BigDecimal getAmountBeforeTax() { return amountBeforeTax; }
+    public BigDecimal getTaxAmount() { return taxAmount; }
+    public LocalDate getActualEndDate() { return actualEndDate; }
+    public WorkStatus getStatus() { return status; }
+    public Map<String, String> getAdditionalValues() { return Map.copyOf(additionalValues); }
 }

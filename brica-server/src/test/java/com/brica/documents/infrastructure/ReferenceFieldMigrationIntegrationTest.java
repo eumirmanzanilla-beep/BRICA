@@ -50,7 +50,7 @@ class ReferenceFieldMigrationIntegrationTest {
         assertEquals(8, jdbc.queryForObject("SELECT count(*) FROM permissions", Integer.class));
         assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM app_users", Integer.class));
         assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM roles", Integer.class));
-        var documents = Flyway.configure().dataSource(dataSource).load().migrate();
+        var documents = Flyway.configure().dataSource(dataSource).target("7").load().migrate();
         assertEquals(1, documents.migrationsExecuted);
         assertEquals("7", documents.targetSchemaVersion);
         assertEquals(before, snapshot(jdbc));
@@ -58,6 +58,37 @@ class ReferenceFieldMigrationIntegrationTest {
                 SELECT character_maximum_length FROM information_schema.columns
                 WHERE table_name = 'template_version_fields' AND column_name = 'marker'
                 """, Integer.class));
+        var expansion = Flyway.configure().dataSource(dataSource).target("8").load().migrate();
+        assertEquals(1, expansion.migrationsExecuted);
+        assertEquals("8", expansion.targetSchemaVersion);
+        assertEquals("IN_PROGRESS", jdbc.queryForObject("SELECT status FROM works WHERE id_work = ?", String.class, workId));
+        var names = Flyway.configure().dataSource(dataSource).target("9").load().migrate();
+        assertEquals(1, names.migrationsExecuted);
+        assertEquals("9", names.targetSchemaVersion);
+        var roles = Flyway.configure().dataSource(dataSource).target("10").load().migrate();
+        assertEquals(1, roles.migrationsExecuted);
+        assertEquals("10", roles.targetSchemaVersion);
+        assertEquals(4, jdbc.queryForObject("SELECT count(*) FROM roles", Integer.class));
+        assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM app_users", Integer.class));
+        assertEquals(8, jdbc.queryForObject("SELECT count(*) FROM role_permissions rp JOIN roles r ON r.id_role=rp.role_id WHERE r.name='Gerencial'", Integer.class));
+        assertEquals(8, jdbc.queryForObject("SELECT count(*) FROM role_permissions rp JOIN roles r ON r.id_role=rp.role_id WHERE r.name='Administrativo'", Integer.class));
+        assertEquals(4, jdbc.queryForObject("SELECT count(*) FROM role_permissions rp JOIN roles r ON r.id_role=rp.role_id WHERE r.name='Practicante'", Integer.class));
+        assertEquals(4, jdbc.queryForObject("SELECT count(*) FROM role_permissions rp JOIN roles r ON r.id_role=rp.role_id WHERE r.name='Invitado'", Integer.class));
+        assertEquals(List.of("Administrativo:3", "Gerencial:4", "Invitado:1", "Practicante:2"),
+                jdbc.queryForList("SELECT name || ':' || hierarchy_level FROM roles ORDER BY name", String.class));
+        var readOnly = List.of("CLIENTS_READ", "CONTRACTS_READ", "DOCUMENT_VALUES_READ", "WORKS_READ");
+        for (String role : List.of("Practicante", "Invitado")) {
+            assertEquals(readOnly, jdbc.queryForList("""
+                    SELECT p.key FROM permissions p JOIN role_permissions rp ON rp.permission_id=p.id_permission
+                    JOIN roles r ON r.id_role=rp.role_id WHERE r.name=? ORDER BY p.key
+                    """, String.class, role));
+        }
+        var navigation = Flyway.configure().dataSource(dataSource).load().migrate();
+        assertEquals(3, navigation.migrationsExecuted);
+        assertEquals("13", navigation.targetSchemaVersion);
+        assertEquals(17, jdbc.queryForObject("SELECT count(*) FROM reference_fields", Integer.class));
+        assertEquals("Obra previa", jdbc.queryForObject("SELECT name FROM works WHERE id_work=?", String.class, workId));
+        assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM work_attachments", Integer.class));
     }
 
     private List<String> snapshot(JdbcTemplate jdbc) {

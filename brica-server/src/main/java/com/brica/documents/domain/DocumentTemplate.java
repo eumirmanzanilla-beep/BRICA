@@ -23,10 +23,22 @@ public class DocumentTemplate {
     private OffsetDateTime deletedAt;
     @Version @Column(nullable = false)
     private Long revision;
+    @Column(name = "client_id", updatable = false)
+    private Long clientId;
+    @Column(name = "work_id", updatable = false)
+    private Long workId;
 
     protected DocumentTemplate() { }
     public DocumentTemplate(String name, String documentType, TemplateState state) {
         change(name, documentType, state);
+    }
+    public DocumentTemplate(String name, String documentType, TemplateState state, Long clientId, Long workId) {
+        this(name, documentType, state); this.clientId = clientId; this.workId = workId;
+    }
+    public Long getClientId() { return clientId; }
+    public Long getWorkId() { return workId; }
+    public boolean appliesTo(Long client, Long work) {
+        return (clientId == null || clientId.equals(client)) && (workId == null || workId.equals(work));
     }
     public void change(String name, String documentType, TemplateState state) {
         requireEditable();

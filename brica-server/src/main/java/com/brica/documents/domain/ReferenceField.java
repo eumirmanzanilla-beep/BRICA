@@ -59,6 +59,19 @@ public class ReferenceField {
         this.sourcePath = attribute.getSourcePath();
     }
 
+    public static ReferenceField additional(String key, String visibleName, ReferenceDataType type) {
+        var field = new ReferenceField();
+        field.key = new ReferenceKey(key).value();
+        field.rename(visibleName);
+        if (type == null) {
+            throw new InvalidDataException(Map.of("type", "Selecciona texto, fecha o importe."));
+        }
+        field.type = type;
+        field.origin = ReferenceOrigin.ADDITIONAL;
+        field.sourcePath = field.key;
+        return field;
+    }
+
     public void rename(String visibleName) {
         var errors = new LinkedHashMap<String, String>();
         InputRules.requiredText(errors, "visibleName", visibleName, 50);

@@ -14,6 +14,8 @@ public class DocumentPackage {
     private Long id;
     @Column(name = "client_id")
     private Long clientId;
+    @Column(name = "work_id")
+    private Long workId;
     @Column(length = 150)
     private String name;
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 20)
@@ -27,6 +29,13 @@ public class DocumentPackage {
     private Set<Long> templateIds = new HashSet<>();
 
     public DocumentPackage() { }
+    public void scope(Long workId) {
+        if (state == State.CONFIRMED && !java.util.Objects.equals(this.workId, workId)) {
+            throw new DocumentRuleException("PACKAGE_SCOPE_FIXED", "El ámbito de un paquete confirmado no puede cambiar.");
+        }
+        this.workId = workId;
+    }
+    public Long getWorkId() { return workId; }
     public void edit(Long clientId, String name, List<Long> templates, boolean confirm) {
         if (state == State.CONFIRMED && !java.util.Objects.equals(this.clientId, clientId)) {
             throw new DocumentRuleException("PACKAGE_CLIENT_FIXED", "El cliente de un paquete confirmado no puede cambiar.");
