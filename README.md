@@ -74,7 +74,9 @@ Las operaciones de negocio requieren HTTPS por defecto; HTTP se rechaza salvo `B
 
 ### Crear roles y cuentas iniciales
 
-No existen usuarios ni contraseñas de acceso por defecto. Tras compilar, desde una terminal interactiva del servidor, con `DB_*` configuradas:
+El responsable autorizó usar la base persistente `brica`, aplicar las migraciones nuevas y sustituir las tres cuentas anteriores conservando los datos de negocio. El sistema habitual se ejecuta con Compose y volúmenes persistentes, **no** mediante `tools/review-environment.py`. Esa herramienta se conserva solo como utilidad de desarrollo, fuera del recorrido normal.
+
+No existen usuarios ni contraseñas de acceso por defecto. V10 prepara Gerencial (4), Administrativo (3), Practicante (2) e Invitado (1), sin crear cuentas; ante un rol homónimo existente falla en vez de sobrescribirlo. Gerencial y Administrativo tienen los ocho permisos actuales. Practicante e Invitado tienen solo los cuatro permisos de lectura; propuestas/aprobación quedan fuera de este sprint. En un destino expresamente autorizado, tras compilar y desde una terminal interactiva del servidor, con `DB_*` configuradas:
 
 ```bash
 java -jar brica-server/target/brica-server-0.1.0-SNAPSHOT.jar --spring.main.web-application-type=none --spring.profiles.active=security-admin
@@ -85,6 +87,8 @@ Este perfil **no abre un servidor web**. El acceso administrativo depende de los
 Claves disponibles: `CLIENTS_READ`, `CLIENTS_WRITE`, `WORKS_READ`, `WORKS_WRITE`, `CONTRACTS_READ`, `CONTRACTS_WRITE`, `DOCUMENT_VALUES_READ`, `DOCUMENT_CONFIG_ADMIN`. Se asignan por separado: administración documental no concede consulta de valores, ni un nivel jerárquico alto concede permisos implícitos. `CONTRACTS_READ` no crea una consulta de contratos aún inexistente.
 
 Los identificadores de usuario se comparan exactamente, sin recortar ni convertir mayúsculas. Contraseñas: al menos 8 caracteres, una mayúscula y un número, máximo técnico 72 bytes UTF-8, sin truncamiento. Usuarios/roles desactivados y permisos retirados dejan de autorizar operaciones aunque exista una sesión previa.
+
+Para esta instalación se habilitan `UsuarioGerencial` y `UsuarioAdministrativo` con la contraseña de pruebas acordada fuera del código. `tools/ReplaceTestAccounts.java` es una operación local explícita, no un seed de arranque: exige confirmación, identidad de base/proceso PostgreSQL y coincidencia exacta del conjunto anterior; su transacción se revierte si algo difiere. No se guardan contraseñas en migraciones, ni se restablecen cuentas al reiniciar.
 
 ### 3. Iniciar el escritorio desde Windows
 
@@ -123,6 +127,12 @@ Las pruebas de integración usan PostgreSQL 18 en Testcontainers; no necesitan a
 La [Spec 001](specs/001/spec.md) define el catálogo de campos, la consulta de valores por obra, el análisis de DOCX, las versiones de plantilla y los paquetes documentales. Su [plan de trabajo](specs/001/plan.md) detalla fases, archivos, funciones, validaciones y criterios de salida. La aceptación completa requiere permisos reales comprobados en el servidor.
 
 El [seguimiento](specs/001/review.md) separa implementación, evidencia automática y aceptación pendiente. El [recorrido manual](specs/001/manual-test.md) cubre permisos, estados, análisis, versiones, borradores, concurrencia y valores; la [prueba de almacenamiento](specs/001/storage-test.md) mantiene D-06 aislada del despliegue definitivo. Los [fixtures](specs/001/fixtures/README.md) no son formatos operativos aprobados.
+
+La navegación habitual es **Obras**, **Clientes** y **Catálogo de campos**. Una obra se crea con cliente, nombre y descripción; ubicación y fechas son opcionales y se completan después. Sus acciones por fila permiten editar, seguir el asistente de documentos/información/revisión, consultar toda la información y configurar paquetes → plantillas → versiones. El botón Generar documentos permanece sin implementación en esta iteración.
+
+Desde una obra se crean paquetes/plantillas exclusivos de ella; desde Clientes → Paquetes documentales, exclusivos de ese cliente y enlazados automáticamente. Los campos fijos se predefinen internamente y el catálogo crea adicionales tipados sin pedir elegir rutas de origen; el nombre visible coincide con la clave. El asistente admite adjuntos DOCX, PDF y XLSX de hasta 10 MiB, sin extracción; las plantillas siguen siendo DOCX con límite de análisis de 1 MiB.
+
+Base de datos y archivos usan los volúmenes de Compose. El volumen de archivos mantiene su nombre histórico para conservar los existentes, no es almacenamiento temporal. No ejecutar `down -v` ni borrar volúmenes. Los contenedores se reinician con `unless-stopped`; la sesión de acceso deberá renovarse tras un reinicio del servidor. La [guía vigente](specs/001/manual-test.md) cubre este recorrido persistente y los límites de la verificación.
 
 La [Spec 002](specs/002/spec.md) corresponde al motor documental posterior. No confundir la consulta de valores de la configuración documental con una previsualización renderizada o una generación definitiva.
 

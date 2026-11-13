@@ -3,6 +3,7 @@ name: brica-dev
 services:
   postgres:
     image: postgres:18-alpine
+    restart: unless-stopped
 
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
@@ -27,6 +28,7 @@ services:
       start_period: 10s
 
   brica-server:
+    restart: unless-stopped
     build:
       context: .
       dockerfile: brica-server/Dockerfile
@@ -40,7 +42,7 @@ services:
     ports:
       - "${BRICA_SERVER_PORT:-8080}:8080"
 
-    # Únicamente almacenamiento de pruebas construidas; despliegue final pendiente (D-06).
+    # Volumen persistente de archivos; se conserva el nombre histórico para no perder archivos existentes.
     volumes:
       - brica_document_test_files:/app/var/documents
 

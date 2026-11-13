@@ -4,14 +4,20 @@
 
 **Fecha:** 2026-11-09.
 
-**Estado:** retomado con aprobación expresa para implementar hasta F6 con casos construidos. Catálogo/seguridad, análisis, versiones, paquetes y escritorio implementados; verificación final de 150 pruebas de servidor y 18 de cliente correcta, más suite Python incorporada. Aceptación manual pendiente. No se inicia F7 ni el motor de Spec 002.
+**Estado:** implementación hasta F6 y correcciones ampliadas con casos construidos. Catálogo/seguridad, análisis, versiones, paquetes, atributos adicionales y diálogos de escritorio implementados. La evidencia actual y los recuentos de pruebas están en `review.md`; los resultados históricos no representan la suite ampliada. Aceptación Windows/Word pendiente. No se inicia F7 ni el motor de Spec 002.
 **Especificación:** [spec.md](spec.md), requisitos CD-001–CD-007 y criterios CA-01–CA-42.
 
 **Seguimiento:** [review.md](review.md), con tareas individuales, decisiones confirmadas y evidencia de cada avance.
 
 **Punto de control:** se permite avanzar técnicamente con fixtures construidos y permisos reales en PostgreSQL desechable. F0/F1 no se declaran aceptadas de extremo a extremo mientras falten la plantilla conjunta y el recorrido manual. Los estados Borrador/No disponible siguen visibles y administrables, pero no son elegibles para confirmar paquetes ni generar.
 
-**Actualización aprobada:** D-03 conserva solo nombres; D-04 elige docxtpl y proceso local Python con JSON/timeout; D-06 permite almacenamiento aislado en una ruta del servidor para casos construidos, no decide despliegue definitivo; D-12 reutiliza tipo documental. La captura manual corrige la entidad de origen. La plantilla de negocio sigue pendiente de diseño conjunto. Se preserva la evidencia de las entregas anteriores sin atribuirle las nuevas capacidades.
+**Actualización vigente:** el responsable amplió D-01/D-03 a todos los atributos fijos de Obra/Cliente y adicionales TEXT/DATE/AMOUNT por obra, fecha española e importes precisos separados de su presentación. Aprobó estados de obra y selectores con permisos independientes, diálogos, unicidad exacta global de plantillas y borrado de campos sin referencias. La sección histórica de decisiones de abajo no vuelve a restringir el alcance a nombres. D-04/D-06/D-12 conservan el proceso Python local, almacenamiento de prueba y tipo documental, sin implementar el motor.
+
+**Protección de desarrollo:** no aplicar V8–V10 ni sustituir cuentas de desarrollo. Verificar únicamente en PostgreSQL desechable y ofrecer un entorno aislado de revisión mediante `tools/review-environment.py`. Roles aprobados: Gerencial 4 y Administrativo 3, mismos permisos actuales; Practicante 2 e Invitado 1, solo lectura. Propuestas/aprobación fuera de este sprint. No hacer commit, push, merge ni cambiar de rama.
+
+**Correcciones de escritorio:** completar diálogos de paquetes y valores, conservar captura al registrar plantilla y evitar peticiones/cierres simultáneos. Separar captura de datos documentales de obra en `WorkDocumentInformationDialog`, con fechas estrictas y entradas por definición adicional; mantener errores del servidor sin perder captura. Preservar `If-Match` y resolución exclusivamente desde la API. Ejecutar pruebas de servidor/cliente, carga real JavaFX separada de aceptación Windows y actualizar la guía vigente.
+
+**Sustitución aprobada el 2026-11-13:** se autoriza la base persistente `brica`, nuevas migraciones y sustitución explícita de las tres cuentas antiguas por las dos propuestas, después de respaldo. La restricción anterior de no aplicar a desarrollo queda superada por esta autorización; se mantienen sin commit/push/cambio de rama. La aplicación habitual deja de usar el entorno temporal. Nuevas tareas: V11 ubicación/fechas opcionales, V12 ámbito obra/cliente y adjuntos, V13 nombres canónicos y campos fijos internos; navegación de Obras con cuatro iconos, asistente de tres pasos, configuración contextual, catálogo único y cierre local asíncrono con recuperación de captura. DOCX/PDF/XLSX, sin extracción; generación definitiva sigue diferida.
 
 ## 1. Objetivo, fuentes y límites
 
@@ -37,7 +43,7 @@ Fuentes efectivas: `AGENTS.md`, `docs/constitution.md`, únicamente la spec 001,
 - Ejecuciones de generación y su historial completo: definir el contrato ahora, persistirlo con el motor. No crear generaciones ficticias para declarar aprobados sus criterios.
 - Paquetes generales sin cliente, el concepto de operación/etapa documental, reglas contractuales por convenio y cambios amplios de Clientes, Obras o Contratos.
 - Nuevas fuentes libres, expresiones evaluadas, acceso a PostgreSQL o archivos desde JavaFX.
-- En el preliminar: fechas/importes, almacenamiento y despliegue definitivos. No convertir su aplazamiento en aceptación de criterios aún no verificados.
+- Almacenamiento y despliegue definitivos. Fechas e importes sí están incluidos en las correcciones aprobadas; no se incorporan cálculos fiscales ni conversión de moneda.
 
 ## 2. Diagnóstico contrastado con el repositorio
 
@@ -59,7 +65,7 @@ El diagnóstico de la tabla corresponde a la planificación original. Al iniciar
 
 Estado posterior comprobado: V5 y V6 existen en código; catálogo de nombres y seguridad están implementados, y el backend de desarrollo llegó a V6. El 2026-11-10 se ejecutaron `test` y `clean verify`: 130 servidor + 14 cliente, sin fallos, errores ni pruebas omitidas. La entrega se separa en convenciones (#22) y catálogo protegido (#23), ambos desde `main`, sin cerrar Spec 001 ni validar visualmente JavaFX.
 
-## 3. Decisiones y bloqueos previos
+## 3. Decisiones y bloqueos previos (registro histórico; ver actualización vigente arriba)
 
 La aprobación para redactar este documento no aprueba automáticamente estas propuestas técnicas.
 
