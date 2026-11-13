@@ -1,89 +1,143 @@
-# Spec 002 — Motor documental de BRICA
+# SPEC-002 — Motor documental de BRICA
 
-**Estado** · Propuesta para revisión  
-**Resultado esperado** · Un usuario carga el PDF de un contrato, BRICA rellena los campos reconocidos en el formulario de una obra, el usuario confirma los datos y el motor genera un documento descargable a partir de una plantilla.
+**Estado:** Propuesta revisada para validación  
+**Dependencia:** SPEC 001
+**Resultado esperado:** Un usuario incorpora documentos fuente PDF o Excel a una obra existente, revisa y confirma datos extraídos, selecciona un paquete y versiones de plantillas, previsualiza, genera y exporta documentos DOCX/PDF, con continuidad e historial.
 
 ## 1. Alcance de la primera entrega
 
-El **PDF de entrada es el documento fuente**. BRICA extrae información de ese archivo y la propone en el formulario. La **plantilla es un archivo independiente** que determina el formato de salida y los campos que se deben sustituir. Esta interpretación sigue la separación entre RF-04 y RF-06 del ERS.
+La SPEC-002 implementa el motor documental de BRICA e integra la configuración definida en la SPEC anterior, sin duplicar la administración de paquetes, plantillas, versiones ni campos. Admite PDF (con texto seleccionable o escaneados mediante OCR) y presupuestos Excel **XLS/XLSX**. La importación de presupuestos comprende selección de hojas, datos generales, partidas y conceptos con clave, descripción, unidad, cantidad, precio unitario e importe, así como subtotales, impuestos y totales cuando existan y sean identificables.
 
-Se propone un recorrido completo para **una obra y su cliente ya registrados**. La primera entrega procesa contratos PDF con texto seleccionable de al menos un formato acordado. El usuario puede corregir y completar la información, guardar los datos de la obra, previsualizar la salida y generar un **DOCX** mediante un paquete con una plantilla versionada disponible para el cliente. El paquete, la plantilla, los campos y su versión podrán quedar preparados mediante la configuración que adopte el plan técnico. En el flujo de generación el usuario debe poder identificar y elegir la opción disponible.
+Los valores extraídos se presentan como propuestas revisables, con su procedencia cuando sea posible. El usuario corrige, completa y confirma antes de actualizar una **obra y un cliente ya registrados**; los conflictos con datos existentes no se resuelven sobrescribiendo automáticamente. Se conserva el archivo fuente y se reutilizan los datos confirmados, tanto campos simples como colecciones de conceptos presupuestales.
 
-PDF es el formato de entrada solicitado. DOCX de salida, un formato inicial de contrato y una obra ya registrada son recortes propuestos para esta entrega. Quedan para entregas posteriores el OCR de documentos escaneados, la importación de presupuestos Excel, el registro de una obra nueva desde PDF, la administración completa de plantillas y paquetes, la reanudación de generaciones parciales, las estimaciones, los convenios, el cierre de obra y la exportación en lote.
+El usuario selecciona un paquete compatible, las plantillas incluidas y una versión disponible por plantilla. El motor resuelve marcadores y colecciones, valida obligatoriedad, previsualiza y genera uno o varios archivos **DOCX y PDF**, respetando la estructura de las plantillas. Incluye almacenamiento, exportación, historial y guardado/reanudación de generaciones parciales, sin alterar resultados históricos.
 
-## 2. Actores y precondiciones
+**Fuera de alcance:** alta automática de obras desde documentos; flujos especializados de estimaciones, convenios y cierre; interpretación universal de formatos arbitrarios; integraciones documentales externas. Estos procesos podrán consumir el motor en entregas posteriores.
 
-- El usuario interno cuenta con acceso a la obra y con los permisos correspondientes para actualizarla y generar documentación.
-- La obra está asociada con un cliente. El usuario selecciona la obra antes de cargar el contrato.
-- Hay un paquete compatible con el cliente y con la operación, con una plantilla disponible y al menos una versión registrada.
-- El catálogo identifica los campos reconocidos y el tipo de cada valor. Cada versión declara sus marcadores y qué campos exige para finalizar.
+## 2. Actores, precondiciones y límites
+
+- **Actor:** usuario interno autorizado. La API del servidor comprueba acceso a la obra y a las operaciones solicitadas.
+- La obra y su cliente existen. Puede iniciarse una generación con datos ya registrados, sin cargar archivos nuevos.
+- Para generar, existe un paquete compatible con cliente y operación, que contiene al menos una plantilla con versión disponible y configuración de campos conocida.
+- El procesamiento se limita a formatos de entrada compatibles y a archivos que superen las validaciones de seguridad, tamaño y legibilidad configuradas. OCR y extracción pueden producir resultados parciales; nunca se consideran confirmados automáticamente.
+- La SPEC anterior es propietaria de la configuración documental; esta SPEC consume sus definiciones y registra qué versiones exactas se usaron.
 
 ## 3. Historias y criterios de aceptación
 
-### HU-001 · Cargar un contrato y rellenar el formulario
+### HU-001 · Incorporar y analizar documentos PDF
 
-Como usuario interno, quiero cargar un contrato PDF en una obra para recuperar los datos que BRICA pueda reconocer y reducir la captura manual.
-
-| ID | Dado | Cuando | Entonces |
-|---|---|---|---|
-| CA-01 | Una obra existente y un contrato válido del formato acordado con número, nombre de obra y fechas reconocibles | Cargo el archivo | BRICA propone los valores en los campos correspondientes, muestra su origen y mantiene sin cambios los datos guardados. |
-| CA-02 | Un campo ausente, inválido o con dos valores incompatibles | Termina la extracción | El campo queda señalado para revisión y puedo capturarlo o corregirlo. El sistema conserva las demás propuestas válidas. |
-| CA-03 | Un valor extraído que difiere del que ya está guardado | Reviso las propuestas | Puedo comparar los valores y decidir cuál conservar. La carga del PDF por sí sola no modifica la obra ni su cliente. |
-| CA-04 | Un PDF escaneado sin texto, cifrado, dañado o un archivo que no es PDF | Intento cargarlo | BRICA explica la causa que pudo identificar y ofrece volver a seleccionar el archivo o continuar con captura manual. |
-| CA-05 | Una revisión con valores válidos corregidos o aceptados | Confirmo el guardado | BRICA guarda los valores confirmados en la fuente común de la obra y vincula el contrato cuando se aceptó un PDF válido. Si cancelo, los datos vigentes permanecen intactos. |
-
-### HU-002 · Generar documentación con los datos confirmados
-
-Como usuario interno, quiero revisar y descargar el documento que BRICA completa con los datos de la obra.
+Como usuario interno, quiero adjuntar PDF digitales o escaneados a una obra para recuperar datos reconocibles y reducir la captura manual.
 
 | ID | Dado | Cuando | Entonces |
 |---|---|---|---|
-| CA-06 | Una obra con datos confirmados y una versión de plantilla compatible | Selecciono el paquete y la versión, y solicito la vista previa | Veo el resultado de sustituir los marcadores por los valores guardados. La vista previa conserva el formato acordado y no crea un documento definitivo. |
-| CA-07 | Una versión con dos campos obligatorios sin valor válido | Solicito finalizar | BRICA identifica ambos campos y detiene la generación definitiva hasta que los corrija y vuelva a validar. |
-| CA-08 | Una versión que contiene un marcador desconocido o cuyo archivo ya no está disponible | Solicito procesarla | BRICA identifica la versión y el problema, y permite regresar a la selección. El intento no crea un documento definitivo. |
-| CA-09 | Una vista previa válida que ya revisé | Confirmo la generación | Puedo descargar un DOCX que abre correctamente y contiene los valores revisados. El historial muestra la obra, el paquete y la versión exacta de la plantilla. |
-| CA-10 | Un documento definitivo ya generado | Corrijo un dato de la obra y genero de nuevo | Obtengo una salida con el dato actualizado. El archivo anterior y su vínculo con la versión original se conservan. |
-| CA-11 | Una vista previa emitida y datos de la obra que cambiaron después | Intento confirmar la generación | BRICA solicita una vista previa actualizada antes de finalizar, de modo que la salida coincida con lo que revisé. |
-| CA-12 | Un fallo durante el renderizado o el almacenamiento | Intento finalizar | BRICA informa qué operación falló y permite reintentar. El historial no presenta archivos incompletos como documentos definitivos. |
+| CA-01 | Una obra existente y un PDF con texto reconocible | Solicito analizarlo | BRICA propone los campos identificados, muestra procedencia cuando esté disponible y no modifica datos vigentes. |
+| CA-02 | Un PDF escaneado o con páginas mixtas | Solicito analizarlo | BRICA utiliza OCR donde se requiera y presenta los resultados como propuestas sujetas a revisión. |
+| CA-03 | Un dato ausente, ambiguo o inconsistente | Finaliza el análisis | Se identifica el dato que requiere revisión, conservando las propuestas válidas restantes. |
+| CA-04 | Un PDF cifrado no accesible, dañado, ilegible o no admitido | Intento procesarlo | BRICA explica el impedimento, no registra valores no confirmados y permite reemplazar el archivo o continuar manualmente. |
+| CA-05 | Un PDF válido aceptado por el usuario | Confirmo su incorporación | Se conserva el archivo original y su vínculo con la obra y el tipo de documento fuente correspondiente. |
 
-## 4. Requisitos de la Spec 002
+### HU-002 · Importar presupuestos Excel
+
+Como usuario interno, quiero importar presupuestos Excel con sus conceptos y montos para reutilizar información económica y técnica de la obra.
+
+| ID | Dado | Cuando | Entonces |
+|---|---|---|---|
+| CA-06 | Un XLS/XLSX compatible con una o varias hojas | Lo cargo | BRICA muestra las hojas detectadas y permite elegir cuáles importar y cómo identificar cada presupuesto. |
+| CA-07 | Una hoja con conceptos reconocibles | Solicito la extracción | Se proponen clave, descripción, unidad, cantidad, precio unitario e importe por concepto, conservando agrupaciones identificables. |
+| CA-08 | Una hoja con subtotales, impuestos, totales o fórmulas | Reviso la importación | BRICA distingue conceptos de filas de cálculo o presentación y señala discrepancias de importes sin corregirlas silenciosamente. |
+| CA-09 | Dos hojas que representan alternativas o presupuestos distintos | Confirmo la importación | Se conservan como presupuestos diferenciados y no se fusionan ni sustituyen automáticamente. |
+| CA-10 | Una estructura no reconocible o valores ambiguos | Finaliza el análisis | Se indican hojas, filas o datos pendientes; puedo corregir, excluir o cancelar la importación sin perder información vigente. |
+
+### HU-003 · Revisar y confirmar información extraída
+
+Como usuario interno, quiero contrastar las propuestas con los datos existentes y decidir qué información guardar.
+
+| ID | Dado | Cuando | Entonces |
+|---|---|---|---|
+| CA-11 | Datos extraídos de PDF o Excel | Abro la revisión | Veo valores propuestos, valores existentes y origen identificable, con posibilidad de corregir o descartar. |
+| CA-12 | Un valor propuesto distinto al registrado | Confirmo la revisión | Solo se aplican los cambios aprobados y válidos; no se sobrescriben otros datos. |
+| CA-13 | Valores incompletos o inválidos | Intento guardarlos | BRICA señala las validaciones incumplidas y conserva las propuestas válidas para corregirlas. |
+| CA-14 | Una revisión en curso | Cancelo sin confirmar | Los datos vigentes de la obra y del cliente permanecen intactos. |
+| CA-15 | Un presupuesto confirmado | Consulto sus conceptos para generar documentos | Los conceptos importados están disponibles como colección asociada al presupuesto seleccionado, sin convertirse en campos individuales fijos. |
+
+### HU-004 · Seleccionar y validar la configuración de generación
+
+Como usuario interno, quiero seleccionar un paquete y las versiones disponibles de sus plantillas para generar la documentación correspondiente.
+
+| ID | Dado | Cuando | Entonces |
+|---|---|---|---|
+| CA-16 | Una obra y paquetes compatibles | Inicio una generación | BRICA muestra paquetes compatibles y las plantillas que los integran. |
+| CA-17 | Un paquete con varias plantillas | Configuro la generación | Puedo elegir una o varias plantillas y una versión disponible por cada una. |
+| CA-18 | Una versión con campos obligatorios faltantes o inválidos | Solicito previsualizar o finalizar | BRICA identifica los campos y bloquea la finalización de los documentos afectados hasta resolverlos. |
+| CA-19 | Una versión inactiva, no disponible o cuyo archivo falta | Intento utilizarla | BRICA impide usarla en una nueva generación y permite elegir una alternativa válida. |
+| CA-20 | Una plantilla con campos simples y una colección de conceptos | Solicito resolverla | BRICA sustituye los valores simples y reproduce los elementos de la colección según la estructura definida en la plantilla, sin perder el orden seleccionado. |
+
+### HU-005 · Previsualizar y generar documentos
+
+Como usuario interno, quiero revisar el resultado y producir documentos DOCX/PDF a partir de los datos confirmados.
+
+| ID | Dado | Cuando | Entonces |
+|---|---|---|---|
+| CA-21 | Una selección válida con datos suficientes | Solicito vista previa | Veo el contenido y formato resultantes sin registrar documentos definitivos. |
+| CA-22 | Una vista previa revisada | Confirmo la generación | BRICA produce los formatos DOCX y PDF solicitados para cada plantilla seleccionada y registra sus archivos. |
+| CA-23 | Una vista previa cuyos datos, presupuesto o selección cambiaron | Intento confirmar | BRICA exige actualizar la vista previa antes de finalizar. |
+| CA-24 | Un error de sustitución, conversión o almacenamiento | Intento finalizar | BRICA identifica los documentos afectados y no presenta archivos incompletos como definitivos. |
+| CA-25 | Una generación anterior | Actualizo datos y genero de nuevo | Se produce una nueva generación sin modificar los archivos ni la configuración histórica de la anterior. |
+
+### HU-006 · Guardar, reanudar, consultar y exportar
+
+Como usuario interno, quiero conservar generaciones pendientes y recuperar documentos producidos sin repetir el trabajo.
+
+| ID | Dado | Cuando | Entonces |
+|---|---|---|---|
+| CA-26 | Una generación iniciada con selección y datos parciales | Solicito guardar | BRICA conserva el estado pendiente y la información necesaria para continuar. |
+| CA-27 | Una generación pendiente | La reabro | Recupero la selección y los datos guardados; BRICA vuelve a validar disponibilidad y vigencia antes de finalizar. |
+| CA-28 | Una generación finalizada | Consulto su historial | Veo obra, paquete, plantillas, versiones exactas, documentos, formatos y datos utilizados o su instantánea inmutable. |
+| CA-29 | Uno o varios documentos almacenados | Solicito exportarlos | Descargo los archivos seleccionados sin modificar los originales. |
+| CA-30 | Un archivo histórico faltante o inaccesible | Intento exportarlo | BRICA informa qué archivo no pudo recuperarse y permite exportar los demás disponibles. |
+
+## 4. Requisitos de la SPEC-002
 
 | ID | Comportamiento requerido | Trazabilidad |
 |---|---|---|
-| MD-001 | Recibir el PDF para una obra concreta, comprobar que puede procesarse e indicar el resultado de la carga. | RF-04, RNF-03, CU-01 como referencia de extracción |
-| MD-002 | Extraer los valores reconocibles como propuestas editables. Mostrar por campo el valor detectado y, cuando pueda identificarse, la página y el fragmento del que provino. Señalar valores ausentes, inválidos o ambiguos. | RF-04, RF-05, RNF-04 |
-| MD-003 | Permitir corregir, completar, aceptar o descartar propuestas. Guardar los valores aprobados usando las validaciones del servidor y la fuente común de la obra. Conservar los controles de actualización existentes. | RF-03, RF-05, RF-09, CU-02, RNF-02 |
-| MD-004 | Asociar el PDF aceptado con la obra mediante su registro de contrato y archivo. Mantener los binarios en almacenamiento administrado y los metadatos en ARCHIVO, con ruta relativa y hash SHA-256 según el DAS. | RF-04, DAS Documentación Fuente y Gestión de Archivos |
-| MD-005 | Identificar un paquete compatible y seleccionar la plantilla y la versión disponible. Resolver los marcadores por su correspondencia con el catálogo de campos y los datos confirmados de la obra. | RF-06, RF-08, CU-04, RES-02 |
-| MD-006 | Validar disponibilidad de la versión, marcadores reconocidos y todos los campos obligatorios. La plantilla podrá tener campos opcionales cuyo tratamiento esté definido en su configuración. El sistema debe informar qué campo requiere atención y cómo continuar. | RF-18, RNF-03, RNF-04, CU-04, CU-08 como referencia de marcadores |
-| MD-007 | Mostrar una vista previa con el formato y los valores que se emitirán. Tras confirmar, generar el DOCX y registrar los valores usados o una referencia inmutable a ellos, la obra, el paquete, la versión y el archivo resultante. Si cambian los datos o la selección, se requiere volver a revisar. | RF-06, RF-16, RF-17, RNF-01, CU-04, RES-02 |
-| MD-008 | Permitir descargar el documento definitivo. Una nueva generación conserva la anterior y la descarga entrega el archivo almacenado. | RF-09, RF-17, RF-24 en el alcance de un documento definitivo |
-| MD-009 | Aplicar las comprobaciones de acceso en el servidor para cargar, confirmar, previsualizar, generar y descargar. Si una operación falla, ofrecer un mensaje y una acción siguiente sin registrar una salida parcial como definitiva. | RF-26, RNF-03, DAS Seguridad y Gestión de Archivos |
+| MD-001 | Recibir y validar archivos PDF y XLS/XLSX asociados a una obra, con límites configurables de procesamiento. | RF-04, RNF-03, RES-01 |
+| MD-002 | Extraer texto de PDF digitales y aplicar OCR a contenido escaneado, conservando indicios de procedencia y señalando incertidumbre. | RF-04, RF-05, RNF-04 |
+| MD-003 | Interpretar hojas presupuestales seleccionadas y proponer datos generales, partidas, conceptos, cantidades, precios e importes, distinguiendo presupuestos alternativos. | RF-04, RF-03, RES-01 |
+| MD-004 | Permitir revisión, corrección, descarte y confirmación explícita de propuestas, sin sobrescritura automática de datos vigentes. | RF-03, RF-05, RF-09, CU-02 |
+| MD-005 | Registrar fuentes PDF/Excel y presupuestos importados vinculados a la obra; conservar binarios y metadatos de archivo con integridad verificable. | DAS Gestión de Archivos, Diccionario de Datos: ARCHIVO, CONTRATO, PRESUPUESTO |
+| MD-006 | Consultar paquetes compatibles y versiones disponibles definidos por la SPEC anterior; permitir seleccionar una o varias plantillas y su versión exacta. | RF-08, RF-11, RF-15, CU-04 |
+| MD-007 | Resolver campos del catálogo y colecciones de conceptos, con reglas de representación acordadas para la plantilla. | RF-06, RF-03, RES-02 |
+| MD-008 | Validar campos obligatorios, datos inválidos, marcadores no resueltos y disponibilidad de versiones, informando cómo corregirlos. | RF-18, RNF-03, RNF-04 |
+| MD-009 | Previsualizar el resultado y requerir una nueva revisión si cambian datos, selección o presupuesto antes de confirmar. | RF-16, RNF-01, CU-04 |
+| MD-010 | Generar DOCX y PDF, conservar el formato de la plantilla dentro de las capacidades soportadas y evitar registrar como definitivos resultados incompletos. | RF-06, RES-02, CU-04 |
+| MD-011 | Guardar y recuperar generaciones parciales con estado, selección y datos capturados. | RF-23 |
+| MD-012 | Registrar generaciones, versiones exactas, instantánea de valores y documentos producidos; mantener inmutables los resultados históricos. | RF-09, RF-17, RNF-01 |
+| MD-013 | Consultar y exportar individualmente o en conjunto los archivos generados, sin alterar los almacenados. | RF-24, CU-07 |
+| MD-014 | Aplicar autorización en servidor, manejo seguro de archivos y mensajes de error accionables en carga, análisis, generación y exportación. | RF-26, RNF-03, DAS Seguridad |
 
-## 5. Datos del primer formato
+## 5. Datos y formatos de referencia
 
-Estos campos son candidatos para el primer contrato. Su obligatoriedad para finalizar proviene de la versión de la plantilla elegida. Las validaciones para guardar la obra provienen de sus reglas vigentes.
+Los documentos reales de la empresa sirven como **casos de validación**, no como garantía de compatibilidad con cualquier archivo similar.
 
-| Dato de la obra | Regla de extracción y validación |
-|---|---|
-| Número de contrato | Conservar letras, ceros iniciales y separadores. Identificarlo como número contractual en la fuente. |
-| Nombre de la obra | Capturar el nombre o la denominación de la obra según el formato acordado. Si difiere del valor registrado, mostrar la comparación. |
-| Contratista | Usar el valor identificado como contratista. Mantener separada la identidad del cliente seleccionado en la obra. |
-| Fecha de inicio y fecha de terminación | Interpretar ambas en sus roles contractuales. Señalar fechas ambiguas y validar la coherencia antes de guardar. |
-| Monto antes de IVA, IVA y monto contratado | Registrar solo los importes cuyo concepto se pueda identificar. Cuando existan los tres, señalar cualquier inconsistencia. La ausencia de un importe queda pendiente de confirmación. |
+- **PDF:** documentos contractuales y administrativos, incluidos escaneos como el acta de entrega proporcionada. Datos candidatos: cliente, contratista, nombre de obra, número de contrato, fechas, ubicación, descripción de trabajos, montos, anticipos y saldos. Su correspondencia con la fuente común debe revisarse antes de guardar; no todos son atributos existentes de OBRA.
+- **Excel:** presupuestos como `PPTO. SANTA FE.xlsx`, con varias hojas y conceptos. Datos candidatos: nombre de presupuesto, hoja de origen, partida, clave, descripción, unidad, cantidad, precio unitario, importe, subtotal, impuestos y total.
+- **Plantillas de salida:** archivos DOCX versionados administrados por la SPEC anterior. Las colecciones de conceptos requieren una convención explícita de bloques repetibles; su definición debe coordinarse con esa SPEC antes de implementar la sustitución.
 
-Los nombres anteriores corresponden a atributos de OBRA en el Diccionario de Datos. El plan técnico deberá verificar cómo se representan en el código y evitar duplicar fuentes vigentes. La plantilla deberá usar los identificadores y marcadores de su catálogo real.
+La obligatoriedad para generar depende de la configuración de cada versión de plantilla; las reglas para persistir datos de obra y presupuestos son independientes. Se deben preservar identificadores, ceros iniciales, precisión decimal y formatos de fecha sin introducir conversiones silenciosas.
 
-## 6. Límites de diseño y decisiones pendientes
+## 6. Límites de diseño y decisiones por concretar
 
-- Mantener el análisis del PDF y el renderizado en infraestructura, con orquestación en la capa de aplicación. El cliente JavaFX opera mediante la API y el dominio recibe valores de negocio.
-- Tratar el PDF como contenido de entrada. Validar tamaño, legibilidad y formato con límites configurados antes de procesarlo. Mantener el documento dentro del entorno de BRICA para esta primera entrega.
-- Confirmar el primer formato con un contrato real anonimizado y una plantilla representativa. Definir qué etiquetas y variantes se reconocen, qué campos son obligatorios y cómo se muestran los importes y las fechas en esa plantilla.
-- Resolver en el plan técnico las bibliotecas de extracción y renderizado, el mecanismo de vista previa y la configuración inicial del paquete. Los cambios de esquema, si se requieren, deberán seguir Flyway.
-- El CU-07 del ERS referencia RF-28, que no está definido en el listado de requisitos entregado. Esta spec vincula la descarga a RF-24 y deja la referencia del CU pendiente de corrección.
+- Mantener separadas **extracción**, **revisión/confirmación**, **persistencia de información de negocio** y **generación**. La orquestación reside en aplicación; lectores, OCR y renderizadores son adaptadores de infraestructura. JavaFX consume la API del servidor.
+- No reutilizar el catálogo de campos simples como sustituto de un modelo de conceptos presupuestales. El Diccionario de Datos actual contiene PRESUPUESTO y ARCHIVO, pero no detalla partidas ni conceptos: **se requiere definir la persistencia estructurada** y sus migraciones Flyway.
+- Definir los formatos Excel compatibles y cómo se reconocen encabezados, filas, fórmulas, totales, hojas alternativas y agrupaciones; los archivos reales son fixtures de referencia.
+- Acordar con la SPEC anterior la sintaxis y el comportamiento de bloques repetibles para conceptos, así como las reglas de campos opcionales y la selección de versiones disponibles.
+- Definir límites de OCR, páginas, tamaño, tiempo y recursos; procesar archivos no confiables de forma aislada y sin ejecución de macros ni contenido activo.
+- Definir el mecanismo de vista previa y conversión DOCX→PDF, junto con las garantías de fidelidad del formato y la política de errores por documento en generaciones múltiples.
+- Definir el tratamiento de borradores, estados de generación, consistencia entre base de datos y almacenamiento de archivos y recuperación ante fallos.
+- El CU-07 del ERS cita RF-28, no presente en el listado de RF disponible; esta SPEC vincula la exportación a RF-24 hasta corregir la referencia.
 
 ## 7. Condición de entrega
 
-La primera entrega se acepta cuando un usuario completa el recorrido con el contrato y la plantilla acordados. Debe poder cargar el PDF, revisar el formulario rellenado, corregir un dato, confirmarlo, revisar la vista previa y descargar un documento que conserva el formato y contiene los valores confirmados. La evidencia incluirá al menos el recorrido exitoso, un campo obligatorio faltante, un PDF que no se pueda extraer y una nueva generación que preserve la anterior.
+La entrega se acepta cuando se demuestran, con archivos representativos de la empresa y plantillas configuradas, los recorridos completos: **(1)** analizar PDF digital y escaneado con OCR, revisar y confirmar datos; **(2)** importar un XLS/XLSX de varias hojas, distinguir presupuestos y conservar conceptos estructurados; **(3)** generar y previsualizar documentos DOCX/PDF con campos simples y conceptos repetibles; y **(4)** guardar/reanudar una generación, consultar historial y exportar resultados. Las pruebas deben cubrir además conflictos de datos, campos obligatorios, archivos inválidos, cambios posteriores a la vista previa y fallos sin documentos definitivos incompletos.
 
-**Fuentes del proyecto** · ERS_BRICA.docx, DAS_BRICA.docx, DiccionarioDatos_BRICA.docx y constitución de BRICA. Los identificadores MD y CA pertenecen a esta spec.
+**Fuentes del proyecto:** ERS_BRICA.docx, DAS_BRICA.docx, DiccionarioDatos_BRICA.docx, SPEC anterior de configuración documental y ejemplos PDF/Excel proporcionados. Los identificadores HU, CA y MD de este documento pertenecen a SPEC-002.
