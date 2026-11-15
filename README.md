@@ -2,6 +2,15 @@
 
 Sistema interno para una constructora que centraliza clientes, obras, contratos y documentación. La obra es el eje del negocio. El escritorio JavaFX consume una API REST; las reglas y la persistencia residen en el servidor.
 
+## Empezar desde cero
+
+Consulta la **[guía de instalación paso a paso](docs/installation-guide.md)** para descargar esta rama, instalar los requisitos, configurar `.env`, iniciar PostgreSQL y servidor con Docker, crear cuentas y abrir el escritorio desde Windows.
+
+- Requiere Git, Docker Desktop y JDK 25 para el escritorio. La imagen del servidor ya incluye Python y sus dependencias documentales.
+- No hay cuentas ni contraseñas predeterminadas: las migraciones crean los roles y la consola `security-admin` permite crear tus usuarios.
+- Los usuarios PostgreSQL y del escritorio son distintos. La guía indica los nombres, puertos y valores concretos, sin incluir credenciales reales.
+- Es una instalación local; el despliegue público requiere HTTPS y configuración operativa adicional.
+
 ## Estado actual
 
 El repositorio ya contiene:
@@ -10,13 +19,14 @@ El repositorio ya contiene:
 - Clientes: registro, listado paginado, consulta, actualización y eliminación lógica.
 - Obras: registro, listado paginado, consulta, corrección de información general y eliminación lógica. La corrección utiliza `ETag` / `If-Match` para detectar cambios concurrentes.
 - Contratos: registro mediante `POST /api/v1/contracts`, asociado a una obra, con datos JSON almacenados en PostgreSQL. No incluye carga ni extracción de PDF.
-- Persistencia JPA, validaciones del servidor, errores `ProblemDetail` y migraciones Flyway V1–V7.
+- Persistencia JPA, validaciones del servidor, errores `ProblemDetail` y migraciones Flyway V1–V13.
 - Autenticación por sesión de servidor, BCrypt coste 10, CSRF y autorización por permisos vigentes en los casos de uso de negocio. Inicio/cierre de sesión en JavaFX y administración local inicial de cuentas/roles.
-- Configuración documental por API y JavaFX: catálogo de nombres, análisis DOCX mediante docxtpl, versiones inmutables, recuperación/idempotencia, paquetes por cliente con borradores y concurrencia, opciones y resolución por tipo documental.
+- Configuración documental por API y JavaFX: campos fijos y adicionales tipados, fechas españolas e importes precisos, análisis DOCX mediante docxtpl, versiones inmutables, recuperación/idempotencia, paquetes por obra/cliente con borradores y concurrencia, opciones y resolución por tipo documental.
+- Obras con alta mínima, edición completa con concurrencia, asistente de adjuntos/información/revisión y consulta. Adjuntos DOCX/PDF/XLSX persistentes de hasta 10 MiB, sin extracción automática.
 - Escritorio con panel de inicio, pantallas de clientes y obras y comprobación de conexión. La sección Contratos todavía muestra un contenido provisional; no existe su formulario FXML.
 - Pruebas unitarias, de API y de persistencia/HTTP con PostgreSQL en Testcontainers.
 
-**Pendiente de aceptación:** recorrido manual Windows/Word, plantilla operativa conjunta y despliegue definitivo del almacenamiento. Se prueban casos construidos; fechas/importes, extracción PDF, previsualización, motor y generaciones definitivas siguen fuera de esta entrega.
+**Pendiente de aceptación:** recorrido manual Windows/Word, plantilla operativa conjunta y despliegue público/HTTPS y retención operativa. La instalación local usa almacenamiento persistente; extracción, previsualización renderizada y generación/exportación definitiva siguen fuera de esta entrega.
 
 ## Stack y estructura
 
@@ -35,7 +45,16 @@ Las versiones y la configuración efectiva están en los POM, `compose.yml` y `b
 
 ## Desarrollo local
 
-Requiere JDK 25, Docker activo y un entorno Python con las dependencias de `brica-server/src/main/python/requirements.txt` para análisis y pruebas. Prepararlo y exportar `BRICA_DOCUMENT_PYTHON`/`BRICA_DOCUMENT_SCRIPT` como indica la [guía manual](specs/001/manual-test.md). La imagen Docker ya incluye ese entorno. Usar WSL para desarrollo/pruebas y Windows para validar JavaFX; comandos desde la raíz.
+Para una primera instalación usa la [guía de instalación](docs/installation-guide.md). Para desarrollar el backend fuera de Docker o ejecutar sus pruebas, requiere JDK 25, Docker activo y Python con las dependencias de `brica-server/src/main/python/requirements.txt`. Desde WSL prepara el entorno:
+
+```bash
+python3 -m venv .venv-documents
+.venv-documents/bin/python -m pip install -r brica-server/src/main/python/requirements.txt
+export BRICA_DOCUMENT_PYTHON="$PWD/.venv-documents/bin/python"
+export BRICA_DOCUMENT_SCRIPT="$PWD/brica-server/src/main/python/brica_docx.py"
+```
+
+Python debe estar instalado en el host para crear ese entorno. La imagen Docker ya lo incluye y no necesita esta preparación. Usar WSL para desarrollo/pruebas y Windows para validar JavaFX; comandos desde la raíz. Preparar el entorno no ejecuta pruebas ni sustituye la aceptación manual.
 
 ### 1. Preparar PostgreSQL
 
@@ -74,7 +93,7 @@ Las operaciones de negocio requieren HTTPS por defecto; HTTP se rechaza salvo `B
 
 ### Crear roles y cuentas iniciales
 
-El responsable autorizó usar la base persistente `brica`, aplicar las migraciones nuevas y sustituir las tres cuentas anteriores conservando los datos de negocio. El sistema habitual se ejecuta con Compose y volúmenes persistentes, **no** mediante `tools/review-environment.py`. Esa herramienta se conserva solo como utilidad de desarrollo, fuera del recorrido normal.
+En una instalación nueva, consulta los IDs de los roles creados por las migraciones y crea las cuentas con `security-admin`, como muestra la [guía](docs/installation-guide.md#6-crear-las-cuentas-del-escritorio). No ejecutes herramientas de sustitución de cuentas ni el entorno temporal `tools/review-environment.py` para instalar desde cero. El sistema habitual utiliza Compose y volúmenes persistentes.
 
 No existen usuarios ni contraseñas de acceso por defecto. V10 prepara Gerencial (4), Administrativo (3), Practicante (2) e Invitado (1), sin crear cuentas; ante un rol homónimo existente falla en vez de sobrescribirlo. Gerencial y Administrativo tienen los ocho permisos actuales. Practicante e Invitado tienen solo los cuatro permisos de lectura; propuestas/aprobación quedan fuera de este sprint. En un destino expresamente autorizado, tras compilar y desde una terminal interactiva del servidor, con `DB_*` configuradas:
 
@@ -88,7 +107,7 @@ Claves disponibles: `CLIENTS_READ`, `CLIENTS_WRITE`, `WORKS_READ`, `WORKS_WRITE`
 
 Los identificadores de usuario se comparan exactamente, sin recortar ni convertir mayúsculas. Contraseñas: al menos 8 caracteres, una mayúscula y un número, máximo técnico 72 bytes UTF-8, sin truncamiento. Usuarios/roles desactivados y permisos retirados dejan de autorizar operaciones aunque exista una sesión previa.
 
-Para esta instalación se habilitan `UsuarioGerencial` y `UsuarioAdministrativo` con la contraseña de pruebas acordada fuera del código. `tools/ReplaceTestAccounts.java` es una operación local explícita, no un seed de arranque: exige confirmación, identidad de base/proceso PostgreSQL y coincidencia exacta del conjunto anterior; su transacción se revierte si algo difiere. No se guardan contraseñas en migraciones, ni se restablecen cuentas al reiniciar.
+En la instalación local previamente autorizada se habilitaron `UsuarioGerencial` y `UsuarioAdministrativo`; esas cuentas no se descargan con Git ni existen automáticamente en una base nueva. `tools/ReplaceTestAccounts.java` corresponde a esa sustitución específica y explícita, no al alta inicial ni a un seed de arranque: exige confirmación, identidad de base/proceso PostgreSQL y coincidencia exacta del conjunto anterior; su transacción se revierte si algo difiere. No se guardan contraseñas en migraciones, ni se restablecen cuentas al reiniciar.
 
 ### 3. Iniciar el escritorio desde Windows
 
@@ -126,7 +145,7 @@ Las pruebas de integración usan PostgreSQL 18 en Testcontainers; no necesitan a
 
 La [Spec 001](specs/001/spec.md) define el catálogo de campos, la consulta de valores por obra, el análisis de DOCX, las versiones de plantilla y los paquetes documentales. Su [plan de trabajo](specs/001/plan.md) detalla fases, archivos, funciones, validaciones y criterios de salida. La aceptación completa requiere permisos reales comprobados en el servidor.
 
-El [seguimiento](specs/001/review.md) separa implementación, evidencia automática y aceptación pendiente. El [recorrido manual](specs/001/manual-test.md) cubre permisos, estados, análisis, versiones, borradores, concurrencia y valores; la [prueba de almacenamiento](specs/001/storage-test.md) mantiene D-06 aislada del despliegue definitivo. Los [fixtures](specs/001/fixtures/README.md) no son formatos operativos aprobados.
+El [seguimiento](specs/001/review.md) separa implementación, evidencia automática y aceptación pendiente. El [recorrido manual](specs/001/manual-test.md) cubre permisos, estados, análisis, versiones, borradores, concurrencia y valores. Los documentos construidos para pruebas no son formatos operativos aprobados.
 
 La navegación habitual es **Obras**, **Clientes** y **Catálogo de campos**. Una obra se crea con cliente, nombre y descripción; ubicación y fechas son opcionales y se completan después. Sus acciones por fila permiten editar, seguir el asistente de documentos/información/revisión, consultar toda la información y configurar paquetes → plantillas → versiones. El botón Generar documentos permanece sin implementación en esta iteración.
 
