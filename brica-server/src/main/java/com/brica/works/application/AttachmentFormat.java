@@ -15,6 +15,11 @@ public final class AttachmentFormat {
         if (lower.endsWith(".pdf") && bytes.length >= 5 && new String(bytes, 0, 5, java.nio.charset.StandardCharsets.US_ASCII).equals("%PDF-")) {
             return "application/pdf";
         }
+        if (lower.endsWith(".xls") && bytes.length >= 8 && java.util.Arrays.equals(java.util.Arrays.copyOf(bytes,8),
+                new byte[]{(byte)0xD0,(byte)0xCF,0x11,(byte)0xE0,(byte)0xA1,(byte)0xB1,0x1A,(byte)0xE1})) {
+            // Full OLE/BIFF validation and active-content detection belongs to the isolated reader.
+            return "application/vnd.ms-excel";
+        }
         if (!lower.endsWith(".docx") && !lower.endsWith(".xlsx")) { throw invalid(); }
         var entries = new HashSet<String>(); long expanded = 0;
         try (var zip = new ZipInputStream(new ByteArrayInputStream(bytes))) {
@@ -39,6 +44,6 @@ public final class AttachmentFormat {
         throw invalid();
     }
     private static DocumentException invalid() {
-        return new DocumentException(400, "INVALID_WORK_ATTACHMENT", "Adjunta un archivo DOCX, PDF o XLSX válido, sin macros.");
+        return new DocumentException(400, "INVALID_WORK_ATTACHMENT", "Adjunta un archivo DOCX, PDF, XLS o XLSX válido, sin macros.");
     }
 }

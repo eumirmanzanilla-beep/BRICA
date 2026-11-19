@@ -52,7 +52,7 @@ public class TemplateController {
     public ResponseEntity<?> confirm(@PathVariable("id") Long id, @RequestPart("file") MultipartFile file,
             @Valid @RequestPart("metadata") ConfirmationRequest request) throws IOException {
         var result = versions.confirm(id, request.confirmationId(), file.getOriginalFilename(), file.getBytes(),
-                request.fingerprint(), request.required(), request.staticAccepted());
+                request.fingerprint(), request.required(), request.staticAccepted(), request.name());
         if (result.updatedAnalysis() != null) {
             var problem = ApiProblems.problem(HttpStatus.CONFLICT, "TEMPLATE_REVIEW_CHANGED", "Revisa el análisis actualizado",
                     "Cambió el archivo o su configuración. Revisa y confirma nuevamente.", "Comprueba campos y obligatoriedad.");
@@ -79,6 +79,12 @@ public class TemplateController {
             @Valid @RequestBody WorkRequest request) { return selections.administrativeValues(request.workId(), id, number); }
     @GetMapping("/document-registrations/{id}")
     public RegisterTemplateVersionService.OperationView status(@PathVariable("id") UUID id) { return versions.status(id); }
+    @PutMapping("/document-templates/{id}/versions/{number}/name")
+    public TemplateManagementService.VersionView renameVersion(@PathVariable("id") Long id, @PathVariable("number") int number,
+            @Valid @RequestBody VersionName request) { return templates.renameVersion(id, number, request.name()); }
+    @DeleteMapping("/document-templates/{id}/versions/{number}") @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteVersion(@PathVariable("id") Long id, @PathVariable("number") int number) { templates.deleteVersion(id, number); }
+    public record VersionName(@NotBlank @Size(max = 150) String name) { }
     @PostMapping("/document-registrations/{id}/recover")
     public RegisterTemplateVersionService.OperationView recover(@PathVariable("id") UUID id) { return versions.recover(id); }
 
@@ -86,6 +92,7 @@ public class TemplateController {
             @NotBlank @Size(max = 100) String documentType, @NotNull TemplateState state,
             @Positive Long clientId, @Positive Long workId) { }
     public record ConfirmationRequest(@NotNull UUID confirmationId, @NotBlank String fingerprint,
-            @NotNull @Size(max = 5000) Map<@Positive Long, @NotNull Boolean> required, boolean staticAccepted) { }
+            @NotNull @Size(max = 5000) Map<@Positive Long, @NotNull Boolean> required, boolean staticAccepted,
+            @NotBlank @Size(max = 150) String name) { }
     public record WorkRequest(@NotNull @Positive Long workId) { }
 }

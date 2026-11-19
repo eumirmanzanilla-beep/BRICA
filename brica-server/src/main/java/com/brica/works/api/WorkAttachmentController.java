@@ -12,6 +12,8 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/v1/works/{workId}/attachments")
 public class WorkAttachmentController {
     private final WorkAttachmentService service;
+    @DeleteMapping("/{id}") @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable("workId") Long workId, @PathVariable("id") Long id) { service.delete(workId, id); }
     public WorkAttachmentController(WorkAttachmentService service) { this.service = service; }
     @GetMapping
     public List<WorkAttachmentService.View> list(@PathVariable("workId") Long workId,

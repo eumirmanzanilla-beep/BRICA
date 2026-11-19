@@ -22,15 +22,16 @@ public class DeleteClientService {
     }
 
     @Transactional
-    public void delete(Long id) {
+    public void delete(Long id, String expectedEtag) {
 
         InputRules.positiveId("id", id);
 
-        Client client = clientStore.findById(id)
+        Client client = clientStore.findForUpdate(id)
                 .orElseThrow(
                         () -> new ClientNotFoundException(id)
                 );
 
+        ClientRevision.check(client, expectedEtag);
         client.markDeleted(
                 OffsetDateTime.now(ZoneOffset.UTC)
         );

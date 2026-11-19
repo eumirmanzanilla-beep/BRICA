@@ -83,9 +83,9 @@ class ReferenceFieldMigrationIntegrationTest {
                     JOIN roles r ON r.id_role=rp.role_id WHERE r.name=? ORDER BY p.key
                     """, String.class, role));
         }
-        var navigation = Flyway.configure().dataSource(dataSource).load().migrate();
-        assertEquals(3, navigation.migrationsExecuted);
-        assertEquals("13", navigation.targetSchemaVersion);
+        var navigation = Flyway.configure().dataSource(dataSource).target("14").load().migrate();
+        assertEquals(4, navigation.migrationsExecuted);
+        assertEquals("14", navigation.targetSchemaVersion);
         assertEquals(17, jdbc.queryForObject("SELECT count(*) FROM reference_fields", Integer.class));
         assertEquals("Obra previa", jdbc.queryForObject("SELECT name FROM works WHERE id_work=?", String.class, workId));
         assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM work_attachments", Integer.class));

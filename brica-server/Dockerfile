@@ -46,7 +46,7 @@ WORKDIR /app
 
 # El procesamiento documental es un proceso local, sin servicio ni acceso a la base.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends python3 python3-venv \
+    && apt-get install -y --no-install-recommends python3 python3-venv bubblewrap libseccomp2 tesseract-ocr tesseract-ocr-eng tesseract-ocr-spa \
     && apt-get clean
 COPY brica-server/src/main/python/requirements.txt /app/documents-python/requirements.txt
 RUN python3 -m venv /opt/brica-document-python \
@@ -54,6 +54,8 @@ RUN python3 -m venv /opt/brica-document-python \
     && mkdir -p /app/var/documents \
     && chown -R 10001:10001 /app/var/documents
 COPY brica-server/src/main/python/brica_docx.py /app/documents-python/brica_docx.py
+COPY brica-server/src/main/python/brica_extraction.py /app/extraction-python/brica_extraction.py
+ENV BRICA_EXTRACTION_SCRIPT=/app/extraction-python/brica_extraction.py
 ENV BRICA_DOCUMENT_PYTHON=/opt/brica-document-python/bin/python
 ENV BRICA_DOCUMENT_SCRIPT=/app/documents-python/brica_docx.py
 ENV BRICA_DOCUMENT_STORAGE=/app/var/documents

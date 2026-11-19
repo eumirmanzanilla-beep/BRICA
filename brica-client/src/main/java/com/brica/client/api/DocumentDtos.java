@@ -24,8 +24,8 @@ public final class DocumentDtos {
     }
     public record VersionField(Long id, String key, String visibleName, String marker, boolean required) { }
     public record Version(Long templateId, int number, String status, boolean staticDocument, String originalName,
-            String sha256, List<VersionField> fields, String analysisJson) {
-        @Override public String toString() { return "Versión " + number + (staticDocument ? " · Documento estático" : ""); }
+            String sha256, List<VersionField> fields, String analysisJson, String name, boolean deleted) {
+        @Override public String toString() { return "v" + number + " · " + name + (deleted ? " · Eliminada" : "") + (staticDocument ? " · Documento estático" : ""); }
     }
     public record DetectedField(Long id, String key, String visibleName, String type, String origin,
             String sourcePath, Boolean proposedRequired) { }
@@ -39,7 +39,7 @@ public final class DocumentDtos {
         public Package(Long id, Long clientId, String name, String state, Long revision, List<PackageTemplate> templates) {
             this(id, clientId, name, state, revision, templates, null);
         }
-        @Override public String toString() { return (name == null || name.isBlank() ? "Sin nombre" : name) + " · " + state + " · #" + id; }
+        @Override public String toString() { return (name == null || name.isBlank() ? "Sin nombre" : name) + " · " + state + (workId == null ? " · Cliente" : " · Obra #" + workId); }
     }
     public record CreatedPackageTemplate(Package documentPackage, Template template) { }
     public record TemplateOption(Long id, String name, String documentType, int version) {

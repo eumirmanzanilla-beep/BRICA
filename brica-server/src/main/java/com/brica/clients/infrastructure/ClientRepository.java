@@ -15,4 +15,8 @@ public interface ClientRepository
     Optional<Client> findByIdAndDeletedAtIsNull(Long id);
 
     Page<Client> findAllByDeletedAtIsNull(Pageable pageable);
+
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("select c from Client c where c.id = :id and c.deletedAt is null")
+    Optional<Client> findForUpdate(@org.springframework.data.repository.query.Param("id") Long id);
 }

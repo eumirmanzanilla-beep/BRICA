@@ -19,7 +19,7 @@ class WorkSoftDeleteTest {
 
         Work work = new Work(
                 client,
-                "Obra original",
+                "Obra_original",
                 "Mérida",
                 "Descripción",
                 LocalDate.of(2026, 11, 1),
@@ -32,7 +32,7 @@ class WorkSoftDeleteTest {
         work.markDeleted(deletionDate);
 
         assertEquals(deletionDate, work.getDeletedAt());
-        assertEquals("Obra original", work.getName());
+        assertEquals("Obra_original", work.getName());
         assertSame(client, work.getClient());
     }
 }

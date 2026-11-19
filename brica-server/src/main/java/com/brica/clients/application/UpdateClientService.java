@@ -22,18 +22,27 @@ public class UpdateClientService {
     @Transactional
     public Client update(
             Long id,
+            String expectedEtag,
             String name,
             String legalRepresentative) {
 
         InputRules.positiveId("id", id);
 
-        Client client = clientStore.findById(id)
+        Client client = clientStore.findForUpdate(id)
                 .orElseThrow(
                         () -> new ClientNotFoundException(id)
                 );
 
+        ClientRevision.check(client, expectedEtag);
         client.updateDetails(name, legalRepresentative);
 
+        return clientStore.save(client);
+    }
+    @Transactional
+    public Client updateDocumentName(Long id,String expectedEtag,String value) {
+        InputRules.positiveId("id",id);
+        var client=clientStore.findForUpdate(id).orElseThrow(()->new ClientNotFoundException(id));
+        ClientRevision.check(client,expectedEtag); client.changeDocumentName(value);
         return clientStore.save(client);
     }
 }

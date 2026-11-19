@@ -72,7 +72,7 @@ class ReferenceFieldPersistenceIntegrationTest {
     @Test
     @Transactional
     void shouldPersistAndRenameWithoutChangingMeaningOrBusinessData() {
-        var work = createWork("Obra A", "Cliente A");
+        var work = createWork("Obra_A", "Cliente_A");
         contracts.saveAndFlush(new Contract(work, Map.of("source", "preserve")));
         var before = businessSnapshot(work);
         var field = register.register("A".repeat(50), "Nombre", ReferenceAttribute.WORK_NAME);
@@ -89,7 +89,7 @@ class ReferenceFieldPersistenceIntegrationTest {
         assertEquals(before, businessSnapshot(work));
         var result = resolve.resolveForWork(work.getId(), List.of(id)).getFirst();
         assertEquals(54, result.marker().length());
-        assertEquals("Obra A", result.textValue());
+        assertEquals("Obra_A", result.textValue());
     }
 
     @Test
@@ -97,19 +97,19 @@ class ReferenceFieldPersistenceIntegrationTest {
     void shouldResolveFreshNamesForEachWorkAndOnlyItsAssociatedClient() {
         var workField = register.register("OBRA", "Obra", ReferenceAttribute.WORK_NAME);
         var clientField = register.register("CLIENTE", "Cliente", ReferenceAttribute.CLIENT_NAME);
-        var first = createWork("Obra A", "Cliente A");
-        var second = createWork("Obra B", "Cliente B");
+        var first = createWork("Obra_A", "Cliente_A");
+        var second = createWork("Obra_B", "Cliente_B");
         var ids = List.of(workField.getId(), clientField.getId());
-        assertEquals(List.of("Obra A", "Cliente A"), texts(resolve.resolveForWork(first.getId(), ids)));
-        assertEquals(List.of("Obra B", "Cliente B"), texts(resolve.resolveForWork(second.getId(), ids)));
-        first.correctGeneralInformation("Obra corregida", first.getLocation(), first.getDescription());
-        first.getClient().updateDetails("Cliente corregido", "Representante");
+        assertEquals(List.of("Obra_A", "Cliente_A"), texts(resolve.resolveForWork(first.getId(), ids)));
+        assertEquals(List.of("Obra_B", "Cliente_B"), texts(resolve.resolveForWork(second.getId(), ids)));
+        first.correctGeneralInformation("Obra_corregida", first.getLocation(), first.getDescription());
+        first.getClient().updateDetails("Cliente_corregido", "Representante");
         entityManager.flush();
         entityManager.clear();
         var current = resolve.resolveForWork(first.getId(), ids);
-        assertEquals(List.of("Obra corregida", "Cliente corregido"), texts(current));
+        assertEquals(List.of("Obra_corregida", "Cliente_corregido"), texts(current));
         assertEquals(ReferenceOrigin.CLIENT, current.getLast().origin());
-        assertEquals(List.of("Obra B", "Cliente B"), texts(resolve.resolveForWork(second.getId(), ids)));
+        assertEquals(List.of("Obra_B", "Cliente_B"), texts(resolve.resolveForWork(second.getId(), ids)));
     }
 
     @Test
@@ -127,7 +127,7 @@ class ReferenceFieldPersistenceIntegrationTest {
     @Test
     @Transactional
     void shouldRejectDeletedClientWithoutDeletingWorkOrContract() {
-        var work = createWork("Obra", "Cliente eliminado");
+        var work = createWork("Obra", "Cliente_eliminado");
         var contract = contracts.saveAndFlush(new Contract(work, Map.of("historical", true)));
         work.getClient().markDeleted(OffsetDateTime.now());
         clients.saveAndFlush(work.getClient());

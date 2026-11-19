@@ -28,6 +28,9 @@
 }
 
 .work-icon-button {
+    -fx-min-height: 30px;
+    -fx-pref-height: 30px;
+    -fx-alignment: center;
     -fx-min-width: 30px;
     -fx-pref-width: 30px;
     -fx-max-width: 30px;
@@ -482,4 +485,3 @@
 .client-dialog .content {
     -fx-text-fill: #263746;
 }
-

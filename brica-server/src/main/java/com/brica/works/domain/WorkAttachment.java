@@ -17,6 +17,7 @@ public class WorkAttachment {
     @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.CHAR)
     @Column(nullable = false, length = 64) private String sha256;
     @Column(name = "registered_at", nullable = false) private OffsetDateTime registeredAt;
+    @Column(name = "deleted_at") private OffsetDateTime deletedAt;
     protected WorkAttachment() { }
     public WorkAttachment(Long workId, Kind kind, String name, String mime, String path, long size, String sha256) {
         this.workId = workId; this.kind = kind; this.originalName = name; this.mimeType = mime;
@@ -31,4 +32,6 @@ public class WorkAttachment {
     public long getSizeBytes() { return sizeBytes; }
     public String getSha256() { return sha256; }
     public OffsetDateTime getRegisteredAt() { return registeredAt; }
+    public void delete() { if (deletedAt == null) { deletedAt = OffsetDateTime.now(); } }
+    public OffsetDateTime getDeletedAt() { return deletedAt; }
 }

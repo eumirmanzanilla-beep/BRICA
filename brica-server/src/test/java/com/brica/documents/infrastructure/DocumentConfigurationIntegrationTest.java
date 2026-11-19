@@ -71,7 +71,8 @@ class DocumentConfigurationIntegrationTest {
         try (var in = getClass().getResourceAsStream("/documents/" + name + ".docx")) { return in.readAllBytes(); }
         catch (Exception exception) { throw new IllegalStateException(exception); }
     }
-    long template(String type) { return as(() -> templates.create("Formato " + UUID.randomUUID(), type, TemplateState.CURRENT).id()); }
+    String uniqueName(String prefix) { return prefix + UUID.randomUUID().toString().replace("-", ""); }
+    long template(String type) { return as(() -> templates.create(uniqueName("Formato_"), type, TemplateState.CURRENT).id()); }
     TemplateAnalysisService.Review review(long id) { return as(() -> analyses.analyze(id, fixture("acta-inicio-prototipo"))); }
     Map<Long, Boolean> required(TemplateAnalysisService.Review review) {
         var result = new TreeMap<Long, Boolean>(); review.fields().forEach(f -> result.put(f.id(), true)); return result;
@@ -80,8 +81,8 @@ class DocumentConfigurationIntegrationTest {
         var r = review(id);
         return as(() -> versions.confirm(id, UUID.randomUUID(), "test.docx", fixture("acta-inicio-prototipo"), r.fingerprint(), required(r), false).operation());
     }
-    long client() { return jdbc.queryForObject("insert into cliente(nombre, representante_legal) values ('Cliente de prueba', 'Representante') returning id_cliente", Long.class); }
-    long work(long client) { return jdbc.queryForObject("insert into works(client_id, name, location, start_date) values (?, 'Obra de prueba', 'Mérida', '2026-01-01') returning id_work", Long.class, client); }
+    long client() { return jdbc.queryForObject("insert into cliente(nombre, representante_legal) values ('Cliente_prueba', 'Representante') returning id_cliente", Long.class); }
+    long work(long client) { return jdbc.queryForObject("insert into works(client_id, name, location, start_date) values (?, 'Obra_prueba', 'Mérida', '2026-01-01') returning id_work", Long.class, client); }
     <T> T as(Supplier<T> action) {
         var context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(UsernamePasswordAuthenticationToken.authenticated("IntegrationAdmin", null, List.of()));
@@ -101,26 +102,28 @@ class DocumentConfigurationIntegrationTest {
     }
     @Test void shouldKeepWorkAndClientDocumentScopesSeparate() {
         long clientId = client(), a = work(clientId), b = work(clientId), otherClient = client();
-        long scoped = as(() -> templates.create("Obra " + UUID.randomUUID(), "ACTA", TemplateState.CURRENT, null, a)).id();
+        long scoped = as(() -> templates.create(uniqueName("Obra_"), "ACTA", TemplateState.CURRENT, null, a)).id();
         register(scoped);
-        var workPackage = as(() -> packages.createFromWork(a, "Paquete exclusivo", List.of(scoped), true));
+        var workPackage = as(() -> packages.createFromWork(a, "Paquete_exclusivo", List.of(scoped), true));
         assertEquals(a, workPackage.workId());
+        assertTrue(as(() -> packages.listForClient(clientId, 0, 100)).stream().anyMatch(p -> p.id().equals(workPackage.id())));
+        assertTrue(as(() -> packages.listForWork(b, 0, 100)).stream().noneMatch(p -> p.id().equals(workPackage.id())));
         assertThrows(DocumentException.class, () -> as(() -> packages.createFromWork(b, "Ajeno", List.of(scoped), true)));
-        assertThrows(DocumentException.class, () -> as(() -> packages.create(clientId, "No ampliar ámbito", List.of(scoped), true)));
+        assertThrows(DocumentException.class, () -> as(() -> packages.create(clientId, "No_ampliar_ambito", List.of(scoped), true)));
         assertTrue(as(() -> selection.options(b, 0, 100)).stream().noneMatch(p -> p.id().equals(workPackage.id())));
         assertThrows(DocumentException.class, () -> as(() -> selection.resolve(b, workPackage.id(), workPackage.revision(),
                 List.of(new DocumentSelectionService.Selection(scoped, 1)))));
-        long shared = as(() -> templates.create("Cliente " + UUID.randomUUID(), "COMPARTIDA", TemplateState.CURRENT, clientId, null)).id();
+        long shared = as(() -> templates.create(uniqueName("Cliente_"), "COMPARTIDA", TemplateState.CURRENT, clientId, null)).id();
         register(shared);
-        var clientPackage = as(() -> packages.create(clientId, "Paquete del cliente", List.of(shared), true));
+        var clientPackage = as(() -> packages.create(clientId, "Paquete_del_cliente", List.of(shared), true));
         assertTrue(as(() -> selection.options(a, 0, 100)).stream().anyMatch(p -> p.id().equals(clientPackage.id())));
         assertTrue(as(() -> selection.options(b, 0, 100)).stream().anyMatch(p -> p.id().equals(clientPackage.id())));
-        assertThrows(DocumentException.class, () -> as(() -> packages.create(otherClient, "No otro cliente", List.of(shared), true)));
+        assertThrows(DocumentException.class, () -> as(() -> packages.create(otherClient, "No_otro_cliente", List.of(shared), true)));
     }
     @Test void shouldCreateTemplateInsidePackageAndRequireItsVersionBeforeConfirmation() {
         long clientId = client(), workId = work(clientId);
-        var draft = as(() -> packages.createFromWork(workId, "Primero nombre", List.of(), false));
-        var result = as(() -> packages.createTemplate(draft.id(), DocumentPackageService.etag(draft.revision()), "Dentro " + UUID.randomUUID(), "ACTA"));
+        var draft = as(() -> packages.createFromWork(workId, "Primero_nombre", List.of(), false));
+        var result = as(() -> packages.createTemplate(draft.id(), DocumentPackageService.etag(draft.revision()), uniqueName("Dentro_"), "ACTA"));
         assertEquals(clientId, result.template().clientId()); assertEquals(workId, result.template().workId());
         assertEquals(List.of(result.template().id()), result.documentPackage().templates().stream().map(DocumentPackageService.PackageTemplate::id).toList());
         assertThrows(DocumentException.class, () -> as(() -> packages.updateFromWork(draft.id(), DocumentPackageService.etag(result.documentPackage().revision()),
@@ -132,21 +135,94 @@ class DocumentConfigurationIntegrationTest {
     }
     @Test void shouldCreateMinimalWorkAndAtomicallyEditItsCompleteInformation() throws Exception {
         var admin = new Session(); admin.login("IntegrationAdmin");
-        var created = admin.send("POST", "/works", "{\"clientId\":" + client() + ",\"name\":\"Obra mínima\",\"description\":\"Descripción\"}", true);
+        var created = admin.send("POST", "/works", "{\"clientId\":" + client() + ",\"name\":\"Obra_minima\",\"description\":\"Descripción\"}", true);
         assertEquals(201, created.statusCode(), created.body());
         long id = JSON.readTree(created.body()).path("id").asLong();
         var initial = admin.get("/works/" + id + "/information");
         String etag = initial.headers().firstValue("ETag").orElseThrow();
-        var info = Map.of("name", "Nombre editado", "location", "Ubicación opcional", "description", "Nueva descripción", "documentInformation",
+        var info = Map.of("name", "Nombre_editado", "location", "Ubicación opcional", "description", "Nueva descripción", "documentInformation",
                 Map.of("status", "ON_HOLD", "additionalValues", Map.of(), "contractedAmount", "1.186"));
         var saved = admin.sendWithEtag("PUT", "/works/" + id + "/information", JSON.writeValueAsString(info), etag);
         assertEquals(200, saved.statusCode(), saved.body());
-        assertEquals("Nombre editado", JSON.readTree(saved.body()).path("work").path("name").asText());
+        assertEquals("Nombre_editado", JSON.readTree(saved.body()).path("work").path("name").asText());
         assertEquals("1.186", jdbc.queryForObject("SELECT contracted_amount::text FROM works WHERE id_work=?", String.class, id));
         assertEquals(412, admin.sendWithEtag("PUT", "/works/" + id + "/information", JSON.writeValueAsString(info), etag).statusCode());
         var invalid = new LinkedHashMap<String, Object>(info); invalid.put("name", " ");
         assertEquals(400, admin.sendWithEtag("PUT", "/works/" + id + "/information", JSON.writeValueAsString(invalid), saved.headers().firstValue("ETag").orElseThrow()).statusCode());
-        assertEquals("Nombre editado", jdbc.queryForObject("SELECT name FROM works WHERE id_work=?", String.class, id));
+        assertEquals("Nombre_editado", jdbc.queryForObject("SELECT name FROM works WHERE id_work=?", String.class, id));
+    }
+    @Test void shouldAppendSeveralTemplatesBeforeAndAfterConfirmationWithoutReplacingExistingOnes() {
+        long clientId = client();
+        var draft = as(() -> packages.create(clientId, "Multiple", List.of(), false));
+        var first = as(() -> packages.createTemplate(draft.id(), DocumentPackageService.etag(draft.revision()), uniqueName("Primera_"), "ACTA"));
+        var second = as(() -> packages.createTemplate(draft.id(), DocumentPackageService.etag(first.documentPackage().revision()), uniqueName("Segunda_"), "ACTA"));
+        assertEquals(2, second.documentPackage().templates().size());
+        register(first.template().id()); register(second.template().id());
+        var confirmed = as(() -> packages.update(draft.id(), DocumentPackageService.etag(second.documentPackage().revision()), clientId,
+                draft.name(), List.of(first.template().id(), second.template().id()), true));
+        var third = as(() -> packages.createTemplate(draft.id(), DocumentPackageService.etag(confirmed.revision()), uniqueName("Tercera_"), "OTRA"));
+        assertEquals(DocumentPackage.State.CONFIRMED, third.documentPackage().state());
+        assertEquals(2, third.documentPackage().templates().size(), "La composición confirmada sigue válida durante la preparación");
+        assertThrows(DocumentException.class, () -> as(() -> packages.update(draft.id(), DocumentPackageService.etag(confirmed.revision()), clientId,
+                draft.name(), List.of(first.template().id(), second.template().id(), third.template().id()), false)));
+        register(third.template().id());
+        var appended = as(() -> packages.update(draft.id(), DocumentPackageService.etag(confirmed.revision()), clientId,
+                draft.name(), List.of(first.template().id(), second.template().id(), third.template().id()), false));
+        assertEquals(3, appended.templates().size()); assertEquals(DocumentPackage.State.CONFIRMED, appended.state());
+        assertThrows(DocumentException.class, () -> as(() -> packages.createTemplate(draft.id(), DocumentPackageService.etag(confirmed.revision()), uniqueName("Obsoleta_"), "X")));
+        long a = work(clientId), b = work(clientId);
+        assertTrue(as(() -> packages.listForWork(a, 0, 100)).stream().anyMatch(p -> p.id().equals(draft.id())));
+        assertTrue(as(() -> packages.listForWork(b, 0, 100)).stream().anyMatch(p -> p.id().equals(draft.id())));
+    }
+    @Test void shouldRenameAndLogicallyDeleteVersionsPreservingFilesAndNeverReusingNumbers() throws Exception {
+        long id = template("VERSION_LIFECYCLE"); register(id); register(id);
+        var admin = new Session(); admin.login("IntegrationAdmin");
+        var before = as(() -> templates.version(id, 2)); byte[] bytes = as(() -> templates.download(id, 2));
+        var renamed = admin.send("PUT", "/document-templates/" + id + "/versions/2/name", "{\"name\":\"Revision_Ñ2\"}", true);
+        assertEquals(200, renamed.statusCode(), renamed.body());
+        assertEquals("Revision_Ñ2", as(() -> templates.version(id, 2)).name());
+        assertEquals(before.sha256(), as(() -> templates.version(id, 2)).sha256());
+        assertArrayEquals(bytes, as(() -> templates.download(id, 2)));
+        for (String invalid : List.of("123", "_Version", "Dos palabras", "Versión")) {
+            assertEquals(400, admin.send("PUT", "/document-templates/" + id + "/versions/2/name", JSON.writeValueAsString(Map.of("name", invalid)), true).statusCode());
+        }
+        long clientId = client(), workId = work(clientId);
+        var p = as(() -> packages.create(clientId, "Versiones", List.of(id), true));
+        assertEquals(204, admin.send("DELETE", "/document-templates/" + id + "/versions/2", "", true).statusCode());
+        assertTrue(as(() -> templates.version(id, 2)).deleted());
+        assertEquals(2, as(() -> templates.versions(id)).size());
+        assertArrayEquals(bytes, as(() -> templates.download(id, 2)), "Consulta histórica conserva el archivo");
+        assertEquals(1, as(() -> templates.get(id)).latestVersion());
+        assertEquals(1, as(() -> selection.options(workId, 0, 100)).getFirst().templates().getFirst().version());
+        assertThrows(DocumentException.class, () -> as(() -> selection.resolve(workId, p.id(), p.revision(), List.of(new DocumentSelectionService.Selection(id, 2)))));
+        Long linkedField = before.fields().getFirst().id();
+        assertThrows(DocumentRuleException.class, () -> as(() -> { updateFields.delete(linkedField); return null; }));
+        assertEquals(3, register(id).versionNumber(), "No se reutiliza el número de una versión eliminada");
+        String readerName = uniqueName("VersionReader"); SecurityTestData.install(jdbc, passwords, readerName, "DOCUMENT_VALUES_READ");
+        var reader = new Session(); reader.login(readerName);
+        assertEquals(403, reader.send("DELETE", "/document-templates/" + id + "/versions/1", "", true).statusCode());
+        assertEquals(403, reader.send("PUT", "/document-templates/" + id + "/versions/1/name", "{\"name\":\"Nueva\"}", true).statusCode());
+        as(() -> { templates.deleteVersion(id, 1); templates.deleteVersion(id, 3); return null; });
+        assertNull(as(() -> templates.get(id)).latestVersion());
+        assertTrue(as(() -> selection.options(workId, 0, 100)).isEmpty());
+        assertThrows(DocumentRuleException.class, () -> as(() -> templates.renameVersion(id, 2, "No_renombrar_eliminada")));
+        assertThrows(DocumentRuleException.class, () -> as(() -> { updateFields.delete(linkedField); return null; }));
+        assertEquals(4, register(id).versionNumber());
+    }
+    @Test void shouldRejectInvalidNamesAndBothReversedEndDatesThroughHttp() throws Exception {
+        var admin = new Session(); admin.login("IntegrationAdmin"); long clientId = client();
+        for (String name : List.of("123", "123_456", "_Nombre", "Con espacio", "Conácento", "A.B")) {
+            assertEquals(400, admin.send("POST", "/clients", JSON.writeValueAsString(Map.of("name", name, "legalRepresentative", "Representante")), true).statusCode());
+            assertEquals(400, admin.send("POST", "/works", JSON.writeValueAsString(Map.of("name", name, "clientId", clientId)), true).statusCode());
+            assertEquals(400, admin.send("POST", "/document-templates", JSON.writeValueAsString(Map.of("name", name, "documentType", "X", "state", "CURRENT")), true).statusCode());
+            assertEquals(400, admin.send("POST", "/document-packages", JSON.writeValueAsString(Map.of("name", name, "clientId", clientId, "templateIds", List.of(), "confirm", false)), true).statusCode());
+        }
+        long id = work(clientId); var initial = admin.get("/works/" + id + "/information"); String etag = initial.headers().firstValue("ETag").orElseThrow();
+        for (String key : List.of("endDate", "actualEndDate")) {
+            var body = Map.of("name", "Obra_Ñ", "documentInformation", Map.of("startDate", "2026-02-01", key, "2026-01-31", "status", "IN_PROGRESS", "additionalValues", Map.of()));
+            assertEquals(400, admin.sendWithEtag("PUT", "/works/" + id + "/information", JSON.writeValueAsString(body), etag).statusCode());
+            assertEquals(etag, admin.get("/works/" + id + "/information").headers().firstValue("ETag").orElseThrow());
+        }
     }
     @Test void shouldPersistAndDownloadAttachmentsOnlyForTheirWork() throws Exception {
         long workId = work(client()), other = work(client()); var admin = new Session(); admin.login("IntegrationAdmin");
@@ -169,6 +245,14 @@ class DocumentConfigurationIntegrationTest {
         SecurityTestData.install(jdbc, passwords, reader, "WORKS_READ"); var session = new Session(); session.login(reader);
         assertEquals(200, session.get("/works/" + workId + "/attachments").statusCode());
         assertEquals(403, session.attachment(workId, "CONTRACT", "otro.pdf", pdf).statusCode());
+        assertEquals(403, session.send("DELETE", "/works/" + workId + "/attachments/" + id, "", true).statusCode());
+        assertEquals(404, admin.send("DELETE", "/works/" + other + "/attachments/" + id, "", true).statusCode());
+        assertEquals(204, admin.send("DELETE", "/works/" + workId + "/attachments/" + id, "", true).statusCode());
+        assertEquals(404, admin.get("/works/" + workId + "/attachments/" + id + "/file").statusCode());
+        String retainedPath = jdbc.queryForObject("SELECT relative_path FROM work_attachments WHERE id_attachment=? AND deleted_at IS NOT NULL", String.class, id);
+        assertArrayEquals(pdf, Files.readAllBytes(STORAGE.resolve(retainedPath)));
+        var visibleAttachments = JSON.readTree(admin.get("/works/" + workId + "/attachments").body());
+        for (var attachment : visibleAttachments) { assertNotEquals(id, attachment.path("id").asLong()); }
     }
     @Test void shouldDeleteAnUnlinkedFieldAndProtectLinkedFieldOverHttp() throws Exception {
         var free = as(() -> registerFields.register("FREE_" + UUID.randomUUID().toString().replace("-", "").toUpperCase(),
@@ -251,7 +335,7 @@ class DocumentConfigurationIntegrationTest {
         assertEquals(400, altered.statusCode(), altered.body());
     }
     @Test void shouldEnforceExactTemplateNamesInPostgres() {
-        String name = "Formato_" + UUID.randomUUID();
+        String name = uniqueName("Formato_");
         as(() -> templates.create(name, "ACTA", TemplateState.DRAFT));
         assertThrows(org.springframework.dao.DataIntegrityViolationException.class,
                 () -> as(() -> templates.create(name, "OTHER", TemplateState.DRAFT)));
@@ -261,14 +345,14 @@ class DocumentConfigurationIntegrationTest {
     @Test void shouldDerivePackageClientFromWorkAndRequireWorkRead() throws Exception {
         long clientId = client(), workId = work(clientId);
         var admin = new Session(); admin.login("IntegrationAdmin");
-        String request = "{\"workId\":" + workId + ",\"name\":\"Desde obra\",\"templateIds\":[],\"confirm\":false}";
+        String request = "{\"workId\":" + workId + ",\"name\":\"Desde_obra\",\"templateIds\":[],\"confirm\":false}";
         var created = admin.send("POST", "/document-packages", request, true);
         assertEquals(201, created.statusCode(), created.body());
         var body = JSON.readTree(created.body());
         assertEquals(clientId, body.path("clientId").asLong());
         long packageId = body.path("id").asLong();
         var updated = admin.sendWithEtag("PUT", "/document-packages/" + packageId,
-                request.replace("Desde obra", "Desde obra editado"), created.headers().firstValue("ETag").orElseThrow());
+                request.replace("Desde_obra", "Desde_obra_editado"), created.headers().firstValue("ETag").orElseThrow());
         assertEquals(200, updated.statusCode(), updated.body());
         assertEquals(412, admin.sendWithEtag("PUT", "/document-packages/" + packageId,
                 request, created.headers().firstValue("ETag").orElseThrow()).statusCode());
@@ -430,7 +514,7 @@ class DocumentConfigurationIntegrationTest {
     }
     @Test void shouldPersistDraftsUseExactNamesRejectStaleEditsAndKeepClientFixed() {
         long id = template("PACKAGE"); register(id); long client = client();
-        var draft = as(() -> packages.create(null, null, List.of(id), false));
+        var draft = as(() -> packages.create(null, "Borrador", List.of(id), false));
         var reopened = as(() -> packages.get(draft.id())); assertEquals(draft, reopened);
         var confirmed = as(() -> packages.update(draft.id(), DocumentPackageService.etag(draft.revision()), client, "Paquete", List.of(id), true));
         assertEquals(DocumentPackage.State.CONFIRMED, confirmed.state());
@@ -438,7 +522,8 @@ class DocumentConfigurationIntegrationTest {
         assertThrows(DocumentRuleException.class, () -> as(() -> packages.update(draft.id(), DocumentPackageService.etag(confirmed.revision()), client(), "Change", List.of(id), true)));
         assertThrows(org.springframework.dao.DataIntegrityViolationException.class, () -> as(() -> packages.create(client, "Paquete", List.of(id), true)));
         assertNotNull(as(() -> packages.create(client, "paquete", List.of(id), true)));
-        assertNotNull(as(() -> packages.create(client, " Paquete ", List.of(id), true)));
+        assertThrows(com.brica.server.shared.validation.domain.InvalidDataException.class,
+                () -> as(() -> packages.create(client, " Paquete ", List.of(id), true)));
         var discarded = as(() -> packages.create(null, "Discard", List.of(id), false));
         as(() -> { packages.discard(discarded.id(), DocumentPackageService.etag(discarded.revision())); return null; });
         assertThrows(DocumentException.class, () -> as(() -> packages.get(discarded.id())));
@@ -506,14 +591,14 @@ class DocumentConfigurationIntegrationTest {
         assertEquals(200, response.statusCode(), response.body());
         var review = JSON.readValue(response.body(), TemplateAnalysisService.Review.class);
         var key = UUID.randomUUID();
-        var metadata = Map.of("confirmationId", key.toString(), "fingerprint", review.fingerprint(), "required", required(review), "staticAccepted", false);
+        var metadata = Map.of("confirmationId", key.toString(), "fingerprint", review.fingerprint(), "required", required(review), "staticAccepted", false, "name", "Version_inicial");
         var confirmation = session.multipart("/document-templates/" + id + "/versions", fixture("acta-inicio-prototipo"), metadata);
         assertEquals(200, confirmation.statusCode(), confirmation.body());
         assertEquals("COMPLETED", JSON.readTree(confirmation.body()).path("status").asText());
         assertEquals(confirmation.body(), session.multipart("/document-templates/" + id + "/versions", fixture("acta-inicio-prototipo"), metadata).body());
         assertEquals(200, session.get("/document-registrations/" + key).statusCode());
         var changed = session.multipart("/document-templates/" + id + "/versions", fixture("documento-estatico"),
-                Map.of("confirmationId", UUID.randomUUID().toString(), "fingerprint", review.fingerprint(), "required", Map.of(), "staticAccepted", true));
+                Map.of("confirmationId", UUID.randomUUID().toString(), "fingerprint", review.fingerprint(), "required", Map.of(), "staticAccepted", true, "name", "Version_estatica"));
         assertEquals(409, changed.statusCode(), changed.body());
         assertTrue(changed.headers().firstValue("Content-Type").orElse("").contains("application/problem+json"));
         assertEquals("TEMPLATE_REVIEW_CHANGED", JSON.readTree(changed.body()).path("code").asText());

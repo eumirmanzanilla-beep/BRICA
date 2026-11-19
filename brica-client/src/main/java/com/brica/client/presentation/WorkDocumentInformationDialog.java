@@ -23,6 +23,7 @@ final class WorkDocumentInformationDialog {
             var attachments = new ListView<WorksApiClient.Attachment>(); attachments.setPrefHeight(140);
             var download = new Button("Guardar copia del adjunto seleccionado");
             body.getChildren().addAll(new Label("Contrato y presupuesto base"), attachments, download);
+            if (editable) { body.getChildren().add(WorkAttachmentActions.delete(owner, api, work.id(), attachments, error)); }
             api.allAttachments(work.id()).whenComplete((items, failure) -> javafx.application.Platform.runLater(() -> {
                 if (failure == null) { attachments.getItems().setAll(items); } else { error.setText(DocumentUi.cause(failure).getMessage()); }
             }));

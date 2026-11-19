@@ -21,7 +21,9 @@ public enum ReferenceAttribute {
     WORK_ACTUAL_END_DATE(ReferenceOrigin.WORK, "Fecha de terminación real", ReferenceDataType.DATE, "actualEndDate"),
     WORK_CONTRACTED_AMOUNT(ReferenceOrigin.WORK, "Monto contratado", ReferenceDataType.AMOUNT, "contractedAmount"),
     WORK_AMOUNT_BEFORE_TAX(ReferenceOrigin.WORK, "Monto antes de IVA", ReferenceDataType.AMOUNT, "amountBeforeTax"),
-    WORK_TAX_AMOUNT(ReferenceOrigin.WORK, "IVA", ReferenceDataType.AMOUNT, "taxAmount");
+    WORK_TAX_AMOUNT(ReferenceOrigin.WORK, "IVA", ReferenceDataType.AMOUNT, "taxAmount"),
+    WORK_DOCUMENT_NAME(ReferenceOrigin.WORK, "Denominación documental de obra", ReferenceDataType.TEXT, "documentName"),
+    CLIENT_DOCUMENT_NAME(ReferenceOrigin.CLIENT, "Denominación documental de cliente", ReferenceDataType.TEXT, "documentName");
 
     private final ReferenceOrigin origin;
     private final String label;
@@ -44,6 +46,7 @@ public enum ReferenceAttribute {
             case WORK_START_DATE -> "FECHA_INICIO"; case WORK_END_DATE -> "FECHA_TERMINACION";
             case WORK_ACTUAL_END_DATE -> "FECHA_TERMINACION_REAL"; case WORK_CONTRACTED_AMOUNT -> "MONTO_CONTRATADO";
             case WORK_AMOUNT_BEFORE_TAX -> "MONTO_ANTES_IVA"; case WORK_TAX_AMOUNT -> "IVA";
+            case WORK_DOCUMENT_NAME -> "DENOMINACION_OBRA"; case CLIENT_DOCUMENT_NAME -> "DENOMINACION_CLIENTE";
         };
     }
     public static java.util.Optional<ReferenceAttribute> forKey(String key) {

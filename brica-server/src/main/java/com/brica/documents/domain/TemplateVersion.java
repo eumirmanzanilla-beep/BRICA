@@ -15,6 +15,10 @@ public class TemplateVersion {
     private boolean staticDocument;
     @JdbcTypeCode(SqlTypes.JSON) @Column(name = "analysis_json", nullable = false, updatable = false)
     private String analysisJson;
+    @Column(nullable = false, length = 150)
+    private String name;
+    @Column(name = "deleted_at")
+    private java.time.OffsetDateTime deletedAt;
 
     protected TemplateVersion() { }
     public TemplateVersion(Long templateId, int number, Long fileId, boolean staticDocument, String analysisJson) {
@@ -22,7 +26,18 @@ public class TemplateVersion {
         this.fileId = fileId;
         this.staticDocument = staticDocument;
         this.analysisJson = analysisJson;
+        this.name = "Version_" + number;
     }
+    public void rename(String name) {
+        if (deletedAt != null) { throw new DocumentRuleException("VERSION_DELETED", "La versión eliminada es de solo lectura."); }
+        var errors = new java.util.LinkedHashMap<String, String>();
+        com.brica.server.shared.validation.domain.InputRules.validName(errors, "name", name, 150);
+        com.brica.server.shared.validation.domain.InputRules.rejectErrors(errors);
+        this.name = name;
+    }
+    public void delete() { if (deletedAt == null) { deletedAt = java.time.OffsetDateTime.now(); } }
+    public String getName() { return name; }
+    public java.time.OffsetDateTime getDeletedAt() { return deletedAt; }
     public TemplateVersionId getId() { return id; }
     public Long getFileId() { return fileId; }
     public boolean isStaticDocument() { return staticDocument; }

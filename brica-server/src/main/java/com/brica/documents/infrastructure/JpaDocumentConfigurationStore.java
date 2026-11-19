@@ -28,26 +28,26 @@ public class JpaDocumentConfigurationStore implements DocumentConfigurationStore
     @Override public java.util.Map<Long, Integer> latestNumbers(java.util.Collection<Long> ids) {
         if (ids.isEmpty()) { return java.util.Map.of(); }
         var result = new java.util.HashMap<Long, Integer>();
-        em.createQuery("select v.id.templateId, max(v.id.number) from TemplateVersion v where v.id.templateId in :ids group by v.id.templateId", Object[].class)
+        em.createQuery("select v.id.templateId, max(v.id.number) from TemplateVersion v where v.deletedAt is null and v.id.templateId in :ids group by v.id.templateId", Object[].class)
                 .setParameter("ids", ids).getResultList().forEach(row -> result.put((Long) row[0], (Integer) row[1]));
         return result;
     }
     @Override public List<DocumentTemplate> scopedTemplates(int page, int size, boolean includeDeleted, Long clientId, Long workId) {
         return em.createQuery("select t from DocumentTemplate t where (:deleted=true or t.deletedAt is null) "
-                + "and t.clientId=:client and ((:work is null and t.workId is null) or t.workId=:work) order by t.name,t.id", DocumentTemplate.class)
+                + "and t.clientId=:client and ((:work is null and t.workId is null) or (:work is not null and (t.workId is null or t.workId=:work))) order by t.name,t.id", DocumentTemplate.class)
                 .setParameter("deleted", includeDeleted).setParameter("client", clientId).setParameter("work", workId)
                 .setFirstResult(page * size).setMaxResults(size).getResultList();
     }
     @Override public List<DocumentPackage> scopedPackages(int page, int size, Long clientId, Long workId) {
         return em.createQuery("select p from DocumentPackage p where p.clientId=:client "
-                + "and ((:work is null and p.workId is null) or p.workId=:work) order by p.name,p.id", DocumentPackage.class)
-                .setParameter("client", clientId).setParameter("work", workId)
+                + "and ((:work is null and (p.workId is null or p.state=:confirmed)) or (:work is not null and (p.workId is null or p.workId=:work))) order by p.name,p.id", DocumentPackage.class)
+                .setParameter("client", clientId).setParameter("work", workId).setParameter("confirmed", DocumentPackage.State.CONFIRMED)
                 .setFirstResult(page * size).setMaxResults(size).getResultList();
     }
     @Override public void add(Object entity) { em.persist(entity); }
     @Override public void flush() { em.flush(); }
     @Override public Optional<TemplateVersion> latest(Long id) {
-        return em.createQuery("select v from TemplateVersion v where v.id.templateId = :id order by v.id.number desc", TemplateVersion.class)
+        return em.createQuery("select v from TemplateVersion v where v.deletedAt is null and v.id.templateId = :id order by v.id.number desc", TemplateVersion.class)
                 .setParameter("id", id).setMaxResults(1).getResultStream().findFirst();
     }
     @Override public TemplateVersion version(TemplateVersionId id) {

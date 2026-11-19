@@ -14,17 +14,19 @@ final class WorkInformationForm {
     final GridPane node = new GridPane();
     final TextField name, location;
     final TextArea description;
-    private final TextField contract, contractor, total, beforeTax, tax, start, end, actual;
+    private final TextField contract, contractor, total, beforeTax, tax;
+    private final DatePicker start, end, actual;
     private final ComboBox<String> status = new ComboBox<>();
     private final Map<Field, TextInputControl> additional = new LinkedHashMap<>();
     private final Map<String, String> retained;
     WorkInformationForm(WorkDto work, DocumentInformation info, List<Field> fields, boolean editable) {
         node.setHgap(12); node.setVgap(8);
         name = new TextField(work.name()); location = new TextField(work.location()); description = new TextArea(work.description());
+        NameInputRules.install(name);
         description.setPrefRowCount(3); description.setWrapText(true);
         contract = new TextField(info.contractNumber()); contractor = new TextField(info.contractor());
         total = amount(info.contractedAmount()); beforeTax = amount(info.amountBeforeTax()); tax = amount(info.taxAmount());
-        start = date(info.startDate()); end = date(info.endDate()); actual = date(info.actualEndDate());
+        start = WorkDatePicker.create(info.startDate()); end = WorkDatePicker.create(info.endDate()); actual = WorkDatePicker.create(info.actualEndDate());
         status.getItems().setAll("En Proceso", "En pausa", "Terminada", "Cancelada");
         status.getSelectionModel().select(switch (info.status()) { case "ON_HOLD" -> 1; case "COMPLETED" -> 2; case "CANCELLED" -> 3; default -> 0; });
         node.addRow(0, new Label("Nombre de la obra"), name); node.addRow(1, new Label("Descripción"), description);
@@ -49,7 +51,7 @@ final class WorkInformationForm {
         if (!editable) { node.getChildren().stream().filter(n -> n instanceof Control && !(n instanceof Label)).forEach(n -> n.setDisable(true)); }
     }
     DocumentInformation information() {
-        if (name.getText().isBlank() || name.getText().length() > 255) { throw new IllegalArgumentException("Indica un nombre de hasta 255 caracteres."); }
+        NameInputRules.require(name.getText(), 255);
         var values = new LinkedHashMap<>(retained);
         additional.forEach((field, input) -> {
             String text = input.getText();
@@ -59,10 +61,11 @@ final class WorkInformationForm {
             }
             values.put(field.key(), text);
         });
-        var first = DocumentInput.date(start.getText()); var last = DocumentInput.date(end.getText());
+        var first = WorkDatePicker.read(start); var last = WorkDatePicker.read(end); var real = WorkDatePicker.read(actual);
         if (first != null && last != null && last.isBefore(first)) { throw new IllegalArgumentException("La terminación no puede ser anterior al inicio."); }
+        if (first != null && real != null && real.isBefore(first)) { throw new IllegalArgumentException("La terminación real no puede ser anterior al inicio."); }
         return new DocumentInformation(contract.getText(), contractor.getText(), decimal(total), decimal(beforeTax), decimal(tax),
-                iso(first), iso(last), iso(DocumentInput.date(actual.getText())),
+                iso(first), iso(last), iso(real),
                 List.of("IN_PROGRESS", "ON_HOLD", "COMPLETED", "CANCELLED").get(status.getSelectionModel().getSelectedIndex()), values);
     }
     String preview() {
@@ -84,6 +87,5 @@ final class WorkInformationForm {
     }
     private static TextField amount(BigDecimal value) { return new TextField(value == null ? "" : value.toPlainString()); }
     private static BigDecimal decimal(TextField field) { return field.getText().isBlank() ? null : new BigDecimal(field.getText()); }
-    private static TextField date(String value) { var field = new TextField(DocumentInput.format(DocumentInput.date(value))); field.setPromptText("dd/MM/aaaa"); return field; }
     private static String iso(java.time.LocalDate value) { return value == null ? null : value.toString(); }
 }

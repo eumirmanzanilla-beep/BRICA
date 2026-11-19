@@ -44,9 +44,9 @@ public class DocumentPackage {
                 || new HashSet<>(templates).size() != templates.size() || templates.stream().anyMatch(id -> id <= 0)) {
             throw new InvalidDataException(java.util.Map.of("templateIds", "Selecciona plantillas distintas y válidas."));
         }
-        if (name != null && name.length() > 150) {
-            throw new InvalidDataException(java.util.Map.of("name", "El nombre no debe superar 150 caracteres."));
-        }
+        var errors = new java.util.LinkedHashMap<String, String>();
+        com.brica.server.shared.validation.domain.InputRules.validName(errors, "name", name, 150);
+        com.brica.server.shared.validation.domain.InputRules.rejectErrors(errors);
         if (confirm || state == State.CONFIRMED) {
             if (clientId == null || name == null || name.isBlank() || templates.isEmpty()) {
                 throw new InvalidDataException(java.util.Map.of("package", "Indica cliente, nombre y al menos una plantilla elegible."));

@@ -34,6 +34,12 @@ server:
         same-site: strict
 
 brica:
+  extraction:
+    worker-enabled: ${BRICA_EXTRACTION_ENABLED:true}
+    python: ${BRICA_EXTRACTION_PYTHON:python3}
+    script: ${BRICA_EXTRACTION_SCRIPT:src/main/python/brica_extraction.py}
+    # A delegated, writable cgroup-v2 subtree is mandatory; blank fails closed.
+    cgroup-root: ${BRICA_EXTRACTION_CGROUP_ROOT:}
   documents:
     python: ${BRICA_DOCUMENT_PYTHON:python3}
     script: ${BRICA_DOCUMENT_SCRIPT:src/main/python/brica_docx.py}

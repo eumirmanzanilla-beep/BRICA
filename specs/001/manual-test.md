@@ -1,5 +1,20 @@
 # Prueba manual — navegación por obra y persistencia
 
+## Correcciones vigentes de SPEC001 (2026-11-15)
+
+Este bloque prevalece sobre las indicaciones históricas de abajo si difieren:
+
+1. **Nombres:** cliente/obra/paquete/plantilla/versión admiten letras `A–Z`, `a–z`, `Ñ/ñ`, números y `_`; al menos una letra, sin `_` inicial. Probar `Niño_2` y `1_Obra` (válidos), `123`, `123_456`, `_Obra`, `Con espacio`, `Conácento` y `A.B` (inválidos). Escribir y pegar caracteres prohibidos no cambia la captura válida. Repetir por API: debe devolver 400 y conservar los datos. No aplicar estas reglas al nombre original de un archivo.
+2. **Fechas:** abrir el calendario de inicio, terminación contractual y terminación real; guardar y consultar. También admitir ISO y `dd/MM/aaaa` escritos. Rechazar `31/02/2026` y ambas terminaciones anteriores al inicio. Inicio/terminaciones pueden quedar sin capturar; fechas iguales son válidas.
+3. **Iconos:** comprobar cuatro gráficos vectoriales completos, centrados, tamaño uniforme, ayuda y nombre accesible. Usuarios sin escritura no pueden editar ni usar asistente; sin administración documental no pueden configurar.
+4. **Paquetes:** crear desde cliente, confirmar y comprobar reutilización desde dos obras de ese cliente, incluida una creada después. Un paquete confirmado creado desde obra aparece también en el cliente con `Obra #ID`, pero no se ofrece en otra obra. Renombrar/editar desde el cliente no cambia su ámbito.
+5. **Varias plantillas:** crear dos en un borrador y comprobar que ambas permanecen. Confirmar tras registrar sus versiones. Crear una tercera desde el confirmado: se abre su versión y no se modifica la composición hasta completarla; después aparecen las tres. Si se cancela el registro, retomar con Agregar plantilla existente. Una plantilla sin versión abre primero su registro antes de incorporarla a un confirmado. Verificar que dos ediciones obsoletas no se sobrescriban.
+6. **Versiones:** indicar nombre obligatorio al registrar. Renombrar posteriormente; número, archivo, hash y campos no cambian. Eliminar con confirmación: permanece en la lista histórica marcada Eliminada, pero no puede renombrarse ni usarse en nuevas selecciones. Al borrar v2 se ofrece v1; registrar de nuevo produce v3, no otra v2. Si no queda ninguna, la plantilla no se ofrece. Un campo sigue protegido aunque solo lo referencie una versión eliminada.
+7. **Adjuntos:** desde el asistente o edición de obra seleccionar un adjunto y confirmar Eliminar adjunto. Debe desaparecer de la lista y su descarga ordinaria devolver 404, conservando bytes/metadatos. Rechazar eliminación desde otra obra o sin escritura. Consulta de solo lectura no ofrece eliminar. No se implementa purga física ni eliminación de generados.
+8. **Datos antiguos:** la limpieza elegida elimina lógicamente clientes/obras/plantillas incompatibles y retira únicamente los cinco paquetes incompatibles y sus vínculos tras respaldo. No ejecutar un borrado masivo ni restaurar documentos locales eliminados por el usuario. Las cuentas, catálogo, adjuntos y versiones históricas permanecen.
+
+Registrar por separado pruebas automáticas, recorrido gráfico Linux/WSL y aceptación humana Windows/Word. El borrado de versiones conserva consulta histórica; no representa una generación definitiva.
+
 ## 1. Instalación habitual
 
 El responsable autorizó aplicar V11–V13 a `brica` y sustituir `arqAdiran`, `UserTest` y `CarlosYonson` por `UsuarioGerencial` y `UsuarioAdministrativo`, conservando obras, clientes, contratos y archivos. No hay semillas automáticas de cuentas ni contraseñas en el repositorio. Los roles conservan los permisos aprobados: Gerencial 4 y Administrativo 3 con los ocho actuales; Practicante 2 e Invitado 1 solo lectura. Propuestas/aprobación fuera de esta iteración.
@@ -51,7 +66,7 @@ Acceder con una de las dos cuentas propuestas y la contraseña de pruebas acorda
 5. Confirmar debe ocultar inmediatamente el registro mientras el servidor procesa. Un error o análisis cambiado vuelve a mostrar la captura/revisión. El ID permite consultar o recuperar una operación sin duplicarla.
 6. Tras una versión completa, **Confirmar paquete**. Plantilla sin versión válida o no vigente: rechazo. La confirmación controla la revisión del paquete.
 7. Registrar versión 2 y consultar ambas: la anterior permanece inmutable. Doble clic en una versión muestra su configuración. Confirmaciones simultáneas reciben números distintos.
-8. Paquetes confirmados pueden cambiar nombre o composición válida; el ámbito confirmado queda fijo. Para crear plantillas todavía sin versión, utilizar un paquete borrador. Retirar una plantilla del paquete no borra la plantilla ni sus versiones.
+8. Paquetes confirmados pueden cambiar nombre o composición válida; el ámbito confirmado queda fijo. Crear plantilla desde un confirmado permite preparar su versión antes de incorporarla; mientras tanto conserva la composición anterior. Retirar una plantilla del paquete no borra la plantilla ni sus versiones.
 9. Desde **Clientes → Paquetes documentales**, repetir: el nuevo paquete se enlaza automáticamente al cliente seleccionado y queda en ámbito cliente, no asignado a una obra por inferencia.
 10. Un paquete/plantilla de obra A no se ofrece ni admite en obra B, aunque tengan el mismo cliente. Los de ámbito cliente solo se aplican a obras de ese cliente. Los registros antiguos sin ámbito se preservan como legado, no se reasignan automáticamente.
 11. Los nombres de plantilla conservan la unicidad exacta global anterior. Los paquetes comparan nombres exactamente dentro de su ámbito; no normalizar espacios o mayúsculas.

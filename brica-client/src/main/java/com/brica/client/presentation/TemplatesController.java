@@ -64,6 +64,7 @@ public class TemplatesController {
         var save = new ButtonType("Guardar", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().setAll(save, ButtonType.CANCEL);
         var name = new TextField(selected == null ? "" : selected.name());
+        NameInputRules.install(name);
         var type = new ComboBox<String>(); type.setEditable(true);
         type.getItems().setAll(templates.getItems().stream().map(Template::documentType).distinct().sorted().toList());
         if (selected != null) { type.setValue(selected.documentType()); }
@@ -75,7 +76,8 @@ public class TemplatesController {
         form.addRow(2, new Label("Estado"), state);
         form.addRow(3, new Label("Formato de archivo"), new Label("DOCX"));
         dialog.getDialogPane().setContent(form);
-        dialog.getDialogPane().lookupButton(save).disableProperty().bind(name.textProperty().isEmpty()
+        dialog.getDialogPane().lookupButton(save).disableProperty().bind(javafx.beans.binding.Bindings.createBooleanBinding(
+                () -> !NameInputRules.valid(name.getText(), 150), name.textProperty())
                 .or(type.getEditor().textProperty().isEmpty()).or(state.valueProperty().isNull()));
         if (dialog.showAndWait().orElse(ButtonType.CANCEL) != save) { return; }
         DocumentUi.run(pane, message, () -> api.saveTemplate(selected == null ? null : selected.id(),

@@ -231,6 +231,10 @@ public final class WorksApiClient {
     public record Attachment(Long id, String kind, String originalName, String mimeType, long sizeBytes, String sha256) {
         @Override public String toString() { return ("CONTRACT".equals(kind) ? "Contrato: " : "Presupuesto base: ") + originalName; }
     }
+    public CompletableFuture<Void> deleteAttachment(long workId, long id) {
+        var request = HttpRequest.newBuilder(URI.create(workUri(workId) + "/attachments/" + id)).timeout(TIMEOUT).DELETE().build();
+        return send(request, response -> null);
+    }
     public CompletableFuture<List<Attachment>> attachments(long workId, int page) {
         var request = HttpRequest.newBuilder(URI.create(workUri(workId) + "/attachments?page=" + page + "&size=50")).timeout(TIMEOUT).GET().build();
         return send(request, response -> List.of(read(response.body(), Attachment[].class)));

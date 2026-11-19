@@ -37,7 +37,7 @@ class RegisterWorkServiceTest {
     @Test
     void shouldRegisterWorkForExistingClient() {
         Client client = new Client(
-            "Constructora ABC",
+            "Constructora_ABC",
             "Jane Doe"
         );
 
@@ -49,7 +49,7 @@ class RegisterWorkServiceTest {
 
         Work work = registerWorkService.registerWork(
             1L,
-            "Administrative Building Renovation",
+            "Administrative_Building_Renovation",
             "Merida, Yucatan",
             "General renovation work",
             LocalDate.of(2026, 10, 23),
@@ -57,7 +57,7 @@ class RegisterWorkServiceTest {
         );
 
         assertEquals(
-            "Administrative Building Renovation",
+            "Administrative_Building_Renovation",
             work.getName()
         );
 

@@ -97,10 +97,12 @@ public class ClientController {
     @PutMapping("/{id}")
     public ClientResponse updateClient(
             @PathVariable("id") Long id,
+            @org.springframework.web.bind.annotation.RequestHeader(value = "If-Match", required = false) String expected,
             @Valid @RequestBody UpdateClientRequest request) {
 
         Client client = updateClientService.update(
                 id,
+                expected,
                 request.name(),
                 request.legalRepresentative()
         );
@@ -111,8 +113,16 @@ public class ClientController {
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteClient(
-            @PathVariable("id") Long id) {
+            @PathVariable("id") Long id,
+            @org.springframework.web.bind.annotation.RequestHeader(value = "If-Match", required = false) String expected) {
 
-        deleteClientService.delete(id);
+        deleteClientService.delete(id, expected);
+    }
+    public record DocumentNameRequest(@com.fasterxml.jackson.annotation.JsonProperty(required=true) String documentName) { }
+    @PutMapping("/{id}/document-name")
+    public ClientResponse documentName(@PathVariable("id") Long id,
+            @org.springframework.web.bind.annotation.RequestHeader(value="If-Match",required=false) String expected,
+            @RequestBody DocumentNameRequest request) {
+        return ClientResponse.from(updateClientService.updateDocumentName(id,expected,request.documentName()));
     }
 }

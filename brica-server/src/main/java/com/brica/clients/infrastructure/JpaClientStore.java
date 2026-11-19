@@ -22,13 +22,15 @@ public class JpaClientStore implements ClientStore {
 
     @Override
     public Client save(Client client) {
-        return repository.save(client);
+        return repository.saveAndFlush(client);
     }
 
     @Override
     public Optional<Client> findById(Long id) {
         return repository.findByIdAndDeletedAtIsNull(id);
     }
+
+    @Override public Optional<Client> findForUpdate(Long id) { return repository.findForUpdate(id); }
 
     @Override
     public List<Client> list(int page, int size) {

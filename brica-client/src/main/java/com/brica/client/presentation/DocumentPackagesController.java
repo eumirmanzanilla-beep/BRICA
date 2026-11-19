@@ -46,6 +46,7 @@ public class DocumentPackagesController {
     private boolean allowClose;
     private boolean hasCapture;
     @FXML private void initialize() {
+        NameInputRules.install(name);
         pane.getChildren().remove(form);
         form.disableProperty().addListener((observable, old, busy) -> pane.setDisable(busy));
         dialogMessage.textProperty().bind(message.textProperty());
@@ -123,7 +124,7 @@ public class DocumentPackagesController {
         loading = true; editing = value; hasCapture = true;
         name.setText(value == null || value.name() == null ? "" : value.name());
         selectedClientId = value == null ? null : value.clientId();
-        selectedWorkId = null;
+        selectedWorkId = value == null ? null : value.workId();
         clientChoice.setValue(null); workChoice.setValue(null);
         clientContext.setText(selectedClientId == null ? "Selecciona un cliente o una obra." : "Cliente del paquete · #" + selectedClientId);
         clientChoice.setDisable(value != null && "CONFIRMED".equals(value.state()));
@@ -157,6 +158,8 @@ public class DocumentPackagesController {
     @FXML private void saveDraft() { save(false, () -> { }); }
     @FXML private void confirm() { save(true, () -> { }); }
     private void save(boolean confirm, Runnable after) {
+        try { NameInputRules.require(name.getText(), 150); }
+        catch (IllegalArgumentException failure) { message.setText(failure.getMessage()); return; }
         DocumentUi.run(form, message, () -> api.savePackage(editing, selectedWorkId == null ? selectedClientId : null,
                 selectedWorkId, name.getText(), List.copyOf(selected), confirm), value -> {
             display(value);

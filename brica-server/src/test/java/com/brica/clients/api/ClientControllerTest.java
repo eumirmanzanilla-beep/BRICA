@@ -88,12 +88,12 @@ class ClientControllerTest {
     void shouldRegisterClient() throws Exception {
 
         Client client = new Client(
-                "Constructora ABC",
+                "Constructora_ABC",
                 "Jane Doe"
         );
 
         when(registerClientService.registerClient(
-                "Constructora ABC",
+                "Constructora_ABC",
                 "Jane Doe"
         )).thenReturn(client);
 
@@ -102,17 +102,17 @@ class ClientControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "name": "Constructora ABC",
+                                  "name": "Constructora_ABC",
                                   "legalRepresentative": "Jane Doe"
                                 }
                                 """)
         )
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name").value("Constructora ABC"))
+                .andExpect(jsonPath("$.name").value("Constructora_ABC"))
                 .andExpect(jsonPath("$.legalRepresentative").value("Jane Doe"));
 
         verify(registerClientService)
-                .registerClient("Constructora ABC", "Jane Doe");
+                .registerClient("Constructora_ABC", "Jane Doe");
     }
 
     @Test
@@ -163,12 +163,14 @@ class ClientControllerTest {
 
         when(updateClientService.update(
                 5L,
+                "\"client-revision\"",
                 "Nombre actualizado",
                 "Nuevo representante"
         )).thenReturn(client);
 
         mockMvc.perform(
                 put("/api/v1/clients/5")
+                        .header("If-Match", "\"client-revision\"")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -182,6 +184,7 @@ class ClientControllerTest {
 
         verify(updateClientService).update(
                 5L,
+                "\"client-revision\"",
                 "Nombre actualizado",
                 "Nuevo representante"
         );
@@ -209,8 +212,9 @@ class ClientControllerTest {
 
         mockMvc.perform(
                 delete("/api/v1/clients/5")
+                        .header("If-Match", "\"client-revision\"")
         ).andExpect(status().isNoContent());
 
-        verify(deleteClientService).delete(5L);
+        verify(deleteClientService).delete(5L, "\"client-revision\"");
     }
 }

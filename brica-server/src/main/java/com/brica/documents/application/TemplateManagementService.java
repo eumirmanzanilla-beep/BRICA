@@ -64,6 +64,15 @@ public class TemplateManagementService {
         store.template(templateId, false);
         return store.versions(templateId).stream().map(this::versionView).toList();
     }
+    public VersionView renameVersion(Long templateId, int number, String name) {
+        store.template(templateId, true).requireEditable();
+        var version = store.version(new TemplateVersionId(templateId, number));
+        version.rename(name); store.flush(); return versionView(version);
+    }
+    public void deleteVersion(Long templateId, int number) {
+        store.template(templateId, true).requireEditable();
+        store.version(new TemplateVersionId(templateId, number)).delete();
+    }
     @Transactional(readOnly = true)
     public VersionView version(Long templateId, int number) { return versionView(store.version(new TemplateVersionId(templateId, number))); }
     @Transactional(readOnly = true)
@@ -87,7 +96,7 @@ public class TemplateManagementService {
                 byId.get(b.getFieldId()).getVisibleName(), b.getMarker(), b.isRequired())).toList();
         var file = store.file(v.getFileId());
         return new VersionView(v.getId().templateId(), v.getId().number(), "COMPLETED", v.isStaticDocument(),
-                file.getOriginalName(), file.getSha256(), details, v.getAnalysisJson());
+                file.getOriginalName(), file.getSha256(), details, v.getAnalysisJson(), v.getName(), v.getDeletedAt() != null);
     }
     public static void pagination(int page, int size) {
         if (page < 0 || size < 1 || size > 100 || (long) page * size > Integer.MAX_VALUE) {
@@ -97,5 +106,5 @@ public class TemplateManagementService {
     public record TemplateView(Long id, String name, String documentType, TemplateState state, boolean deleted, Integer latestVersion, Long clientId, Long workId) { }
     public record VersionField(Long id, String key, String visibleName, String marker, boolean required) { }
     public record VersionView(Long templateId, int number, String status, boolean staticDocument, String originalName,
-            String sha256, List<VersionField> fields, String analysisJson) { }
+            String sha256, List<VersionField> fields, String analysisJson, String name, boolean deleted) { }
 }

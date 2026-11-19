@@ -36,22 +36,26 @@ public final class WorksController {
         worksTable.setItems(works); worksTable.getSelectionModel().selectedItemProperty().addListener((o, a, b) -> buttons());
         worksTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         actionsColumn.setCellFactory(column -> new TableCell<>() {
-            private final Button edit = icon("✏", "Editar toda la información", () -> detail(getTableRow().getItem(), 0));
-            private final Button capture = icon("📄", "Documentos, información y revisión", () -> detail(getTableRow().getItem(), 1));
-            private final Button view = icon("👁", "Ver información completa", () -> detail(getTableRow().getItem(), 2));
-            private final Button documents = icon("🖨", "Paquetes, plantillas y versiones", () -> {
+            private final Button edit = icon("edit", "Editar toda la información", () -> detail(getTableRow().getItem(), 0));
+            private final Button capture = icon("capture", "Documentos, información y revisión", () -> detail(getTableRow().getItem(), 1));
+            private final Button view = icon("view", "Ver información completa", () -> detail(getTableRow().getItem(), 2));
+            private final Button documents = icon("documents", "Paquetes, plantillas y versiones", () -> {
                 var value = getTableRow().getItem(); if (value != null) { ContextDocumentsWindow.show(worksTable.getScene().getWindow(), value.clientId(), value.id(), value.name()); }
             });
-            private final HBox box = new HBox(5, edit, capture, view, documents);
+            private final Button extract = new Button("Extraer datos");
+            { extract.setOnAction(e -> { var value=getTableRow().getItem(); if(value!=null) { com.brica.client.presentation.extraction.ExtractionWindow.show(worksTable.getScene().getWindow(),value.id(),value.name(),null); } }); }
+            private final HBox box = new HBox(5, edit, capture, view, documents, extract);
+            { box.setAlignment(javafx.geometry.Pos.CENTER); }
             @Override protected void updateItem(Void value, boolean empty) {
                 super.updateItem(value, empty); setGraphic(empty ? null : box);
                 edit.setDisable(!can("WORKS_WRITE")); capture.setDisable(!can("WORKS_WRITE")); documents.setDisable(!can("DOCUMENT_CONFIG_ADMIN"));
+                extract.setDisable(!can("WORKS_READ"));
             }
         });
         buttons(); load(0, false); loadClients(0);
     }
     private Button icon(String text, String tip, Runnable action) {
-        var button = new Button(text); button.setTooltip(new Tooltip(tip)); button.setAccessibleText(tip);
+        var button = new Button(); button.setGraphic(WorkActionIcon.create(text)); button.setTooltip(new Tooltip(tip)); button.setAccessibleText(tip);
         button.getStyleClass().add("work-icon-button"); button.setOnAction(e -> action.run()); return button;
     }
     private boolean can(String permission) {
@@ -101,11 +105,13 @@ public final class WorksController {
             public ClientDto fromString(String value) { return null; }
         });
         var name = new TextField(); var description = new TextArea(); description.setPrefRowCount(3); var error = new Label(); error.setWrapText(true);
+        NameInputRules.install(name);
         dialog.getDialogPane().setContent(new VBox(10, new Label("Cliente"), client, new Label("Nombre"), name, new Label("Descripción"), description, error));
         var save = new ButtonType("Crear obra", ButtonBar.ButtonData.OK_DONE); dialog.getDialogPane().getButtonTypes().setAll(save, ButtonType.CANCEL);
         dialog.getDialogPane().lookupButton(save).addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
             event.consume();
-            if (client.getValue() == null || name.getText().isBlank() || name.getText().length() > 255) { error.setText("Selecciona cliente e indica un nombre de hasta 255 caracteres."); return; }
+            if (client.getValue() == null) { error.setText("Selecciona un cliente."); return; }
+            try { NameInputRules.require(name.getText(), 255); } catch (IllegalArgumentException failure) { error.setText(failure.getMessage()); return; }
             long id = client.getValue().id(); String capturedName = name.getText(), capturedDescription = description.getText();
             AsyncDialogSave.run(dialog, statusLabel, error, () -> api.create(id, capturedName, null, capturedDescription, null, null), value -> {
                 cache.clear(); works.add(value); worksTable.getSelectionModel().select(value); worksTable.scrollTo(value);

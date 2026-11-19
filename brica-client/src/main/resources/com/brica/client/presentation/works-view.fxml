@@ -16,7 +16,7 @@
             <TableColumn fx:id="clientColumn" text="Cliente" prefWidth="190"/>
             <TableColumn fx:id="nameColumn" text="Nombre" prefWidth="200"/>
             <TableColumn fx:id="descriptionColumn" text="Descripción" prefWidth="240"/>
-            <TableColumn fx:id="actionsColumn" text="Acciones" prefWidth="155" minWidth="150" maxWidth="170" sortable="false"/>
+            <TableColumn fx:id="actionsColumn" text="Acciones" prefWidth="285" minWidth="265" maxWidth="310" sortable="false"/>
         </columns>
         <placeholder><Label text="No hay obras. Crea una con cliente, nombre y descripción."/></placeholder>
     </TableView>

@@ -162,4 +162,11 @@ public class WorkController {
     public record CompleteResponse(WorkResponse work, DocumentInformationResponse documentInformation) {
         static CompleteResponse from(Work work) { return new CompleteResponse(WorkResponse.from(work), DocumentInformationResponse.from(work)); }
     }
+    public record DocumentNameRequest(@com.fasterxml.jackson.annotation.JsonProperty(required=true) String documentName) { }
+    @PutMapping("/{id}/document-name")
+    public ResponseEntity<WorkResponse> documentName(@PathVariable("id") Long id,
+            @RequestHeader(value="If-Match",required=false) String expected,@RequestBody DocumentNameRequest request) {
+        var work=documentInformationService.updateDocumentName(id,expected,request.documentName());
+        return ResponseEntity.ok().eTag(WorkRevision.etag(work)).body(WorkResponse.from(work));
+    }
 }

@@ -43,6 +43,8 @@ public class WorkReferenceData {
             case WORK_CONTRACTED_AMOUNT -> work.getContractedAmount();
             case WORK_AMOUNT_BEFORE_TAX -> work.getAmountBeforeTax();
             case WORK_TAX_AMOUNT -> work.getTaxAmount();
+            case WORK_DOCUMENT_NAME -> work.getDocumentName();
+            case CLIENT_DOCUMENT_NAME -> work.getClient().getDocumentName();
         };
     }
 }

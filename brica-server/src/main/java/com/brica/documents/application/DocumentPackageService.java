@@ -58,15 +58,15 @@ public class DocumentPackageService {
     }
     public CreatedTemplate createTemplate(Long id, String expected, String name, String type) {
         var value = store.documentPackage(id, true); precondition(value, expected);
-        if (value.getState() != DocumentPackage.State.DRAFT) {
-            throw new DocumentException(409, "PACKAGE_NOT_DRAFT", "Crea las plantillas y versiones dentro de un paquete borrador antes de confirmarlo.");
-        }
         if (value.getClientId() == null) { throw new DocumentException(400, "PACKAGE_CLIENT_REQUIRED", "Guarda primero el paquete en una obra o cliente."); }
         context.client(value.getClientId(), value.getWorkId());
         var template = new DocumentTemplate(name, type, TemplateState.CURRENT, value.getClientId(), value.getWorkId());
         store.add(template); store.flush();
         var ids = new java.util.ArrayList<>(value.getTemplateIds()); ids.add(template.getId());
-        edit(value, value.getClientId(), value.getName(), ids, false); store.flush();
+        // Do not invalidate a confirmed package while its new template is still unversioned.
+        if (value.getState() == DocumentPackage.State.DRAFT) {
+            edit(value, value.getClientId(), value.getName(), ids, false); store.flush();
+        }
         return new CreatedTemplate(view(value), new TemplateManagementService.TemplateView(template.getId(), template.getName(),
                 template.getDocumentType(), template.getState(), false, null, template.getClientId(), template.getWorkId()));
     }

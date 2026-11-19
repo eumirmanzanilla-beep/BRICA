@@ -39,6 +39,20 @@ Estas decisiones sustituyen el flujo global de Documentación y el uso de una in
 
 Las referencias heredadas a operación/etapa en ERS/DAS/Diccionario o Spec 002 deben alinearse mediante un cambio separado. La identidad que agrupa plantillas alternativas del mismo documento (D-12) es el **tipo de documento** ya existente; no se crea otra entidad. Las nuevas tablas del flujo se incorporan mediante migraciones posteriores a V6, sin modificar migraciones previas ni fuentes DOCX.
 
+### Correcciones aprobadas de nombres y ciclo de vida (2026-11-15)
+
+Estas decisiones prevalecen sobre las restricciones anteriores de esta spec cuando difieran:
+
+- Los nombres de **clientes, obras, paquetes, plantillas y versiones** solo admiten `A–Z`, `a–z`, `Ñ`, `ñ`, números ASCII y `_`. Deben contener al menos una letra y no comenzar por `_`. Se rechazan espacios, acentos, puntos, guiones y nombres como `123_456`. Se permite comenzar por número si hay una letra después. Se mantienen los límites existentes: 255 para clientes/obras y 150 para paquetes/plantillas/versiones. No se recorta ni transforma el nombre automáticamente. La interfaz rechaza las ediciones/pegados con caracteres prohibidos; la validación completa también se ejecuta en el servidor. No aplicar esta regla al nombre original de archivos, representante legal, descripción, contratista ni a las claves canónicas de campos, que conservan sus reglas propias.
+- Las fechas de obra siguen siendo opcionales. La captura incorpora calendarios y entrada estricta ISO o `dd/MM/aaaa`. La terminación contractual y la real, si existe inicio, **no pueden ser anteriores al inicio**; igualdad permitida. La petición inicial de permitir fechas invertidas quedó expresamente corregida por el responsable.
+- Iconos de obra vectoriales (edición, asistente/documento, consulta/ojo y configuración/carpeta), independientes de fuentes emoji, con tamaño fijo, alineación, ayuda emergente, nombre accesible y estados por permisos.
+- Un paquete **de cliente** es reutilizable en obras actuales y posteriores de ese mismo cliente, sin copiarlo ni cambiar su ámbito. Los paquetes exclusivos de obra confirmados también son visibles desde el cliente, indicando su obra, pero no se habilitan para otras obras. Editar desde otro contexto nunca reasigna el ámbito.
+- Se pueden crear/agregar varias plantillas tanto antes como después de confirmar el paquete, sin reemplazar las ya vinculadas. En un confirmado, la plantilla nueva se prepara en su ámbito y se incorpora únicamente después de tener una versión elegible. Si se cancela esa preparación, la composición anterior permanece válida y la plantilla puede retomarse con Agregar plantilla existente. Las modificaciones de composición mantienen `If-Match`.
+- Cada versión tiene un **nombre obligatorio independiente de su número y archivo**. Se captura al registrar y puede renombrarse sin modificar archivo, hash, campos o número. El nombre forma parte de la identidad de la solicitud de registro para idempotencia. V14 asigna `Version_N` a versiones existentes y conserva los registros pendientes para recuperación.
+- La eliminación de versiones es lógica y requiere confirmación en escritorio. Se conservan archivos, campos y referencias históricas; estas referencias siguen protegiendo el catálogo. Para nuevas selecciones se usa la versión no eliminada de mayor número, o se excluye la plantilla si no queda ninguna. Nunca reutilizar ni renumerar números; una nueva versión se numera sobre el máximo histórico, incluidas las eliminadas. La consulta histórica permanece disponible y una versión eliminada no se renombra.
+- La eliminación de documentos de este bloque se refiere **solo a adjuntos de obra**: confirmación, permiso `WORKS_WRITE`, validación de pertenencia y eliminación lógica. Desaparecen de consulta/descarga ordinaria, pero se conserva el archivo y sus metadatos. No se implementa purga física ni eliminación de documentos generados. Los archivos de versiones se gestionan mediante su versión, no como archivos independientes.
+- El responsable autorizó limpiar los registros incompatibles de prueba de `brica`. Tras conocer sus dependencias eligió limpieza lógica de clientes/obras/plantillas, retirando solamente los cinco paquetes incompatibles y sus vínculos. Conservar cuentas, catálogo, versiones, adjuntos y documentos locales; los paquetes con nombre válido permanecen aunque su cliente quede eliminado. No convertir esta limpieza puntual en una migración o un borrado automático de arranque.
+
 ## 2. Actores y precondiciones
 
 - El acceso se concede globalmente por rol. El rol que tenga permiso de consulta de valores puede resolver campos de cualquier obra registrada. Para administrar campos, plantillas, versiones y paquetes se requiere el permiso de administración documental.
@@ -60,7 +74,7 @@ Las referencias heredadas a operación/etapa en ERS/DAS/Diccionario o Spec 002 d
 
 Los estados **Vigente**, **Borrador** y **No disponible** son válidos. Todos permiten consultar y administrar la plantilla, incluido agregar versiones. Solo **Vigente**, no eliminada y con última versión completada verificable, permite confirmar su incorporación a un paquete y seleccionarla para uso. Una plantilla que cambia de estado sigue visible en los paquetes existentes, pero queda fuera de nuevas selecciones. La eliminación lógica es independiente y deja todo el registro en solo lectura. En esta spec, «activa» significa «Vigente y no eliminada».
 
-La **obligatoriedad se define por versión y campo**. Un campo puede ser obligatorio en un acta y opcional en otro documento. El paquete reúne **identidades de plantilla**. Para cada documento de una generación, el usuario interno elige una sola plantilla activa de entre las aplicables. La única versión seleccionable para una generación nueva es la revisión más reciente registrada correctamente de esa plantilla. El sistema muestra su número para que el usuario confirme la selección. Cambiar de plantilla antes de confirmar sustituye la selección anterior. La generación confirmada conserva la plantilla y la versión exactas que se utilizaron.
+La **obligatoriedad se define por versión y campo**. Un campo puede ser obligatorio en un acta y opcional en otro documento. El paquete reúne **identidades de plantilla**. Para cada documento de una generación, el usuario interno elige una sola plantilla activa de entre las aplicables. La única versión seleccionable para una generación nueva es la revisión más reciente registrada correctamente y no eliminada de esa plantilla. El sistema muestra su número para que el usuario confirme la selección. Cambiar de plantilla antes de confirmar sustituye la selección anterior. La generación confirmada conserva la plantilla y la versión exactas que se utilizaron.
 
 ## 4. Historias y criterios de aceptación
 
@@ -146,6 +160,17 @@ Como administrador de BRICA, quiero revisar la configuración de plantillas y pa
 | CA-41 | Una fecha o un importe válido | Consulto el valor y solicito resolución de una selección | BRICA valida el tipo y devuelve fecha española o importe preciso, además de la presentación separada del importe. No modifica el origen. El motor futuro deberá consumir explícitamente ese contrato. |
 | CA-42 | Los permisos de consulta y administración configurados en el servidor | Verifico las consultas y cambios con usuarios con y sin los permisos correspondientes | El servidor permite las acciones autorizadas y rechaza las demás. La aceptación completa queda pendiente mientras esta verificación no pueda ejecutarse con permisos reales. |
 
+### HU-07 · Corregir captura y administrar versiones/adjuntos
+
+| ID | Dado | Cuando | Entonces |
+|---|---|---|---|
+| CA-43 | Un formulario de cliente, obra, paquete, plantilla o versión | Escribo/pego caracteres no permitidos o confirmo un nombre sin letras | La interfaz bloquea los caracteres prohibidos y la validación rechaza el nombre completo inválido, también por API directa. Ñ/ñ sí se admiten; acentos y espacios no. |
+| CA-44 | Una obra con fechas opcionales | Selecciono fechas por calendario o las escribo | Se conservan las fechas exactas; ambas terminaciones se rechazan si son anteriores al inicio, sin persistencia parcial. |
+| CA-45 | Un paquete del cliente y uno exclusivo de una obra confirmada | Abro la documentación del cliente o de otra obra del mismo cliente | El cliente ve ambos ámbitos identificados; las otras obras pueden reutilizar solo el paquete de cliente, sin reasignarlo. |
+| CA-46 | Un paquete borrador o confirmado con plantillas existentes | Creo y agrego otras plantillas | No se reemplazan las anteriores. La composición confirmada solo incorpora plantillas con versión elegible y conserva control de concurrencia. |
+| CA-47 | Una versión registrada | Renombro o elimino lógicamente su registro | Renombrar conserva bytes/hash/campos/número. Eliminar conserva el historial y excluye su uso nuevo; se elige la anterior disponible y no se reutilizan números. |
+| CA-48 | Un adjunto de obra y usuarios con/sin escritura | Confirmo eliminarlo o intento hacerlo usando otra obra | Solo se permite con escritura y pertenencia correcta. Se oculta de consultas/descargas ordinarias sin borrar bytes ni afectar otros adjuntos. |
+
 ## 5. Requisitos y trazabilidad
 
 | ID | Comportamiento requerido | Fuente |
@@ -192,7 +217,7 @@ Como administrador de BRICA, quiero revisar la configuración de plantillas y pa
 
 ## 7. Condición de entrega
 
-Esta sección conserva la condición de aceptación del flujo completo. La implementación con casos construidos no sustituye el recorrido manual, la plantilla operativa conjunta ni el despliegue definitivo de D-06. Fechas/importes ya pertenecen al contrato de resolución; el historial de generaciones reales sigue diferido. Guía ejecutable: [manual-test.md](manual-test.md); almacenamiento aislado: [storage-test.md](storage-test.md).
+Esta sección conserva la condición de aceptación del flujo completo. La implementación con casos construidos no sustituye el recorrido manual, la plantilla operativa conjunta ni el despliegue definitivo de D-06. Fechas/importes ya pertenecen al contrato de resolución; el historial de generaciones reales sigue diferido. Guía ejecutable: [manual-test.md](manual-test.md). El registro histórico de almacenamiento está en [review.md](review.md).
 
 Con una obra y su cliente de prueba, registrar un campo de referencia y comprobar su valor, cargar un DOCX que lo utilice, registrar una segunda versión y crear un paquete que contenga la plantilla. Al consultar la configuración aplicable, deben verse la composición, la última revisión seleccionable de cada plantilla activa y los valores de los campos de la versión consultada. La aceptación también debe demostrar el rechazo de un marcador desconocido, la detección de un valor obligatorio faltante, la conservación de una versión anterior, la detección de marcadores en encabezados y pies, la selección única de plantilla y versión y el rechazo de solicitudes sin el permiso correspondiente.
 

@@ -1,16 +1,19 @@
 # SPEC-002 — Motor documental de BRICA
 
-**Estado:** Propuesta revisada para validación  
+**Estado:** Alineación de alcance iniciada; implementación pendiente de F0 y de la ficha técnica aprobada.
+
 **Dependencia:** SPEC 001
-**Resultado esperado:** Un usuario incorpora documentos fuente PDF o Excel a una obra existente, revisa y confirma datos extraídos, selecciona un paquete y versiones de plantillas, previsualiza, genera y exporta documentos DOCX/PDF, con continuidad e historial.
+**Resultado esperado vigente:** Un usuario autorizado incorpora o reutiliza documentos fuente PDF, XLS, XLSX o DOCX en una obra existente, extrae y revisa datos con evidencia, y confirma selectivamente los destinos autorizados. La revisión de extracción puede guardarse y retomarse. La generación documental queda fuera de esta SPEC.
+
+> **Alineación F0 — 2026-11-17.** Las 33 decisiones del responsable y el alcance del [plan vigente](plan.md) prevalecen sobre el texto histórico posterior cuando difieran. En particular: no se requiere paquete, operación ni selección de versión para extraer; no se implementan renderizado, previsualización de salida, generación, exportación ni historial de generaciones. HU-004–HU-006 y CA-16–CA-30 se conservan como trazabilidad histórica de la futura generación, no como criterios de entrega de esta SPEC. La revisión de candidatos y el borrador de extracción son procesos distintos de una vista previa o borrador de generación. Los parámetros y dependencias indicados en §5 del plan siguen pendientes de aprobación; [Review.md](Review.md) registra avances y bloqueos.
 
 ## 1. Alcance de la primera entrega
 
-La SPEC-002 implementa el motor documental de BRICA e integra la configuración definida en la SPEC anterior, sin duplicar la administración de paquetes, plantillas, versiones ni campos. Admite PDF (con texto seleccionable o escaneados mediante OCR) y presupuestos Excel **XLS/XLSX**. La importación de presupuestos comprende selección de hojas, datos generales, partidas y conceptos con clave, descripción, unidad, cantidad, precio unitario e importe, así como subtotales, impuestos y totales cuando existan y sean identificables.
+La SPEC-002 implementará extracción y revisión de documentos fuente, reutilizando la configuración de campos definida en SPEC001 sin duplicar la administración de paquetes, plantillas, versiones ni campos. El alcance aprobado incluye PDF (con texto seleccionable o escaneados mediante OCR), Excel **XLS/XLSX** y **DOCX como fuente**. La importación de presupuestos comprende selección y agrupación de hojas, datos generales, partidas y conceptos con clave, descripción, unidad, cantidad, precio unitario e importe, así como subtotales, impuestos y totales cuando existan y sean identificables.
 
 Los valores extraídos se presentan como propuestas revisables, con su procedencia cuando sea posible. El usuario corrige, completa y confirma antes de actualizar una **obra y un cliente ya registrados**; los conflictos con datos existentes no se resuelven sobrescribiendo automáticamente. Se conserva el archivo fuente y se reutilizan los datos confirmados, tanto campos simples como colecciones de conceptos presupuestales.
 
-El usuario selecciona un paquete compatible, las plantillas incluidas y una versión disponible por plantilla. El motor resuelve marcadores y colecciones, valida obligatoriedad, previsualiza y genera uno o varios archivos **DOCX y PDF**, respetando la estructura de las plantillas. Incluye almacenamiento, exportación, historial y guardado/reanudación de generaciones parciales, sin alterar resultados históricos.
+La salida de esta SPEC son datos y colecciones confirmados y consultables, sin producir documentos nuevos. La selección de plantillas, resolución para generación, previsualización de salida, producción DOCX/PDF, exportación e historial de generaciones se aplazan a una entrega posterior.
 
 **Fuera de alcance:** alta automática de obras desde documentos; flujos especializados de estimaciones, convenios y cierre; interpretación universal de formatos arbitrarios; integraciones documentales externas. Estos procesos podrán consumir el motor en entregas posteriores.
 
@@ -18,7 +21,7 @@ El usuario selecciona un paquete compatible, las plantillas incluidas y una vers
 
 - **Actor:** usuario interno autorizado. La API del servidor comprueba acceso a la obra y a las operaciones solicitadas.
 - La obra y su cliente existen. Puede iniciarse una generación con datos ya registrados, sin cargar archivos nuevos.
-- Para generar, existe un paquete compatible con cliente y operación, que contiene al menos una plantilla con versión disponible y configuración de campos conocida.
+- La extracción no exige paquete documental, operación ni plantilla seleccionada. SPEC001 no utiliza operación/etapa como ámbito de paquete.
 - El procesamiento se limita a formatos de entrada compatibles y a archivos que superen las validaciones de seguridad, tamaño y legibilidad configuradas. OCR y extracción pueden producir resultados parciales; nunca se consideran confirmados automáticamente.
 - La SPEC anterior es propietaria de la configuración documental; esta SPEC consume sus definiciones y registra qué versiones exactas se usaron.
 
@@ -138,6 +141,6 @@ La obligatoriedad para generar depende de la configuración de cada versión de 
 
 ## 7. Condición de entrega
 
-La entrega se acepta cuando se demuestran, con archivos representativos de la empresa y plantillas configuradas, los recorridos completos: **(1)** analizar PDF digital y escaneado con OCR, revisar y confirmar datos; **(2)** importar un XLS/XLSX de varias hojas, distinguir presupuestos y conservar conceptos estructurados; **(3)** generar y previsualizar documentos DOCX/PDF con campos simples y conceptos repetibles; y **(4)** guardar/reanudar una generación, consultar historial y exportar resultados. Las pruebas deben cubrir además conflictos de datos, campos obligatorios, archivos inválidos, cambios posteriores a la vista previa y fallos sin documentos definitivos incompletos.
+La entrega se aceptará cuando se demuestren, con casos anotados y muestras reales autorizadas: **(1)** analizar PDF digital, escaneado y mixto con OCR donde se requiera; **(2)** leer XLS/XLSX y DOCX fuente, revisar mapeos y conservar presupuestos/conceptos estructurados; **(3)** revisar evidencia, confirmar selectivamente y consultar datos, con permisos y concurrencia; y **(4)** guardar/reanudar una revisión de extracción y recuperarse ante fallos sin aplicar datos automáticamente. Los criterios EX-01–EX-14 del plan concretan la trazabilidad. Los parámetros de calidad, límites y corpus específicos se acuerdan antes de declarar aceptación. No se exige ni implementa generación o exportación de salida.
 
 **Fuentes del proyecto:** ERS_BRICA.docx, DAS_BRICA.docx, DiccionarioDatos_BRICA.docx, SPEC anterior de configuración documental y ejemplos PDF/Excel proporcionados. Los identificadores HU, CA y MD de este documento pertenecen a SPEC-002.

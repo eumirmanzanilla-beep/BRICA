@@ -20,6 +20,7 @@ public final class ClientsApiClient {
     private final ServerSession session;
     private final ObjectMapper mapper;
     private final URI clientsUri;
+    private final java.util.concurrent.ConcurrentHashMap<Long, String> revisions = new java.util.concurrent.ConcurrentHashMap<>();
 
     public ClientsApiClient(URI serverBaseUri) {
 
@@ -104,27 +105,32 @@ public final class ClientsApiClient {
 
     public CompletableFuture<ClientDto> update(
             long id,
+            String expectedRevision,
             String name,
             String legalRepresentative) {
 
+        if (expectedRevision == null) { return CompletableFuture.failedFuture(new IllegalStateException("Consulta el cliente antes de corregirlo.")); }
         return save(
                 "PUT",
                 clientUri(id),
                 name,
-                legalRepresentative
+                legalRepresentative,
+                expectedRevision
         );
     }
 
     // ELIMINAR CLIENTE
 
-    public CompletableFuture<Void> delete(long id) {
+    public CompletableFuture<Void> delete(long id, String expectedRevision) {
 
-        HttpRequest request = HttpRequest.newBuilder(
+        HttpRequest.Builder builder = HttpRequest.newBuilder(
                         clientUri(id)
                 )
                 .timeout(REQUEST_TIMEOUT)
-                .DELETE()
-                .build();
+                .DELETE();
+        String revision = expectedRevision;
+        if (revision == null) { return CompletableFuture.failedFuture(new IllegalStateException("Vuelve a consultar el cliente antes de eliminar.")); }
+        HttpRequest request = builder.header("If-Match", revision).build();
 
         return send(request, body -> null);
     }
@@ -136,6 +142,10 @@ public final class ClientsApiClient {
             URI uri,
             String name,
             String legalRepresentative) {
+        return save(method, uri, name, legalRepresentative, null);
+    }
+
+    private CompletableFuture<ClientDto> save(String method, URI uri, String name, String legalRepresentative, String expectedRevision) {
 
         final String json;
 
@@ -155,7 +165,7 @@ public final class ClientsApiClient {
             );
         }
 
-        HttpRequest request = HttpRequest.newBuilder(uri)
+        HttpRequest.Builder builder = HttpRequest.newBuilder(uri)
                 .timeout(REQUEST_TIMEOUT)
                 .header(
                         "Content-Type",
@@ -167,8 +177,13 @@ public final class ClientsApiClient {
                                 json,
                                 StandardCharsets.UTF_8
                         )
-                )
-                .build();
+                );
+        if (method.equals("PUT")) {
+            String revision = expectedRevision;
+            if (revision == null) { return CompletableFuture.failedFuture(new IllegalStateException("Vuelve a consultar el cliente antes de guardar.")); }
+            builder.header("If-Match", revision);
+        }
+        HttpRequest request = builder.build();
 
         return send(
                 request,
@@ -200,7 +215,12 @@ public final class ClientsApiClient {
             }
 
             try {
-                return parser.parse(response.body());
+                T parsed = parser.parse(response.body());
+                if (parsed instanceof ClientDto client && client.revision() != null) { revisions.put(client.id(), client.revision()); }
+                if (parsed instanceof List<?> clients) {
+                    clients.forEach(value -> { if (value instanceof ClientDto client && client.revision() != null) { revisions.put(client.id(), client.revision()); } });
+                }
+                return parsed;
 
             } catch (JsonProcessingException exception) {
 

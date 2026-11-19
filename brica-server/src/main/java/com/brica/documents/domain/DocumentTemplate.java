@@ -43,7 +43,7 @@ public class DocumentTemplate {
     public void change(String name, String documentType, TemplateState state) {
         requireEditable();
         var errors = new LinkedHashMap<String, String>();
-        InputRules.requiredText(errors, "name", name, 150);
+        InputRules.validName(errors, "name", name, 150);
         InputRules.requiredText(errors, "documentType", documentType, 100);
         if (state == null) { throw new InvalidDataException(Map.of("state", "Selecciona un estado válido.")); }
         InputRules.rejectErrors(errors);

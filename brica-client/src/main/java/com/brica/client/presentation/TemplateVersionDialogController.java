@@ -19,6 +19,7 @@ public class TemplateVersionDialogController {
     @FXML private VBox classifications;
     @FXML private CheckBox staticAccepted;
     @FXML private TextField confirmation;
+    @FXML private TextField versionName;
     @FXML private Button confirmButton;
     private DocumentsApiClient api;
     private long templateId;
@@ -29,12 +30,14 @@ public class TemplateVersionDialogController {
     private UUID confirmationId;
     private Map<Long, Boolean> lastRequired;
     private boolean lastStatic;
+    private String lastName;
     private boolean busy;
     private final Map<Long, ToggleGroup> choices = new LinkedHashMap<>();
 
     void configure(DocumentsApiClient api, long templateId, Stage stage, Runnable completed) {
         this.api = api; this.templateId = templateId; this.stage = stage; this.completed = completed;
         confirmButton.setDisable(true);
+        NameInputRules.install(versionName);
         stage.setOnCloseRequest(event -> { if (busy) { event.consume(); message.setText("Espera el resultado antes de cerrar."); } });
     }
     @FXML private void choose() {
@@ -67,18 +70,21 @@ public class TemplateVersionDialogController {
     }
     @FXML private void confirm() {
         if (review == null) { return; }
+        try { NameInputRules.require(versionName.getText(), 150); }
+        catch (IllegalArgumentException failure) { message.setText(failure.getMessage()); return; }
         var required = new TreeMap<Long, Boolean>();
         for (var entry : choices.entrySet()) {
             if (entry.getValue().getSelectedToggle() == null) { message.setText("Clasifica todos los campos."); return; }
             required.put(entry.getKey(), (Boolean) entry.getValue().getSelectedToggle().getUserData());
         }
         if (review.staticDocument() && !staticAccepted.isSelected()) { message.setText("Confirma expresamente el documento estático."); return; }
-        if (confirmationId == null || !required.equals(lastRequired) || lastStatic != staticAccepted.isSelected()) {
+        if (confirmationId == null || !required.equals(lastRequired) || lastStatic != staticAccepted.isSelected() || !versionName.getText().equals(lastName)) {
             confirmationId = UUID.randomUUID(); lastRequired = Map.copyOf(required); lastStatic = staticAccepted.isSelected();
+            lastName = versionName.getText();
         }
         confirmation.setText(confirmationId.toString());
         stage.hide();
-        run(() -> api.confirm(templateId, file, confirmationId, review, required, staticAccepted.isSelected()), this::showOperation);
+        run(() -> api.confirm(templateId, file, confirmationId, review, required, staticAccepted.isSelected(), lastName), this::showOperation);
     }
     @FXML private void status() {
         if (confirmationId != null) { run(() -> api.registration(confirmationId.toString(), false), this::showOperation); }

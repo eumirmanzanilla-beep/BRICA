@@ -19,6 +19,8 @@ public class RegistrationOperation {
     private String fileHash;
     @Column(name = "original_name", nullable = false, length = 255, updatable = false)
     private String originalName;
+    @Column(name = "version_name", nullable = false, length = 150, updatable = false)
+    private String versionName = "Version_Pendiente";
     @Column(name = "size_bytes", nullable = false, updatable = false)
     private long sizeBytes;
     @JdbcTypeCode(SqlTypes.JSON) @Column(name = "analysis_json", nullable = false, updatable = false)
@@ -47,6 +49,8 @@ public class RegistrationOperation {
         this.requirementsJson = requirementsJson;
     }
     public void complete(int number) { versionNumber = number; status = Status.COMPLETED; }
+    public void nameVersion(String name) { this.versionName = name; }
+    public String getVersionName() { return versionName; }
     public void fail() {
         status = Status.FAILED;
         failure = "No se pudo verificar el archivo o la configuración. Revisa la causa e inicia otra confirmación.";

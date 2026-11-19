@@ -33,14 +33,19 @@ public class RegisterTemplateVersionService {
     }
     public Confirmation confirm(Long templateId, UUID confirmationId, String name, byte[] content,
             String reviewedFingerprint, Map<Long, Boolean> required, boolean staticAccepted) {
+        return confirm(templateId, confirmationId, name, content, reviewedFingerprint, required, staticAccepted, "Version_Nueva");
+    }
+    public Confirmation confirm(Long templateId, UUID confirmationId, String name, byte[] content,
+            String reviewedFingerprint, Map<Long, Boolean> required, boolean staticAccepted, String versionName) {
         if (confirmationId == null || content == null || required == null || required.values().stream().anyMatch(java.util.Objects::isNull)) {
             throw new InvalidDataException(Map.of("confirmation", "Indica confirmación y clasificación completas."));
         }
         var errors = new java.util.LinkedHashMap<String, String>();
-        InputRules.requiredText(errors, "filename", name, 255); InputRules.rejectErrors(errors);
+        InputRules.requiredText(errors, "filename", name, 255);
+        InputRules.validName(errors, "name", versionName, 150); InputRules.rejectErrors(errors);
         String hash = DocumentHashes.sha256(content);
         String requestHash = DocumentHashes.sha256(json.writeValueAsString(List.of(templateId, name, hash,
-                reviewedFingerprint == null ? "" : reviewedFingerprint, new TreeMap<>(required), staticAccepted)));
+                reviewedFingerprint == null ? "" : reviewedFingerprint, new TreeMap<>(required), staticAccepted, versionName)));
         var started = tx.execute(status -> {
             var template = store.template(templateId, true);
             var previous = store.registration(confirmationId, true);
@@ -62,6 +67,7 @@ public class RegisterTemplateVersionService {
             }
             var op = new RegistrationOperation(confirmationId, templateId, requestHash, hash, name, content.length,
                     json.writeValueAsString(reviewed), json.writeValueAsString(new TreeMap<>(required)));
+            op.nameVersion(versionName);
             store.add(op); store.flush();
             return new Started(result(op), null, true);
         });
@@ -93,11 +99,12 @@ public class RegisterTemplateVersionService {
             var required = json.readValue(op.getRequirementsJson(), new TypeReference<Map<Long, Boolean>>() { });
             var linked = fields.findAllById(required.keySet());
             if (linked.size() != required.size()) { op.fail(); return result(op); }
-            int number = store.latest(template.getId()).map(v -> v.getId().number() + 1).orElse(1);
+            int number = store.versions(template.getId()).stream().mapToInt(v -> v.getId().number()).max().orElse(0) + 1;
             var review = json.readValue(op.getAnalysisJson(), TemplateAnalysisService.Review.class);
             var file = new DocumentFile(op.getOriginalName(), files.relativePath(id), op.getSizeBytes(), op.getFileHash());
             store.add(file); store.flush();
             var version = new TemplateVersion(template.getId(), number, file.getId(), review.staticDocument(), op.getAnalysisJson());
+            version.rename(op.getVersionName());
             store.add(version);
             for (var field : linked) { store.add(new TemplateVersionField(version.getId(), field, required.get(field.getId()))); }
             store.flush();

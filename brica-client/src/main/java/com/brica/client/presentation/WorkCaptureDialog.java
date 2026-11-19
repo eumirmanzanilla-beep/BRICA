@@ -20,9 +20,13 @@ final class WorkCaptureDialog {
         var attachments = new ListView<WorksApiClient.Attachment>(); attachments.setPrefHeight(190);
         var kind = new ComboBox<String>(); kind.getItems().setAll("Contrato", "Presupuesto base"); kind.setValue("Contrato");
         var attach = new Button("Adjuntar archivo"); var download = new Button("Guardar copia del seleccionado");
-        var note = new Label("DOCX, PDF o XLSX, hasta 10 MiB. Puedes omitir este paso. Los archivos se guardan sin extraer datos."); note.setWrapText(true);
+        var note = new Label("DOCX, PDF, XLS o XLSX, hasta 10 MiB. Adjuntar conserva el original; Extraer datos abre su revisión y confirmación independiente."); note.setWrapText(true);
         var message = new Label(); message.setWrapText(true);
         var docs = new VBox(10, note, new HBox(8, kind, attach), attachments, download);
+        var extract = new Button("Extraer datos / retomar borrador");
+        extract.setOnAction(e -> { var selected=attachments.getSelectionModel().getSelectedItem(); com.brica.client.presentation.extraction.ExtractionWindow.show(owner,work.id(),work.name(),selected==null?null:selected.id()); });
+        docs.getChildren().add(extract);
+        docs.getChildren().add(WorkAttachmentActions.delete(owner, api, work.id(), attachments, message));
         var form = new WorkInformationForm(work, versioned.information().documentInformation(), fields, true);
         var formScroll = new ScrollPane(form.node); formScroll.setFitToWidth(true);
         var preview = new TextArea(); preview.setEditable(false); preview.setWrapText(true);
@@ -44,7 +48,7 @@ final class WorkCaptureDialog {
         });
         back.setOnAction(event -> { step[0]--; render.run(); }); skip.setOnAction(event -> { step[0] = 1; render.run(); });
         attach.setOnAction(event -> {
-            var chooser = new FileChooser(); chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Documentos de obra", "*.docx", "*.pdf", "*.xlsx"));
+            var chooser = new FileChooser(); chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Documentos de obra", "*.docx", "*.pdf", "*.xls", "*.xlsx"));
             var file = chooser.showOpenDialog(owner); if (file == null) { return; }
             controls.setDisable(true); attach.setDisable(true); message.setText("Adjuntando…");
             api.upload(work.id(), kind.getValue().equals("Contrato") ? "CONTRACT" : "BASE_BUDGET", file.toPath())

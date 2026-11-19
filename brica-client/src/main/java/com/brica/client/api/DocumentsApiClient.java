@@ -62,8 +62,17 @@ public final class DocumentsApiClient {
     public CompletableFuture<List<Version>> versions(long id) { return request("GET", "/document-templates/" + id + "/versions", null, null, new TypeReference<>() { }); }
     public CompletableFuture<Review> analyze(long id, Path file) { return multipart("/document-templates/" + id + "/analyses", file, null, new TypeReference<>() { }); }
     public CompletableFuture<Operation> confirm(long id, Path file, UUID confirmationId, Review review, Map<Long, Boolean> required, boolean staticAccepted) {
+        return confirm(id, file, confirmationId, review, required, staticAccepted, "Version_Nueva");
+    }
+    public CompletableFuture<Operation> confirm(long id, Path file, UUID confirmationId, Review review, Map<Long, Boolean> required, boolean staticAccepted, String name) {
         return multipart("/document-templates/" + id + "/versions", file, Map.of("confirmationId", confirmationId.toString(),
-                "fingerprint", review.fingerprint(), "required", required, "staticAccepted", staticAccepted), new TypeReference<>() { });
+                "fingerprint", review.fingerprint(), "required", required, "staticAccepted", staticAccepted, "name", name), new TypeReference<>() { });
+    }
+    public CompletableFuture<Version> renameVersion(long id, int number, String name) {
+        return request("PUT", "/document-templates/" + id + "/versions/" + number + "/name", Map.of("name", name), null, new TypeReference<>() { });
+    }
+    public CompletableFuture<Void> deleteVersion(long id, int number) {
+        return request("DELETE", "/document-templates/" + id + "/versions/" + number, null, null, new TypeReference<>() { });
     }
     public CompletableFuture<Operation> registration(String id, boolean recover) {
         UUID.fromString(id);

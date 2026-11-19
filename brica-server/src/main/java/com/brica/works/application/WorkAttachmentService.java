@@ -57,4 +57,9 @@ public class WorkAttachmentService {
                 value.getMimeType(), value.getSizeBytes(), value.getSha256()); }
     }
     public record Download(String name, String mime, byte[] content) { }
+    @PreAuthorize("@accessPolicy.hasPermission('WORKS_WRITE')")
+    public void delete(Long workId, Long id) {
+        work(workId);
+        store.find(id, workId).orElseThrow(() -> new DocumentException(404, "WORK_ATTACHMENT_NOT_FOUND", "El archivo no pertenece a esta obra o está eliminado.")).delete();
+    }
 }

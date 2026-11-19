@@ -24,9 +24,21 @@ public final class NavigationFxSmoke {
                 @SuppressWarnings("unchecked") var table = (TableView<com.brica.client.api.WorkDto>) member(loader.getController(), "worksTable");
                 check(table.getColumns().stream().map(TableColumn::getText).toList().equals(List.of("Cliente", "Nombre", "Descripción", "Acciones")), "Columnas mínimas");
                 check(!((Button) member(loader.getController(), "previousPageButton")).isVisible(), "Sin paginación innecesaria");
-                var sample = new com.brica.client.api.WorkDto(99L, 1L, "Obra mínima", null, "Descripción", null, null);
+                var sample = new com.brica.client.api.WorkDto(99L, 1L, "Obra_minima", null, "Descripción", null, null);
                 table.getItems().add(sample); root.applyCss(); root.layout();
                 check(root.lookupAll(".work-icon-button").size() >= 4, "Cuatro acciones pequeñas por obra");
+                for (var control : root.lookupAll(".work-icon-button")) {
+                    var button = (Button) control;
+                    check(button.getGraphic() instanceof javafx.scene.shape.SVGPath && button.getTooltip() != null, "Iconos vectoriales con ayuda");
+                }
+                var name = new TextField(); NameInputRules.install(name);
+                name.replaceText(0, 0, "Obra_Ñ1"); check(name.getText().equals("Obra_Ñ1"), "Aceptar ñ");
+                name.replaceText(0, name.getLength(), "Obrá mala"); check(name.getText().equals("Obra_Ñ1"), "Rechazar pegado inválido sin transformarlo");
+                name.replaceText(0, name.getLength(), "_Mal"); check(name.getText().equals("Obra_Ñ1"), "Rechazar _ inicial");
+                var date = WorkDatePicker.create(null); date.setValue(java.time.LocalDate.of(2026, 2, 1));
+                check(WorkDatePicker.read(date).equals(java.time.LocalDate.of(2026, 2, 1)), "Selección de calendario");
+                date.getEditor().setText("31/02/2026");
+                try { WorkDatePicker.read(date); throw new AssertionError("Fecha inválida aceptada"); } catch (java.time.format.DateTimeParseException expected) { }
                 var information = new com.brica.client.api.WorksApiClient.DocumentInformation(null, null, null, null, null,
                         null, null, null, "IN_PROGRESS", java.util.Map.of());
                 WorkCaptureDialog.show(owner, new com.brica.client.api.WorksApiClient(java.net.URI.create("http://127.0.0.1:9")),

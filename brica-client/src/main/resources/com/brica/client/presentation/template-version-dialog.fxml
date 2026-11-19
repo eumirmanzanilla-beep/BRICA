@@ -6,6 +6,8 @@
       fx:controller="com.brica.client.presentation.TemplateVersionDialogController" fx:id="pane" spacing="10" stylesheets="@styles/app.css" styleClass="content-card">
     <padding><Insets top="18" right="18" bottom="18" left="18"/></padding>
     <Label text="Revisar y registrar una versión" styleClass="content-title"/>
+    <Label text="Nombre de la versión (independiente del número y del archivo)"/>
+    <TextField fx:id="versionName"/>
     <HBox spacing="10"><Button text="Seleccionar DOCX y analizar" onAction="#choose"/><Label fx:id="filename" wrapText="true"/></HBox>
     <TextArea fx:id="diagnostics" editable="false" wrapText="true" prefHeight="140"/>
     <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"><content><VBox fx:id="classifications" spacing="14"/></content></ScrollPane>

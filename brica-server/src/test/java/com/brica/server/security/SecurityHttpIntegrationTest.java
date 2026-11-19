@@ -58,7 +58,7 @@ class SecurityHttpIntegrationTest {
             boolean administrator = role.equals("Gerencial") || role.equals("Administrativo");
             assertEquals(administrator ? 201 : 403, session.json("POST", "/reference-fields", fieldBody(), true).statusCode(), role);
             assertEquals(administrator ? 201 : 403, session.json("POST", "/clients",
-                    "{\"name\":\"Cliente prueba\",\"legalRepresentative\":\"Representante\"}", true).statusCode(), role);
+                    "{\"name\":\"Cliente_prueba\",\"legalRepresentative\":\"Representante\"}", true).statusCode(), role);
         }
     }
 

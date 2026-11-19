@@ -16,7 +16,7 @@ public final class WorkRevision {
             Object[] values = {work.getId(), work.getClient().getId(), work.getName(),
                     work.getLocation(), work.getDescription(), work.getStartDate(), work.getEndDate(),
                     work.getContractNumber(), work.getContractor(), work.getContractedAmount(),
-                    work.getAmountBeforeTax(), work.getTaxAmount(), work.getActualEndDate(), work.getStatus()};
+                    work.getAmountBeforeTax(), work.getTaxAmount(), work.getActualEndDate(), work.getStatus(), work.getDocumentName()};
             for (Object value : values) {
                 update(digest, value);
             }

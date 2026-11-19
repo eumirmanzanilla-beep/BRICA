@@ -75,4 +75,13 @@ public class DocumentInformationService {
         return works.save(work);
     }
     public record CompleteInformation(String name, String location, String description, Information documentInformation) { }
+    @Transactional
+    public Work updateDocumentName(Long id,String expectedEtag,String value) {
+        InputRules.positiveId("id",id);
+        if(expectedEtag==null || expectedEtag.isBlank()) { throw new MissingPreconditionException(); }
+        var work=works.findForUpdate(id).orElseThrow(()->new WorkNotFoundException(id));
+        if(work.getClient().getDeletedAt()!=null) { throw new WorkNotFoundException(id); }
+        if(!WorkRevision.etag(work).equals(expectedEtag)) { throw new StaleWorkException(); }
+        work.changeDocumentName(value); return works.save(work);
+    }
 }

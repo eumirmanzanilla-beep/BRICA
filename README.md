@@ -19,7 +19,7 @@ El repositorio ya contiene:
 - Clientes: registro, listado paginado, consulta, actualización y eliminación lógica.
 - Obras: registro, listado paginado, consulta, corrección de información general y eliminación lógica. La corrección utiliza `ETag` / `If-Match` para detectar cambios concurrentes.
 - Contratos: registro mediante `POST /api/v1/contracts`, asociado a una obra, con datos JSON almacenados en PostgreSQL. No incluye carga ni extracción de PDF.
-- Persistencia JPA, validaciones del servidor, errores `ProblemDetail` y migraciones Flyway V1–V13.
+- Persistencia JPA, validaciones del servidor, errores `ProblemDetail` y migraciones Flyway V1–V14.
 - Autenticación por sesión de servidor, BCrypt coste 10, CSRF y autorización por permisos vigentes en los casos de uso de negocio. Inicio/cierre de sesión en JavaFX y administración local inicial de cuentas/roles.
 - Configuración documental por API y JavaFX: campos fijos y adicionales tipados, fechas españolas e importes precisos, análisis DOCX mediante docxtpl, versiones inmutables, recuperación/idempotencia, paquetes por obra/cliente con borradores y concurrencia, opciones y resolución por tipo documental.
 - Obras con alta mínima, edición completa con concurrencia, asistente de adjuntos/información/revisión y consulta. Adjuntos DOCX/PDF/XLSX persistentes de hasta 10 MiB, sin extracción automática.
@@ -148,6 +148,10 @@ La [Spec 001](specs/001/spec.md) define el catálogo de campos, la consulta de v
 El [seguimiento](specs/001/review.md) separa implementación, evidencia automática y aceptación pendiente. El [recorrido manual](specs/001/manual-test.md) cubre permisos, estados, análisis, versiones, borradores, concurrencia y valores. Los documentos construidos para pruebas no son formatos operativos aprobados.
 
 La navegación habitual es **Obras**, **Clientes** y **Catálogo de campos**. Una obra se crea con cliente, nombre y descripción; ubicación y fechas son opcionales y se completan después. Sus acciones por fila permiten editar, seguir el asistente de documentos/información/revisión, consultar toda la información y configurar paquetes → plantillas → versiones. El botón Generar documentos permanece sin implementación en esta iteración.
+
+Los nombres de cliente/obra/paquete/plantilla/versión solo admiten letras sin acentos (ñ/Ñ sí), números y `_`, con al menos una letra y sin `_` inicial. La captura filtra caracteres inválidos y el servidor valida la regla completa. Las fechas de obra tienen calendario y ninguna terminación puede ser anterior al inicio. Los paquetes de cliente se reutilizan en sus obras; los exclusivos de obra se identifican también en la consulta del cliente sin habilitarse para otras obras. Pueden agregarse varias plantillas a borradores y confirmados, preparando primero una versión elegible para no invalidar la composición confirmada.
+
+Las versiones tienen nombre independiente de su número/archivo, se pueden renombrar y eliminar lógicamente con confirmación. La última versión no eliminada se usa para nuevas selecciones, sin reutilizar números ni perder el historial. Los adjuntos de obra también tienen eliminación lógica con confirmación; no se purgan sus archivos físicos.
 
 Desde una obra se crean paquetes/plantillas exclusivos de ella; desde Clientes → Paquetes documentales, exclusivos de ese cliente y enlazados automáticamente. Los campos fijos se predefinen internamente y el catálogo crea adicionales tipados sin pedir elegir rutas de origen; el nombre visible coincide con la clave. El asistente admite adjuntos DOCX, PDF y XLSX de hasta 10 MiB, sin extracción; las plantillas siguen siendo DOCX con límite de análisis de 1 MiB.
 

@@ -17,6 +17,11 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+    @ExceptionHandler({org.springframework.dao.OptimisticLockingFailureException.class, jakarta.persistence.OptimisticLockException.class})
+    public ProblemDetail concurrentWrite(Exception exception) {
+        return problem(HttpStatus.PRECONDITION_FAILED, "STALE_DESTINATION", "La información cambió",
+                "Otro escritor modificó el destino durante la operación.", "Consulta de nuevo y conserva la captura para revisar sus diferencias.");
+    }
     @ExceptionHandler(com.brica.documents.domain.DocumentRuleException.class)
     public ProblemDetail documentRule(com.brica.documents.domain.DocumentRuleException exception) {
         return problem(HttpStatus.CONFLICT, exception.code(), "Configuración documental",

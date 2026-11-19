@@ -163,7 +163,7 @@ class ContractDockerHttpIntegrationTest {
     }
 
     private long createClient() throws Exception {
-        var response = send("POST", "/clients", "{\"name\":\"Cliente de prueba\",\"legalRepresentative\":\"Representante\"}", null);
+        var response = send("POST", "/clients", "{\"name\":\"Cliente_prueba\",\"legalRepresentative\":\"Representante\"}", null);
         assertEquals(201, response.statusCode(), response.body());
         return JSON.readTree(response.body()).path("id").asLong();
     }
@@ -171,7 +171,7 @@ class ContractDockerHttpIntegrationTest {
     private long createWork() throws Exception {
         long client = createClient();
         var response = send("POST", "/works", """
-                {"clientId":%d,"name":"Work inicial","location":"Mérida","startDate":"2026-01-01","endDate":"2026-12-31"}
+                {"clientId":%d,"name":"Work_inicial","location":"Mérida","startDate":"2026-01-01","endDate":"2026-12-31"}
                 """.formatted(client), null);
         assertEquals(201, response.statusCode(), response.body());
         return JSON.readTree(response.body()).path("id").asLong();

@@ -12,15 +12,7 @@ import com.brica.clients.domain.Client;
 import com.brica.server.shared.validation.domain.InputRules;
 import com.brica.server.shared.validation.domain.InvalidDataException;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "works")
@@ -38,6 +30,9 @@ public class Work {
     @Column(name = "name", nullable = false, length = 255)
     private String name;
 
+    @Column(name = "document_name", length = 1000)
+    private String documentName;
+
     @Column(name = "location", length = 255)
     private String location;
 
@@ -52,19 +47,26 @@ public class Work {
 
     @Column(name = "contract_number", length = 50)
     private String contractNumber;
+
     @Column(name = "contractor", length = 200)
     private String contractor;
+
     @Column(name = "contracted_amount", columnDefinition = "numeric")
     private BigDecimal contractedAmount;
+
     @Column(name = "amount_before_tax", columnDefinition = "numeric")
     private BigDecimal amountBeforeTax;
+
     @Column(name = "tax_amount", columnDefinition = "numeric")
     private BigDecimal taxAmount;
+
     @Column(name = "actual_end_date")
     private LocalDate actualEndDate;
     @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+
     @Column(name = "status", nullable = false, length = 20)
     private WorkStatus status = WorkStatus.IN_PROGRESS;
+
     @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
     @Column(name = "additional_values", nullable = false, columnDefinition = "jsonb")
     private Map<String, String> additionalValues = new LinkedHashMap<>();
@@ -76,21 +78,21 @@ public class Work {
     }
 
     public Work(
-            Client client,
-            String name,
-            String location,
-            String description,
-            LocalDate startDate,
-            LocalDate endDate) {
+        Client client,
+        String name,
+        String location,
+        String description,
+        LocalDate startDate,
+        LocalDate endDate) {
 
         validate(name, location, startDate, endDate);
 
         if (client == null) {
             throw new InvalidDataException(
-                    java.util.Map.of(
-                            "clientId",
-                            "El cliente es obligatorio."
-                    )
+                java.util.Map.of(
+                    "clientId",
+                    "El cliente es obligatorio."
+                )
             );
         }
 
@@ -103,9 +105,9 @@ public class Work {
     }
 
     public void correctGeneralInformation(
-            String name,
-            String location,
-            String description) {
+        String name,
+        String location,
+        String description) {
 
         validate(name, location, startDate, endDate);
 
@@ -114,14 +116,39 @@ public class Work {
         this.description = description;
     }
 
-    public void updateDocumentInformation(String contractNumber, String contractor, BigDecimal contractedAmount,
-            BigDecimal amountBeforeTax, BigDecimal taxAmount, LocalDate startDate, LocalDate endDate, LocalDate actualEndDate, WorkStatus status,
-            Map<String, String> additionalValues) {
+    public void updateDocumentInformation(
+        String contractNumber,
+        String contractor,
+        BigDecimal contractedAmount,
+        BigDecimal amountBeforeTax,
+        BigDecimal taxAmount,
+        LocalDate startDate,
+        LocalDate endDate,
+        LocalDate actualEndDate,
+        WorkStatus status,
+        Map<String, String> additionalValues) {
+
         var errors = new LinkedHashMap<String, String>();
-        if (contractNumber != null && contractNumber.length() > 50) { errors.put("contractNumber", "Máximo 50 caracteres."); }
-        if (contractor != null && contractor.length() > 200) { errors.put("contractor", "Máximo 200 caracteres."); }
-        if (status == null) { errors.put("status", "Selecciona el estado de la obra."); }
-        if (additionalValues == null) { errors.put("additionalValues", "Indica los valores adicionales."); }
+
+        if (contractNumber != null && contractNumber.length() > 50) {
+            errors.put("contractNumber", "Máximo 50 caracteres.");
+        }
+
+        if (contractor != null && contractor.length() > 200) {
+            errors.put("contractor", "Máximo 200 caracteres.");
+        }
+
+        if (status == null) {
+            errors.put("status", "Selecciona el estado de la obra.");
+        }
+
+        if (additionalValues == null) {
+            errors.put("additionalValues", "Indica los valores adicionales.");
+        }
+        if (startDate != null && actualEndDate != null && actualEndDate.isBefore(startDate)) {
+            errors.put("actualEndDate", "La terminación real no puede ser anterior al inicio.");
+        }
+
         InputRules.rejectErrors(errors);
         validate(name, location, startDate, endDate);
         this.contractNumber = contractNumber;
@@ -138,26 +165,28 @@ public class Work {
 
     public void markDeleted(OffsetDateTime deletedAt) {
         this.deletedAt = Objects.requireNonNull(
-                deletedAt,
-                "La fecha de eliminación es obligatoria."
+            deletedAt,
+            "La fecha de eliminación es obligatoria."
         );
     }
 
     private static void validate(
-            String name,
-            String location,
-            LocalDate start,
-            LocalDate end) {
+        String name,
+        String location,
+        LocalDate start,
+        LocalDate end) {
 
         var errors = new LinkedHashMap<String, String>();
 
-        InputRules.requiredText(errors, "name", name, 255);
-        if (location != null && location.length() > 255) { errors.put("location", "Máximo 255 caracteres."); }
+        InputRules.validName(errors, "name", name, 255);
+        if (location != null && location.length() > 255) {
+            errors.put("location", "Máximo 255 caracteres.");
+        }
 
         if (start != null && end != null && end.isBefore(start)) {
             errors.put(
-                    "endDate",
-                    "La fecha de terminación no puede ser anterior al inicio."
+                "endDate",
+                "La fecha de terminación no puede ser anterior al inicio."
             );
         }
 
@@ -166,6 +195,11 @@ public class Work {
 
     public Long getId() {
         return id;
+    }
+
+    public String getDocumentName() { return documentName; }
+    public void changeDocumentName(String value) {
+        documentName = com.brica.server.shared.validation.domain.DocumentNameRules.normalize(value);
     }
 
     public Client getClient() {
@@ -196,12 +230,35 @@ public class Work {
         return deletedAt;
     }
 
-    public String getContractNumber() { return contractNumber; }
-    public String getContractor() { return contractor; }
-    public BigDecimal getContractedAmount() { return contractedAmount; }
-    public BigDecimal getAmountBeforeTax() { return amountBeforeTax; }
-    public BigDecimal getTaxAmount() { return taxAmount; }
-    public LocalDate getActualEndDate() { return actualEndDate; }
-    public WorkStatus getStatus() { return status; }
-    public Map<String, String> getAdditionalValues() { return Map.copyOf(additionalValues); }
+    public String getContractNumber() {
+        return contractNumber;
+    }
+
+    public String getContractor() {
+        return contractor;
+    }
+
+    public BigDecimal getContractedAmount() {
+        return contractedAmount;
+    }
+
+    public BigDecimal getAmountBeforeTax() {
+        return amountBeforeTax;
+    }
+
+    public BigDecimal getTaxAmount() {
+        return taxAmount;
+    }
+
+    public LocalDate getActualEndDate() {
+        return actualEndDate;
+    }
+
+    public WorkStatus getStatus() {
+        return status;
+    }
+
+    public Map<String, String> getAdditionalValues() {
+        return Map.copyOf(additionalValues);
+    }
 }

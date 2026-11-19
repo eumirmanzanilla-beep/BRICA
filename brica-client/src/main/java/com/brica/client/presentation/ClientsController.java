@@ -235,6 +235,7 @@ public final class ClientsController {
                 executeMutation(
                         api.update(
                                 selected.id(),
+                                selected.revision(),
                                 input.name(),
                                 input.legalRepresentative()
                         ),
@@ -289,7 +290,7 @@ public final class ClientsController {
                         : currentPage;
 
         executeMutation(
-                api.delete(selected.id()),
+                api.delete(selected.id(), selected.revision()),
                 "Cliente eliminado correctamente.",
                 targetPage
         );
@@ -348,6 +349,7 @@ public final class ClientsController {
         );
 
         TextField nameField = new TextField();
+        NameInputRules.install(nameField);
         nameField.setPromptText("Nombre del cliente");
         nameField.setPrefColumnCount(28);
         nameField.getStyleClass().add("form-field");
@@ -427,7 +429,7 @@ public final class ClientsController {
 
         saveButton.disableProperty().bind(
                 Bindings.createBooleanBinding(
-                        () -> !validText(nameField.getText())
+                        () -> !NameInputRules.valid(nameField.getText(), 255)
                                 || !validText(
                                         representativeField.getText()
                                 ),

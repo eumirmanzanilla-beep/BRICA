@@ -64,7 +64,7 @@ class ContractPersistenceIntegrationTest {
         // Arrange: crear un cliente y una obra reales en PostgreSQL.
         Client client = clientRepository.saveAndFlush(
                 new Client(
-                        "Cliente de integración",
+                        "Cliente_integracion",
                         "Representante de integración"
                 )
         );
@@ -72,7 +72,7 @@ class ContractPersistenceIntegrationTest {
         Work work = workRepository.saveAndFlush(
                 new Work(
                         client,
-                        "Obra de integración",
+                        "Obra_integracion",
                         "Mérida, Yucatán",
                         "Obra creada para probar la persistencia del contrato",
                         LocalDate.of(2026, 1, 1),
