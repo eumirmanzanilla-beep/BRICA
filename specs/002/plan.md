@@ -74,19 +74,19 @@ Los estados indican presencia de código observada, no aceptación ni prueba eje
 
 ## 6. Verificación y trazabilidad
 
-Los identificadores EX siguientes son los criterios históricos del plan, preservados sin cambiar su significado:
+Los identificadores EX siguientes son los criterios históricos del plan, preservados sin cambiar su significado. Las referencias CA corresponden a la numeración actual de la spec.
 
 | Criterio | Resultado verificable | Referencias | Fases |
 |---|---|---|---|
 | EX-01 | PDF digital/escaneado/mixto produce candidatos y evidencia, sin escritura de negocio. | CA-01–CA-04, MD-001–MD-002; P07–P09 | F3–F4, F10 |
-| EX-02 | XLS/XLSX muestra hojas, permite rangos/columnas, distingue conceptos/resúmenes y conserva resultados de fórmula sin evaluarla. | CA-06–CA-10, MD-003; P10–P12 | F5, F9–F10 |
-| EX-03 | DOCX fuente se lee sin requerir marcadores; su original y analizador de plantillas quedan intactos. | P02-C, P09-A | F5, F10 |
-| EX-04 | Mapeo asistido y precedencia conservan alternativas; unknowns solo se asocian a adicionales existentes compatibles. | CA-03/CA-11–CA-13; P04–P06/P19 | F6, F9–F10 |
+| EX-02 | XLS/XLSX muestra hojas, permite rangos/columnas, distingue conceptos/resúmenes y conserva resultados de fórmula sin evaluarla. | CA-08–CA-12/CA-14–CA-15, MD-003; P10–P12 | F5, F9–F10 |
+| EX-03 | DOCX fuente se lee sin requerir marcadores; su original y analizador de plantillas quedan intactos. | CA-13; P02-C, P09-A | F5, F10 |
+| EX-04 | Mapeo asistido y precedencia conservan alternativas; unknowns solo se asocian a adicionales existentes compatibles. | CA-03/CA-06/CA-18–CA-20/CA-28; P04–P06/P19 | F6, F9–F10 |
 | EX-05 | Denominación literal y nombre técnico coexisten; claves/plantillas antiguas no cambian significado. | P16-B y SPEC001 | F2, F7, F10 |
-| EX-06 | Fechas y decimales se interpretan con configuración explícita; diferencias de cálculo no sobrescriben importes fuente. | CA-08/CA-13; P17–P18 | F6, F8, F10 |
-| EX-07 | Cada destino confirma solo lo aceptado, con permiso, ETag, auditoría y justificación cuando corresponde. | CA-11–CA-14, MD-004; P20–P23/P28 | F7–F10 |
+| EX-06 | Fechas y decimales se interpretan con configuración explícita; diferencias de cálculo no sobrescriben importes fuente. | CA-10/CA-16–CA-17/CA-20; P17–P18 | F6, F8, F10 |
+| EX-07 | Cada destino confirma solo lo aceptado, con permiso, ETag, auditoría y justificación cuando corresponde. | CA-18–CA-21/CA-25/CA-29–CA-30, MD-004; P20–P23/P28 | F7–F10 |
 | EX-08 | Confirmar obra no confirma cliente/presupuestos; cancelar no revierte bloques ya aplicados. | P22-B/P26-B | F7–F10 |
-| EX-09 | Presupuestos conservan partes/alternativas, revisiones inmutables, orden y principal explícita; conceptos consultables paginados. | CA-09/CA-15, MD-005; P12–P14/P32 | F8–F10 |
+| EX-09 | Presupuestos conservan partes/alternativas, revisiones inmutables, orden y principal explícita; conceptos consultables paginados. | CA-11/CA-14/CA-22/CA-27, MD-005; P12–P14/P32 | F8–F10 |
 | EX-10 | Reintento idéntico devuelve el resultado original; reanálisis y nueva intención no duplican confirmaciones ni destruyen decisiones previas. | P24-A/P31-A | F3, F6–F8, F10 |
 | EX-11 | Cerrar cliente/reiniciar servidor conserva revisión y recupera trabajos sin aplicar datos automáticamente. | P25-B/P26-B | F3, F9–F11 |
 | EX-12 | Fuente eliminada lógicamente conserva evidencia protegida; pertenencia y límites impiden accesos/lecturas indebidos. | CA-05, MD-014; P29–P31 | F1, F3, F10–F11 |

@@ -13,7 +13,7 @@ Un usuario autorizado analiza documentos de una obra existente, revisa sus datos
 ## 1. Contexto y fuentes
 
 - Los documentos de entrada contienen información contractual y presupuestal que debe revisarse antes de incorporarla. El resultado es información consultable, no documentos generados.
-- Fuentes: decisiones P01–P33 y DP-01–DP-38 registradas en el plan y seguimiento, [Spec 001](../001/spec.md), ERS/DAS/Diccionario en `docs/informative/`, código, configuración y migraciones.
+- Fuentes: [Spec 001](../001/spec.md), ERS/DAS/Diccionario en `docs/informative/`, código, configuración y migraciones.
 - Código presente: módulos `extraction` y `budgets` del servidor, ventana JavaFX, lectores y migraciones V15–V18. Su presencia no demuestra aceptación ni operación segura en un despliegue concreto.
 - Los documentos iniciales y la versión histórica de esta spec contemplaban generación y etapas. El alcance aprobado de esta entrega no las incluye. El Diccionario inicial no define el modelo completo de partidas y revisiones.
 
@@ -27,92 +27,125 @@ La extracción no requiere paquete, etapa ni versión de plantilla. Un DOCX fuen
 
 ## 3. Actores, permisos y precondiciones
 
-| Actor / acción | Permiso y precondición |
-|---|---|
-| Consultar trabajo y evidencia | `WORKS_READ`; obra y cliente existentes. La lectura de datos de cliente requiere `CLIENTS_READ`. |
-| Crear, revisar, cancelar; confirmar obra o presupuesto | `WORKS_READ` y `WORKS_WRITE`. Las fuentes deben pertenecer a la obra. |
-| Confirmar cliente | `WORKS_READ`, `CLIENTS_READ` y `CLIENTS_WRITE`; advertir que el cliente es compartido. |
-| Administrar el catálogo documental | Permisos de Spec 001; extraer no concede administración del catálogo. |
+| Actor | Permiso necesario | Precondiciones / límites |
+|---|---|---|
+| Usuario que consulta trabajos y evidencia | `WORKS_READ`; `CLIENTS_READ` para leer datos de cliente. | Obra y cliente existentes. |
+| Usuario que crea, revisa o cancela trabajos y confirma obra o presupuesto | `WORKS_READ` y `WORKS_WRITE`. | Las fuentes deben pertenecer a la obra. |
+| Usuario que confirma datos de cliente | `WORKS_READ`, `CLIENTS_READ` y `CLIENTS_WRITE`. | Se advierte que el cliente es compartido. |
+| Administrador del catálogo documental | Permisos de [Spec 001](../001/spec.md). | La extracción no concede permisos de administración del catálogo. |
 
 El servidor autoriza cada operación; ocultar controles no reemplaza la autorización. No se añade asignación usuario–obra ni permisos nuevos por esta spec.
 
 ## 4. Reglas y datos
 
-- Una lectura produce candidatos, no datos confirmados. Conservar fuente/hash, ubicación, literal, valor propuesto, alternativas y diagnóstico; no elegir por orden de llegada.
-- Precedencia v1 **como sugerencia**: contrato para número, contratista, fechas contractuales y montos contratado/antes de impuestos/impuesto; Excel seleccionado para conceptos, unidades, cantidades y precios. En otros campos o ante contradicción en la fuente preferida, no elegir automáticamente.
-- Permitir mapeo a destinos admitidos y adicionales existentes; no escribir IDs/relaciones, crear campos globales ni ejecutar rutas o expresiones del archivo. Perfiles de obra declarativos, opcionales y versionados solo sugieren mapeos.
-- Conservar nombres técnicos y claves históricas; las denominaciones documentales son atributos separados. No inferir una modificación contractual: completar o corregir captura requiere decisión humana; una corrección de un valor existente exige motivo y justificación de 10–2000 caracteres. Los convenios quedan fuera.
-- Seleccionar y agrupar explícitamente hojas como partes, resúmenes o alternativas. Conceptos ordenados y códigos textuales repetibles; descripción obligatoria; clave, unidad, cantidad, precio e importe pueden faltar. Ausencia no es cero. No sumar automáticamente notas o resúmenes como conceptos.
-- Conservar fórmula, caché y formato sin evaluar fórmulas, macros o vínculos. Caché ausente, cero, error y posible dato obsoleto son distintos. Fechas y números ambiguos necesitan convención explícita; no inventar moneda, impuesto ni precisión perdida de XLS.
-- `CONTROL_V1` compara cantidad × precio con decimales exactos, redondea cada concepto a dos decimales `HALF_UP` y suma controles; conserva el declarado y la suma exacta. Una diferencia no nula se muestra y requiere justificación explícita; no se corrige el original. Valores inválidos o incoherentes bloquean el bloque afectado.
-- Obra, cliente y cada presupuesto se confirman por separado. `If-Match`, revisión del destino y clave idempotente evitan sobrescrituras y duplicados; cancelar lo pendiente no revierte bloques confirmados. Revisiones de presupuesto confirmadas son inmutables; la principal se elige expresamente.
-- Estados técnicos `QUEUED`, `RUNNING`, `COMPLETED`, `PARTIAL`, `FAILED`, `CANCELLED` son independientes de `DRAFT`, `CONFIRMED`, `CANCELLED` de la revisión. Lectura terminada no significa aceptación; reanálisis crea otro trabajo y conserva el anterior.
-- La fuente original se conserva y verifica antes de confirmar. No hay purga automática aprobada de fuentes, borradores o auditoría; el scratch de cada ejecución es temporal. Los límites y el aislamiento requeridos están en [plan.md](plan.md).
+- **Candidatos y evidencia:** la lectura no confirma datos. Conserva fuente/hash, ubicación, literal, propuesta, alternativas y diagnóstico; no elige por orden de llegada.
+- **Precedencia sugerida:** contrato para número, contratista, fechas y montos contractuales, antes de impuestos e impuesto; Excel seleccionado para conceptos, unidades, cantidades y precios. Otros campos o contradicciones en la fuente preferida no se eligen automáticamente.
+- **Mapeo:** solo destinos admitidos y adicionales existentes; no escribir IDs/relaciones, crear campos globales ni ejecutar rutas o expresiones del archivo. Los perfiles de obra declarativos, opcionales y versionados solo sugieren mapeos.
+- **Correcciones:** conservar nombres técnicos y claves históricas; las denominaciones documentales son atributos separados. Completar o corregir requiere decisión humana; corregir un valor existente exige motivo y justificación de 10–2000 caracteres. No se infiere una modificación contractual ni se gestionan convenios.
+- **Hojas y conceptos:** agrupar explícitamente hojas como partes, resúmenes o alternativas. Los conceptos son ordenados, admiten códigos textuales repetidos y requieren descripción; clave, unidad, cantidad, precio e importe pueden faltar. Ausencia no es cero; notas y resúmenes no se suman automáticamente como conceptos.
+- **Interpretación:** conservar fórmula, caché y formato sin evaluar fórmulas, macros ni vínculos. Distinguir caché ausente, cero, error y posible obsolescencia. Fechas y números ambiguos requieren convención explícita; no inventar moneda, impuesto ni precisión perdida de XLS.
+- **Control de importes:** `CONTROL_V1` calcula cantidad × precio con decimales exactos, redondea cada concepto a dos decimales `HALF_UP` y suma controles. Conserva total declarado y suma exacta; muestra toda diferencia no nula y exige justificación, sin corregir el original. Valores inválidos o incoherentes bloquean el bloque afectado.
+- **Confirmación e historial:** obra, cliente y cada presupuesto se confirman por separado con `If-Match`, revisión del destino y clave idempotente. Cancelar lo pendiente no revierte bloques confirmados; las revisiones confirmadas de presupuesto son inmutables y la principal se elige expresamente.
+- **Estados:** los estados técnicos `QUEUED`, `RUNNING`, `COMPLETED`, `PARTIAL`, `FAILED`, `CANCELLED` son independientes de `DRAFT`, `CONFIRMED`, `CANCELLED` de revisión. Terminar la lectura no implica aceptación; reanalizar crea otro trabajo y conserva el anterior.
+- **Retención y límites:** conservar y verificar la fuente original antes de confirmar. No hay purga automática aprobada de fuentes, borradores o auditoría; el scratch es temporal. Los límites y el aislamiento requeridos están en [plan.md](plan.md).
 
 ## 5. Requisitos funcionales
 
-| ID | Requisito | Prioridad / fuente |
-|---|---|---|
-| MD-001 | Validar y analizar PDF, XLS, XLSX y DOCX fuente asociados a la obra. | Must · P02/P29 |
-| MD-002 | Leer PDF digital y aplicar OCR local donde corresponda, con procedencia y advertencias. | Must · P07–P09 |
-| MD-003 | Proponer y mapear hojas, partidas, conceptos y montos sin fusionar alternativas. | Must · P10–P15 |
-| MD-004 | Revisar, corregir, capturar manualmente, excluir y confirmar por destino. | Must · P01/P21–P23 |
-| MD-005 | Conservar fuentes y presupuestos vinculados, con historial y evidencia. | Must · P13–P15/P30–P31 |
-| MD-014 | Autorizar en servidor, limitar recursos y comunicar fallos recuperables. | Must · P28–P31 |
+| ID | Requisito | Prioridad | Fuente |
+|---|---|---|---|
+| MD-001 | Validar y analizar PDF, XLS, XLSX y DOCX fuente asociados a la obra. | Must | ERS RF-04; P02/P29 para formatos y pertenencia. |
+| MD-002 | Leer PDF digital y aplicar OCR local donde corresponda, con procedencia y advertencias. | Must | ERS RF-04; P07–P09 para OCR y evidencia. |
+| MD-003 | Proponer y mapear hojas, partidas, conceptos y montos sin fusionar alternativas. | Must | ERS RF-04; P10–P15 para mapeo y alternativas. |
+| MD-004 | Revisar, corregir, capturar manualmente, excluir y confirmar por destino. | Must | ERS RF-03/RF-05; RF-09 solo en cuanto a corrección de datos; P01/P21–P23. |
+| MD-005 | Conservar fuentes y presupuestos vinculados, con historial y evidencia. | Must | ERS RF-03; P13–P15/P30–P31 para historial y evidencia. |
+| MD-014 | Autorizar en servidor, limitar recursos y comunicar fallos recuperables. | Must | ERS RF-26 para permisos; P28–P31 para límites y recuperación. |
 
-Los IDs históricos MD-006–MD-013 y CA-16–CA-30 describían selección de plantillas, generación o exportación futuras; quedan reservados fuera de esta entrega, sin reasignarlos. CA-22 no figuraba en la versión histórica.
+RF-03, RF-04, RF-05 y RF-26 se aplican aquí solo a los aspectos incluidos en esta entrega. RF-09 contempla también una nueva generación documental, que permanece fuera de alcance. El ERS no especifica todas las capacidades detalladas; las decisiones P citadas proceden del [plan](plan.md) y [seguimiento](review.md), no se presentan como requisitos del ERS.
+
+Los IDs históricos MD-006–MD-013 corresponden a funcionalidades futuras y permanecen reservados. Los criterios de aceptación se renumeraron para esta versión; los CA de versiones anteriores no deben interpretarse con la numeración actual. La selección de plantillas, generación y exportación siguen fuera de alcance.
 
 ## 6. Historias y criterios de aceptación
 
+Las historias expresan el comportamiento esperado, no su aceptación: la implementación es parcial y su verificación integral sigue pendiente.
+
 ### HU-001 — Analizar fuentes PDF
 
-| ID | Dado / cuando | Entonces |
-|---|---|---|
-| CA-01 | PDF digital reconocible de una obra; solicito análisis. | Se proponen datos y origen sin modificar datos vigentes. |
-| CA-02 | PDF escaneado o mixto; solicito análisis. | Se aplica OCR donde corresponda; los resultados requieren revisión. |
-| CA-03 | Hay datos ausentes, ambiguos o inconsistentes. | Se identifican para revisión y se conservan propuestas válidas. |
-| CA-04 | PDF cifrado, dañado, ilegible o no admitido. | Se informa el impedimento; no se confirman valores y se permite sustituir o capturar manualmente. |
-| CA-05 | El usuario incorpora una fuente válida. | Se conserva el original vinculado a la obra y su clasificación. |
+Como usuario autorizado, quiero analizar documentos PDF de una obra y revisar sus propuestas con evidencia, para incorporar información confiable.
+
+| ID | Dado | Cuando | Entonces |
+|---|---|---|---|
+| CA-01 | Un PDF digital reconocible de una obra. | Solicito el análisis. | Se proponen datos y origen sin modificar datos vigentes. |
+| CA-02 | Un PDF escaneado o mixto. | Solicito el análisis. | Se aplica OCR donde corresponda; los resultados requieren revisión. |
+| CA-03 | Una fuente con datos ausentes, ambiguos o inconsistentes. | Reviso el análisis. | Se identifican los pendientes y se conservan propuestas válidas. |
+| CA-04 | Un PDF cifrado, dañado, ilegible o no admitido. | Solicito el análisis. | Se informa el impedimento; no se confirman valores y se permite sustituir o capturar manualmente. |
+| CA-05 | Una fuente válida de la obra. | La incorporo. | Se conserva el original vinculado a la obra y su clasificación. |
+| CA-06 | Una o varias fuentes contienen valores distintos para un dato. | Consulto el análisis. | Veo literales, propuestas, ubicaciones y alternativas; la precedencia solo sugiere cuando corresponde y no decide por orden de llegada. |
+| CA-07 | La lectura de un PDF ha terminado. | Consulto el trabajo. | Distingo el estado técnico del de revisión y ningún candidato se aplica hasta una confirmación explícita. |
 
 ### HU-002 — Importar presupuestos y DOCX fuente
 
-| ID | Dado / cuando | Entonces |
-|---|---|---|
-| CA-06 | XLS/XLSX con una o varias hojas; lo cargo. | Se identifican hojas y se permite seleccionarlas y agruparlas. |
-| CA-07 | Hoja con conceptos; solicito extracción. | Se proponen clave, descripción, unidad, cantidad, precio e importe con agrupaciones identificables. |
-| CA-08 | Hay fórmulas o totales; reviso la importación. | Se distinguen filas de cálculo y discrepancias sin sustituir valores declarados. |
-| CA-09 | Dos hojas son alternativas; confirmo. | Se conservan separadas, sin fusionarlas ni sustituirlas automáticamente. |
-| CA-10 | Hay estructura desconocida o datos ambiguos. | Se indican los pendientes y puedo corregir, excluir o cancelar sin perder datos vigentes. |
-| CA-31 | DOCX fuente con texto y tablas, sin marcadores; lo analizo. | Se presentan contenido y ubicación estructural, sin inventar páginas Word. |
+Como usuario autorizado, quiero analizar presupuestos y documentos DOCX, para revisar sus datos y mantener separadas las alternativas.
+
+| ID | Dado | Cuando | Entonces |
+|---|---|---|---|
+| CA-08 | Un XLS/XLSX con una o varias hojas. | Lo cargo. | Se identifican hojas y se permite seleccionarlas y agruparlas. |
+| CA-09 | Una hoja con conceptos. | Solicito la extracción. | Se proponen clave, descripción, unidad, cantidad, precio e importe con agrupaciones identificables. |
+| CA-10 | Una importación con fórmulas o totales. | La reviso. | Se distinguen filas de cálculo y discrepancias sin sustituir valores declarados. |
+| CA-11 | Dos hojas identificadas como alternativas. | Confirmo la selección. | Se conservan separadas, sin fusionarlas ni sustituirlas automáticamente. |
+| CA-12 | Una estructura desconocida o datos ambiguos. | Reviso la importación. | Se indican los pendientes y puedo corregir, excluir o cancelar sin perder datos vigentes. |
+| CA-13 | Un DOCX fuente con texto y tablas, sin marcadores. | Lo analizo. | Se presentan contenido y ubicación estructural, sin inventar páginas Word. |
+| CA-14 | Hojas con partes, resúmenes o alternativas. | Las selecciono y agrupo. | Puedo indicar su agrupación; notas y resúmenes no se suman automáticamente como conceptos y las alternativas permanecen separadas. |
+| CA-15 | Una celda con fórmula o caché ausente, cero, con error o posiblemente obsoleta. | Reviso la lectura. | Se conserva la fórmula, la caché disponible y el formato, distinguiendo esas situaciones sin evaluar fórmulas, macros ni vínculos. |
+| CA-16 | Un concepto con algún valor faltante o una fecha o cifra ambigua. | Reviso los datos. | La ausencia no se convierte en cero; la descripción es obligatoria y las convenciones ambiguas requieren una decisión explícita. |
+| CA-17 | Un importe declarado distinto del control calculado con `CONTROL_V1`. | Reviso y confirmo el bloque. | Se muestran ambos importes y la diferencia, se conserva el declarado y se exige justificación explícita antes de confirmar. |
 
 ### HU-003 — Revisar, confirmar y retomar
 
-| ID | Dado / cuando | Entonces |
-|---|---|---|
-| CA-11 | Existen candidatos; abro revisión. | Veo propuestas, valores actuales y evidencia; puedo corregir o descartar. |
-| CA-12 | Un candidato difiere del dato vigente; confirmo. | Solo se aplican cambios explícitamente aprobados y válidos. |
-| CA-13 | Selecciono datos incompletos o inválidos. | Se explican las validaciones y se conserva la revisión para corregirla. |
-| CA-14 | Cancelo sin confirmar. | Obra y cliente permanecen intactos; si hubo bloques confirmados antes, no se revierten. |
-| CA-15 | Hay presupuesto confirmado; consulto su revisión. | Se obtiene su colección ordenada de conceptos, sin convertirlos en campos escalares. |
-| CA-32 | Guardo una revisión y la reabro. | Recupero decisiones, presupuestos y revisiones base; cambios concurrentes exigen nueva revisión. |
-| CA-33 | Reintento una confirmación idéntica tras perder respuesta. | Se devuelve el resultado original; otra intención con la misma clave se rechaza. |
-| CA-34 | Usuario sin permiso o fuente de otra obra. | El servidor rechaza la operación sin modificar destinos. |
-| CA-35 | La lectura falla, se cancela o se reinicia el servidor. | Se informa el estado; no se aplican datos automáticamente ni se repiten confirmaciones. |
-| CA-36 | Confirmo un presupuesto nuevo o una revisión. | Se conserva la revisión anterior y la principal solo cambia por elección explícita. |
+Como usuario autorizado, quiero revisar los datos, guardar mi avance y confirmar los cambios, para incorporar solo información válida.
+
+| ID | Dado | Cuando | Entonces |
+|---|---|---|---|
+| CA-18 | Existen candidatos. | Abro la revisión. | Veo propuestas, valores actuales y evidencia; puedo corregir o descartar. |
+| CA-19 | Un candidato difiere del dato vigente. | Confirmo la selección. | Solo se aplican cambios explícitamente aprobados y válidos. |
+| CA-20 | Datos incompletos o inválidos. | Intento confirmarlos. | Se explican las validaciones y se conserva la revisión para corregirla. |
+| CA-21 | Una revisión con cambios pendientes. | Cancelo sin confirmar esos cambios. | Obra y cliente permanecen intactos respecto de lo pendiente; los bloques confirmados antes no se revierten. |
+| CA-22 | Un presupuesto confirmado. | Consulto su revisión. | Se obtiene su colección ordenada de conceptos, sin convertirlos en campos escalares. |
+| CA-23 | Una revisión guardada. | La reabro. | Recupero decisiones, presupuestos y revisiones base; cambios concurrentes exigen nueva revisión. |
+| CA-24 | Una confirmación cuya respuesta se perdió. | Reintento la misma operación. | Se devuelve el resultado original; otra intención con la misma clave se rechaza. |
+| CA-25 | Un usuario sin permiso o una fuente de otra obra. | Se solicita la operación. | El servidor la rechaza sin modificar destinos. |
+| CA-26 | Una lectura en curso. | Falla, se cancela o se reinicia el servidor. | Se informa el estado; no se aplican datos automáticamente ni se repiten confirmaciones. |
+| CA-27 | Un presupuesto nuevo o una revisión. | Lo confirmo. | Se conserva la revisión anterior, si existe, y la principal solo cambia por elección explícita. |
+| CA-28 | Un candidato o dato faltante. | Lo reviso. | Puedo mapearlo a un destino admitido o adicional existente compatible, capturar o corregir su valor y excluirlo; no se crean campos globales ni se escriben identificadores o relaciones. |
+| CA-29 | Una corrección de un valor existente. | La apruebo. | Debo indicar motivo y justificación de 10–2000 caracteres; la corrección no se interpreta automáticamente como convenio. |
+| CA-30 | Datos seleccionados para obra, cliente o presupuesto. | Confirmo el destino. | Solo se confirma el destino seleccionado con sus permisos y revisión vigentes; confirmar cliente advierte que es compartido y no confirma otros bloques. |
+| CA-31 | La fuente original no está disponible o no supera la verificación. | Intento confirmar. | Se informa el impedimento y no se confirma el bloque afectado. |
+| CA-32 | Fuentes de una revisión anterior. | Solicito reanalizarlas. | Se crea otro trabajo y se conserva el anterior, sin sobrescribir sus decisiones ni repetir confirmaciones. |
 
 ## 7. Requisitos no funcionales y restricciones
 
-- El lector opera aislado, sin red ni credenciales, con límites efectivos por trabajo y proceso; un subproceso o `-Xmx` no bastan. Debe fallar cerrado cuando no haya aislamiento.
-- Procesamiento y red no bloquean JavaFX. Sesión, CSRF, permisos, paginación, captura ante errores y baja lógica siguen los contratos vigentes.
-- Manejar archivos hostiles, tiempo, memoria, expansión y salida acotada; no registrar contenido sensible en logs. Los criterios de frontera se verifican por formato y en el destino real.
-- Medir lectura/OCR y mapeo por campo o fila con corpus anotado, no prometer precisión universal. Pruebas técnicas no sustituyen aceptación manual.
+| ID | Requisito/restricción | Verificación |
+|---|---|---|
+| NFR-001 | Lector aislado sin red ni credenciales, con límites efectivos por trabajo y proceso; fallar cerrado sin aislamiento. Un subproceso o `-Xmx` no bastan. | ¿Se demuestra el aislamiento y sus límites en el destino real, y se rechaza la ejecución cuando no están disponibles? |
+| NFR-002 | Procesamiento y red no bloquean JavaFX; se respetan los contratos vigentes de sesión, CSRF, permisos, paginación, conservación de captura ante errores y baja lógica. | ¿El recorrido en Windows mantiene la interfaz operable y respeta esos contratos, incluso ante errores? |
+| NFR-003 | Limitar archivos hostiles, tiempo, memoria, expansión y salida; no registrar contenido sensible. | ¿Las pruebas por formato y en el destino real comprueban las fronteras y la ausencia de contenido sensible en logs? |
+| NFR-004 | Medir lectura/OCR y mapeo por campo o fila con corpus anotado, sin prometer precisión universal. | ¿Se registran resultados y límites por campo o fila sobre el corpus acordado? |
 
-## 8. Decisiones y verificaciones abiertas
+## 8. Decisiones abiertas
 
-- Confirmar aislamiento agregado independiente por worker en el despliegue, licencias/seguridad nativas y del grafo integrado, límites efectivos y recuperación ante fallos.
-- Ampliar corpus para OCR degradado/rotado, páginas mixtas, tablas, contenido activo y cachés XLS; acordar umbrales y muestras reales con autorización específica por archivo.
-- Validar visualmente Windows y permisos reales; acordar operación, respaldo y retención definitivos. El ERS CU-07 cita RF-28 no localizado; RF-24 es referencia provisional de exportación futura, no de extracción.
+| ID | Pregunta / alternativas | Impacto | Responsable / estado |
+|---|---|---|---|
+| D-001 | ¿Qué umbrales de lectura/OCR y mapeo se acuerdan, y qué muestras reales se autorizan por archivo? | Aceptación y representatividad del corpus; no autoriza usar datos reales sin permiso. | Responsable por definir; pendiente. |
+| D-002 | ¿Cuáles serán las políticas definitivas de operación, respaldo y retención? | Despliegue y conservación de fuentes, borradores y auditoría. | Responsable por definir; pendiente. |
+| D-003 | ¿Cómo se resuelve la referencia RF-28 no localizada en ERS CU-07? | Trazabilidad de exportación futura, fuera de esta entrega; RF-24 es referencia provisional. | Responsable por definir; pendiente. |
+
+**Verificaciones pendientes:** aislamiento agregado independiente por worker, límites efectivos y recuperación en el despliegue; licencias y seguridad nativas y del grafo integrado; ampliación del corpus para OCR degradado/rotado, páginas mixtas, tablas, contenido activo y cachés XLS; comprobación visual en Windows y de permisos reales. No son decisiones ya resueltas ni evidencia de aceptación.
 
 ## 9. Condición de aceptación
 
-Con datos sintéticos anotados y, solo con autorización, muestras reales: analizar PDF digital/escaneado/mixto, XLS/XLSX y DOCX; mapear y capturar; guardar/reanudar; confirmar por destino y consultar presupuesto; probar conflictos, permisos, fallos, cancelación e idempotencia. Registrar comandos, entorno, actor, resultados y evidencia en [review.md](review.md). La aceptación manual y la verificación integral siguen pendientes.
+**Datos y entorno:** usar datos sintéticos anotados y muestras reales solo con autorización específica por archivo. Ejecutar el recorrido de escritorio en Windows y verificar el aislamiento y los límites en el entorno real de destino, sin asumir que la configuración experimental es apta para despliegue.
+
+**Pruebas automáticas:** comprobar lectores y corpus por formato, mapeo, validaciones, permisos, conflictos, idempotencia, recuperación, cancelación y límites de procesamiento; ejecutar las regresiones aplicables según [plan.md](plan.md). Registrar comandos, entorno, resultados y limitaciones en [review.md](review.md).
+
+**Aceptación manual:** con un usuario autorizado, analizar PDF digital, escaneado y mixto, XLS/XLSX y DOCX; revisar evidencia, mapear y capturar datos; guardar y reanudar; confirmar por destino y consultar el presupuesto y sus revisiones. Ejercitar permisos, conflictos, fallos, cancelación y reintentos, incluidos usuarios sin permiso. Registrar actor, entorno, resultados y evidencia por criterio en [review.md](review.md).
+
+La aceptación exige ambas verificaciones; las pruebas automáticas no sustituyen el recorrido manual. La aceptación manual y la verificación integral siguen pendientes.
