@@ -50,13 +50,13 @@ class SoftDeletePersistenceIntegrationTest {
     void shouldHideDeletedEntitiesAndPreserveRelationships() {
 
         Client client = clientRepository.saveAndFlush(
-                new Client("Cliente integración", "Representante")
+                new Client("Cliente_integracion", "Representante")
         );
 
         Work work = workRepository.saveAndFlush(
                 new Work(
                         client,
-                        "Obra integración",
+                        "Obra_integracion",
                         "Mérida",
                         "Prueba de eliminación lógica",
                         LocalDate.of(2026, 11, 1),

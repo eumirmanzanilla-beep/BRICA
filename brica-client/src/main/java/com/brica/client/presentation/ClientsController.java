@@ -68,6 +68,7 @@ public final class ClientsController {
 
     @FXML
     private Button refreshButton;
+    @FXML private Button packagesButton;
 
     @FXML
     private Button previousPageButton;
@@ -145,7 +146,10 @@ public final class ClientsController {
                             }
 
                             currentPage = page;
-                            hasNext = result.size() == PAGE_SIZE;
+                            hasNext = false;
+                            api.list(page + 1, PAGE_SIZE).whenComplete((following, failure) -> Platform.runLater(() -> {
+                                if (failure == null && currentPage == page) { hasNext = !following.isEmpty(); updateButtons(); }
+                            }));
 
                             clients.setAll(result);
 
@@ -231,6 +235,7 @@ public final class ClientsController {
                 executeMutation(
                         api.update(
                                 selected.id(),
+                                selected.revision(),
                                 input.name(),
                                 input.legalRepresentative()
                         ),
@@ -285,7 +290,7 @@ public final class ClientsController {
                         : currentPage;
 
         executeMutation(
-                api.delete(selected.id()),
+                api.delete(selected.id(), selected.revision()),
                 "Cliente eliminado correctamente.",
                 targetPage
         );
@@ -344,6 +349,7 @@ public final class ClientsController {
         );
 
         TextField nameField = new TextField();
+        NameInputRules.install(nameField);
         nameField.setPromptText("Nombre del cliente");
         nameField.setPrefColumnCount(28);
         nameField.getStyleClass().add("form-field");
@@ -423,7 +429,7 @@ public final class ClientsController {
 
         saveButton.disableProperty().bind(
                 Bindings.createBooleanBinding(
-                        () -> !validText(nameField.getText())
+                        () -> !NameInputRules.valid(nameField.getText(), 255)
                                 || !validText(
                                         representativeField.getText()
                                 ),
@@ -467,19 +473,24 @@ public final class ClientsController {
 
     private void updateButtons() {
 
+        var user = com.brica.client.api.ServerSession.shared(ClientConfig.serverBaseUri()).user();
+        boolean canWrite = user != null && user.can("CLIENTS_WRITE");
+
         boolean selected = clientsTable
                 .getSelectionModel()
                 .getSelectedItem() != null;
 
-        newClientButton.setDisable(busy);
+        newClientButton.setDisable(busy || !canWrite);
         refreshButton.setDisable(busy);
+        packagesButton.setDisable(busy || !selected || user == null || !user.can("DOCUMENT_CONFIG_ADMIN"));
+        UiPagination.update(previousPageButton, nextPageButton, pageLabel, currentPage, hasNext);
 
         editClientButton.setDisable(
-                busy || !selected
+                busy || !selected || !canWrite
         );
 
         deleteClientButton.setDisable(
-                busy || !selected
+                busy || !selected || !canWrite
         );
 
         previousPageButton.setDisable(
@@ -489,6 +500,10 @@ public final class ClientsController {
         nextPageButton.setDisable(
                 busy || !hasNext
         );
+    }
+    @FXML private void onPackages() {
+        var value = clientsTable.getSelectionModel().getSelectedItem();
+        if (value != null) { ContextDocumentsWindow.show(clientsTable.getScene().getWindow(), value.id(), null, value.name()); }
     }
 
     // MENSAJES DE ERROR

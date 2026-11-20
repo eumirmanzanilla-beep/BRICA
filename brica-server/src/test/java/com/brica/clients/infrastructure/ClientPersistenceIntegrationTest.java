@@ -29,7 +29,7 @@ class ClientPersistenceIntegrationTest {
     @Test
     void shouldPersistClient() {
         Client client = new Client(
-            "Constructora Integration Test",
+            "Constructora_Integration_Test",
             "Jane Doe"
         );
 
@@ -44,7 +44,7 @@ class ClientPersistenceIntegrationTest {
                 .orElseThrow();
 
         assertEquals(
-            "Constructora Integration Test",
+            "Constructora_Integration_Test",
             persistedClient.getName()
         );
 

@@ -1,4 +1,5 @@
 package com.brica.contracts.application;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.Map;
 
@@ -12,6 +13,7 @@ import com.brica.works.domain.Work;
 import com.brica.works.application.port.WorkStore;
 
 @Service
+@PreAuthorize("@accessPolicy.hasPermission('CONTRACTS_WRITE')")
 public class RegisterContractService {
 
     private final WorkStore workRepository;

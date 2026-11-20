@@ -5,6 +5,7 @@ import java.net.URL;
 import java.util.List;
 
 import com.brica.client.api.ServerHealthClient;
+import com.brica.client.api.ServerSession;
 import com.brica.client.config.ClientConfig;
 
 import javafx.application.Platform;
@@ -17,6 +18,28 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 public class MainController {
+    private ServerSession session;
+    private Parent documentView;
+    private DocumentConfigurationController documentController;
+    private Runnable logout = () -> { };
+
+    public void configureSession(ServerSession session, Runnable logout) {
+        this.session = session;
+        this.logout = logout;
+        var user = session.user();
+        clientsNavButton.setDisable(!user.can("CLIENTS_READ"));
+        worksNavButton.setDisable(!user.can("WORKS_READ"));
+        contractsNavButton.setDisable(!user.can("CONTRACTS_READ") && !user.can("CONTRACTS_WRITE"));
+        documentsNavButton.setDisable(!user.can("DOCUMENT_CONFIG_ADMIN"));
+    }
+
+    @FXML
+    private void onLogout() { requestLeave(logout); }
+
+    public void requestLeave(Runnable continuation) {
+        if (documentController != null) { documentController.requestLeave(continuation); }
+        else { continuation.run(); }
+    }
 
     private static final String VIEW_BASE_PATH =
             "/com/brica/client/presentation/";
@@ -43,6 +66,7 @@ public class MainController {
 
     @FXML
     private Button contractsNavButton;
+    @FXML private Button documentsNavButton;
 
     // Encabezado y contenido principal
     @FXML
@@ -76,6 +100,8 @@ public class MainController {
                 "works-view.fxml",
                 "Aquí aparecerá el módulo de obras."
         ),
+
+        DOCUMENTS("Catálogo de campos", "Definición de campos reutilizables", "reference-fields-view.fxml", "Catálogo de campos"),
 
         CONTRACTS(
                 "Contratos",
@@ -128,10 +154,17 @@ public class MainController {
     private void onNavigateContracts() {
         navigateTo(Section.CONTRACTS);
     }
+    @FXML private void onNavigateDocuments() { navigateTo(Section.DOCUMENTS); }
 
     // NAVEGACIÓN CENTRALIZADA
 
     private void navigateTo(Section section) {
+        if (documentController != null && section != Section.DOCUMENTS) {
+            documentController.requestLeave(() -> displaySection(section));
+        } else { displaySection(section); }
+    }
+
+    private void displaySection(Section section) {
 
         Parent view;
 
@@ -160,6 +193,7 @@ public class MainController {
 
     private Parent loadView(Section section)
             throws IOException {
+        if (section == Section.DOCUMENTS && documentView != null) { return documentView; }
 
         URL resource = getClass().getResource(
                 VIEW_BASE_PATH + section.fxmlFile
@@ -176,6 +210,11 @@ public class MainController {
         FXMLLoader loader = new FXMLLoader(resource);
 
         Parent view = loader.load();
+        if (section == Section.DOCUMENTS) {
+            ReferenceFieldsController controller = loader.getController();
+            controller.configure(new com.brica.client.api.DocumentsApiClient(ClientConfig.serverBaseUri(), session));
+            documentView = view;
+        }
 
         // NUEVO:
         // Conectar el dashboard con la navegación
@@ -230,7 +269,8 @@ public class MainController {
                 homeNavButton,
                 clientsNavButton,
                 worksNavButton,
-                contractsNavButton
+                contractsNavButton,
+                documentsNavButton
         );
 
         for (Button button : buttons) {
@@ -242,6 +282,7 @@ public class MainController {
             case CLIENTS -> clientsNavButton;
             case WORKS -> worksNavButton;
             case CONTRACTS -> contractsNavButton;
+            case DOCUMENTS -> documentsNavButton;
         };
 
         selectedButton.getStyleClass().add("nav-active");

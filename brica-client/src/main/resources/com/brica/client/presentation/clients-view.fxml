@@ -61,6 +61,7 @@
             onAction="#onRefresh"
             styleClass="secondary-button"/>
 
+        <Button fx:id="packagesButton" text="Paquetes documentales" onAction="#onPackages" styleClass="secondary-button"/>
     </FlowPane>
 
     <!-- LISTADO REAL -->
@@ -114,6 +115,7 @@
 
         <Button
             fx:id="previousPageButton"
+            visible="false" managed="false"
             text="Anterior"
             onAction="#onPreviousPage"
             styleClass="secondary-button"/>
@@ -125,6 +127,7 @@
 
         <Button
             fx:id="nextPageButton"
+            visible="false" managed="false"
             text="Siguiente"
             onAction="#onNextPage"
             styleClass="secondary-button"/>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<VBox xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.brica.client.presentation.ReferenceFieldsController" fx:id="pane" spacing="10" styleClass="content-card">
+    <padding><Insets top="16" right="16" bottom="16" left="16"/></padding>
+    <Label text="Catálogo de campos" styleClass="content-title"/>
+    <Label text="Datos fijos de obra y cliente con origen interno, y nuevos campos adicionales. La clave es el nombre visible. Los valores se capturan en cada obra." wrapText="true"/>
+    <ListView fx:id="fields" VBox.vgrow="ALWAYS" minHeight="100"/>
+    <HBox spacing="8"><Button fx:id="previousButton" text="Anterior" onAction="#previous" visible="false" managed="false"/><Label fx:id="pageLabel"/><Button fx:id="nextButton" text="Siguiente" onAction="#next" visible="false" managed="false"/><Button text="Actualizar" onAction="#refresh"/></HBox>
+    <HBox spacing="8"><Button text="Crear campo" onAction="#create"/><Button text="Eliminar seleccionado" onAction="#delete"/></HBox>
+    <Label fx:id="message" wrapText="true"/>
+</VBox>

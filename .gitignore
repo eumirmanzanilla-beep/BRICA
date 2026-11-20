@@ -17,5 +17,8 @@ Thumbs.db
 
 # Local configuration / secrets
 .env
+**/.venv-documents/
+**/var/documents/
+**/__pycache__/
 application-local.yml
 application-local.properties

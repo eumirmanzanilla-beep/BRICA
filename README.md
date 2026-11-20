@@ -131,7 +131,7 @@ El procesamiento de extracción tiene además configuración `BRICA_EXTRACTION_*
 | `specs/README.md`, `specs/templates/` | Flujo SDD y plantillas que integran `spec.md`, `plan.md` y `review.md`. |
 | `specs/001/` | Configuración documental: catálogo, plantillas, versiones, paquetes, plan y aceptación. |
 | `specs/002/` | Extracción de fuentes: alcance, plan, decisiones, pruebas experimentales y seguimiento. |
-| `docs/ERS_BRICA.docx`, `docs/DAS_BRICA.docx`, `docs/DiccionarioDatos_BRICA.docx` | Requisitos y modelo iniciales; no sustituyen el código ni el esquema Flyway vigente. |
+| `docs/informative/ERS_BRICA.docx`, `docs/informative/DAS_BRICA.docx`, `docs/informative/DiccionarioDatos_BRICA.docx` | Requisitos y modelo iniciales; no sustituyen el código ni el esquema Flyway vigente. |
 | `docs/installation-guide.md`, `docs/constitution.md` | Guía reproducible de instalación y principios del proyecto. |
 | `MEMORY.md` | Contexto temporal entre sesiones; puede quedar desactualizado y no es fuente normativa. |
 

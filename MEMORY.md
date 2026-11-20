@@ -8,7 +8,7 @@ Memoria entre sesiones (~50 líneas). Contrastar con el código, `AGENTS.md` y [
 - Ocho rutas están preparadas (staged): actualización `AGENTS.md`, README nuevos en cliente/servidor, dos cambios Java del cliente, `NameImputRules.java`, `draft.md` y `specs/002/spec.md`.
 - `draft.md` además tiene cambios posteriores sin preparar (`MD` en `git status`); preservar esa diferencia al seguir trabajando.
 - `git diff --cached --check` detectó espacios finales en cambios de Java/Spec y línea vacía final en `brica-client/README.md`. No se corrigieron. No se ejecutaron pruebas en esta sesión.
-- Se leyeron completos `docs/ERS_BRICA.docx`, `docs/DAS_BRICA.docx` y `docs/DiccionarioDatos_BRICA.docx`; también configuración, README, constitución y estructura actuales.
+- Se leyeron completos `docs/informative/ERS_BRICA.docx`, `docs/informative/DAS_BRICA.docx` y `docs/informative/DiccionarioDatos_BRICA.docx`; también configuración, README, constitución y estructura actuales.
 - Los documentos de requisitos/diseño/datos son iniciales: describen capacidades futuras y un modelo lógico, no garantizan funcionalidad ni esquema actual. Contrastar siempre con código, POM, configuración y migraciones.
 - Los README de módulo pueden describir estructura objetivo, no inventario exacto. Código cliente actual está en `api`, `config`, `presentation`; backend organizado por función con `api/application/domain/infrastructure`.
 - `AGENTS.md` actualizado con jerarquía de fuentes, entorno, comandos, límites de arquitectura, pruebas, Flyway, seguridad y cuidado de cambios locales.

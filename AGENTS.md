@@ -13,7 +13,7 @@ Consulta las fuentes según su propósito:
 
 1. Para el comportamiento ya implementado y la configuración efectiva: código de la rama actual, `pom.xml` de cada módulo, `compose.yml`, `.env.example`, `brica-server/src/main/resources/application.yml` y migraciones Flyway.
 2. Para principios de arquitectura y flujo de contribución: `docs/constitution.md` y este archivo.
-3. Para requisitos y significado del negocio: `docs/ERS_BRICA.docx` (ERS), `docs/DAS_BRICA.docx` (DAS) y `docs/DiccionarioDatos_BRICA.docx`.
+3. Para requisitos y significado del negocio: `docs/informative/ERS_BRICA.docx` (ERS), `docs/informative/DAS_BRICA.docx` (DAS) y `docs/informative/DiccionarioDatos_BRICA.docx`.
 4. Para estado funcional, puesta en marcha y verificaciones: `README.md`, `docs/installation-guide.md`, `specs/` y los README de módulo.
 
 El ERS, el DAS y el Diccionario son documentos iniciales: expresan intención y modelo lógico, no garantizan que una función o columna exista hoy. Los README de módulo pueden describir una arquitectura objetivo. Si una fuente contradice el código o el esquema vigente, no inventes una reconciliación ni cambies silenciosamente el alcance: explica la discrepancia y consulta al responsable cuando afecte una decisión de negocio, arquitectura o datos. Para cambios de esquema, comprueba además la última migración y las entidades/consultas actuales.

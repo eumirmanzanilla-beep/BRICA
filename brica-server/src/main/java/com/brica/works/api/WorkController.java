@@ -36,19 +36,22 @@ public class WorkController {
     private final ConsultWorkService consultService;
     private final CorrectWorkService correctService;
     private final DeleteWorkService deleteWorkService;
+    private final com.brica.works.application.DocumentInformationService documentInformationService;
 
     public WorkController(
             RegisterWorkService registerWorkService,
             ListWorksService listWorksService,
             ConsultWorkService consultService,
             CorrectWorkService correctService,
-            DeleteWorkService deleteWorkService) {
+            DeleteWorkService deleteWorkService,
+            com.brica.works.application.DocumentInformationService documentInformationService) {
 
         this.registerWorkService = registerWorkService;
         this.listWorksService = listWorksService;
         this.consultService = consultService;
         this.correctService = correctService;
         this.deleteWorkService = deleteWorkService;
+        this.documentInformationService = documentInformationService;
     }
 
     @GetMapping
@@ -129,5 +132,41 @@ public class WorkController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
         public void deleteWork(@PathVariable("id") Long id) {
             deleteWorkService.delete(id);
+        }
+
+    @PutMapping("/{id}/document-information")
+    public ResponseEntity<DocumentInformationResponse> updateDocumentInformation(@PathVariable("id") Long id,
+            @RequestHeader(value = "If-Match", required = false) String expected,
+            @Valid @RequestBody com.brica.works.application.DocumentInformationService.Information request) {
+        var work = documentInformationService.update(id, expected, request);
+        return ResponseEntity.ok().eTag(WorkRevision.etag(work)).body(DocumentInformationResponse.from(work));
+    }
+
+    @GetMapping("/{id}/document-information")
+    public ResponseEntity<DocumentInformationResponse> documentInformation(@PathVariable("id") Long id) {
+        var work = consultService.get(id);
+        return ResponseEntity.ok().eTag(WorkRevision.etag(work)).body(DocumentInformationResponse.from(work));
+    }
+    @GetMapping("/{id}/information")
+    public ResponseEntity<CompleteResponse> information(@PathVariable("id") Long id) {
+        var work = consultService.get(id);
+        return ResponseEntity.ok().eTag(WorkRevision.etag(work)).body(CompleteResponse.from(work));
+    }
+    @PutMapping("/{id}/information")
+    public ResponseEntity<CompleteResponse> updateInformation(@PathVariable("id") Long id,
+            @RequestHeader(value = "If-Match", required = false) String etag,
+            @RequestBody com.brica.works.application.DocumentInformationService.CompleteInformation information) {
+        var work = documentInformationService.updateAll(id, etag, information);
+        return ResponseEntity.ok().eTag(WorkRevision.etag(work)).body(CompleteResponse.from(work));
+    }
+    public record CompleteResponse(WorkResponse work, DocumentInformationResponse documentInformation) {
+        static CompleteResponse from(Work work) { return new CompleteResponse(WorkResponse.from(work), DocumentInformationResponse.from(work)); }
+    }
+    public record DocumentNameRequest(@com.fasterxml.jackson.annotation.JsonProperty(required=true) String documentName) { }
+    @PutMapping("/{id}/document-name")
+    public ResponseEntity<WorkResponse> documentName(@PathVariable("id") Long id,
+            @RequestHeader(value="If-Match",required=false) String expected,@RequestBody DocumentNameRequest request) {
+        var work=documentInformationService.updateDocumentName(id,expected,request.documentName());
+        return ResponseEntity.ok().eTag(WorkRevision.etag(work)).body(WorkResponse.from(work));
     }
 }

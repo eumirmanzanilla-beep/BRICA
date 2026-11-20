@@ -32,6 +32,13 @@ public class Client {
     @Column(name = "deleted_at")
     private OffsetDateTime deletedAt;
 
+    @jakarta.persistence.Version
+    @Column(name = "revision", nullable = false)
+    private Long revision;
+
+    @Column(name = "document_name", length = 1000)
+    private String documentName;
+
     protected Client() {
     }
 
@@ -45,7 +52,7 @@ public class Client {
 
         var errors = new LinkedHashMap<String, String>();
 
-        InputRules.requiredText(errors, "name", name, 255);
+        InputRules.validName(errors, "name", name, 255);
         InputRules.requiredText(
                 errors,
                 "legalRepresentative",
@@ -68,6 +75,12 @@ public class Client {
 
     public Long getId() {
         return id;
+    }
+
+    public Long getRevision() { return revision; }
+    public String getDocumentName() { return documentName; }
+    public void changeDocumentName(String value) {
+        documentName = com.brica.server.shared.validation.domain.DocumentNameRules.normalize(value);
     }
 
     public String getName() {

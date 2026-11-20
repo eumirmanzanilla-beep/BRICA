@@ -1,9 +1,7 @@
 package com.brica.client.api;
 
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
@@ -19,15 +17,14 @@ public final class ClientsApiClient {
     private static final Duration REQUEST_TIMEOUT =
             Duration.ofSeconds(10);
 
-    private final HttpClient httpClient;
+    private final ServerSession session;
     private final ObjectMapper mapper;
     private final URI clientsUri;
+    private final java.util.concurrent.ConcurrentHashMap<Long, String> revisions = new java.util.concurrent.ConcurrentHashMap<>();
 
     public ClientsApiClient(URI serverBaseUri) {
 
-        httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(3))
-                .build();
+        session = ServerSession.shared(serverBaseUri);
 
         mapper = new ObjectMapper();
 
@@ -108,27 +105,32 @@ public final class ClientsApiClient {
 
     public CompletableFuture<ClientDto> update(
             long id,
+            String expectedRevision,
             String name,
             String legalRepresentative) {
 
+        if (expectedRevision == null) { return CompletableFuture.failedFuture(new IllegalStateException("Consulta el cliente antes de corregirlo.")); }
         return save(
                 "PUT",
                 clientUri(id),
                 name,
-                legalRepresentative
+                legalRepresentative,
+                expectedRevision
         );
     }
 
     // ELIMINAR CLIENTE
 
-    public CompletableFuture<Void> delete(long id) {
+    public CompletableFuture<Void> delete(long id, String expectedRevision) {
 
-        HttpRequest request = HttpRequest.newBuilder(
+        HttpRequest.Builder builder = HttpRequest.newBuilder(
                         clientUri(id)
                 )
                 .timeout(REQUEST_TIMEOUT)
-                .DELETE()
-                .build();
+                .DELETE();
+        String revision = expectedRevision;
+        if (revision == null) { return CompletableFuture.failedFuture(new IllegalStateException("Vuelve a consultar el cliente antes de eliminar.")); }
+        HttpRequest request = builder.header("If-Match", revision).build();
 
         return send(request, body -> null);
     }
@@ -140,6 +142,10 @@ public final class ClientsApiClient {
             URI uri,
             String name,
             String legalRepresentative) {
+        return save(method, uri, name, legalRepresentative, null);
+    }
+
+    private CompletableFuture<ClientDto> save(String method, URI uri, String name, String legalRepresentative, String expectedRevision) {
 
         final String json;
 
@@ -159,7 +165,7 @@ public final class ClientsApiClient {
             );
         }
 
-        HttpRequest request = HttpRequest.newBuilder(uri)
+        HttpRequest.Builder builder = HttpRequest.newBuilder(uri)
                 .timeout(REQUEST_TIMEOUT)
                 .header(
                         "Content-Type",
@@ -171,8 +177,13 @@ public final class ClientsApiClient {
                                 json,
                                 StandardCharsets.UTF_8
                         )
-                )
-                .build();
+                );
+        if (method.equals("PUT")) {
+            String revision = expectedRevision;
+            if (revision == null) { return CompletableFuture.failedFuture(new IllegalStateException("Vuelve a consultar el cliente antes de guardar.")); }
+            builder.header("If-Match", revision);
+        }
+        HttpRequest request = builder.build();
 
         return send(
                 request,
@@ -189,12 +200,7 @@ public final class ClientsApiClient {
             HttpRequest request,
             ResponseParser<T> parser) {
 
-        return httpClient.sendAsync(
-                request,
-                HttpResponse.BodyHandlers.ofString(
-                        StandardCharsets.UTF_8
-                )
-        ).thenApply(response -> {
+        return session.send(request).thenApply(response -> {
 
             int status = response.statusCode();
 
@@ -209,7 +215,12 @@ public final class ClientsApiClient {
             }
 
             try {
-                return parser.parse(response.body());
+                T parsed = parser.parse(response.body());
+                if (parsed instanceof ClientDto client && client.revision() != null) { revisions.put(client.id(), client.revision()); }
+                if (parsed instanceof List<?> clients) {
+                    clients.forEach(value -> { if (value instanceof ClientDto client && client.revision() != null) { revisions.put(client.id(), client.revision()); } });
+                }
+                return parsed;
 
             } catch (JsonProcessingException exception) {
 

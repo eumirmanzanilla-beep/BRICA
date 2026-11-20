@@ -20,7 +20,6 @@ public record RegisterWorkRequest(
         )
         String name,
 
-        @NotBlank(message = "El campo es obligatorio.")
         @Size(
             max = 255,
             message = "El campo no debe superar 255 caracteres."
@@ -29,7 +28,6 @@ public record RegisterWorkRequest(
 
         String description,
 
-        @NotNull(message = "El campo es obligatorio.")
         LocalDate startDate,
 
         LocalDate endDate

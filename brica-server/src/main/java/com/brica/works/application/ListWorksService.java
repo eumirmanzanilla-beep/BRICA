@@ -1,4 +1,5 @@
 package com.brica.works.application;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@PreAuthorize("@accessPolicy.hasPermission('WORKS_READ')")
 public class ListWorksService {
 
     private final WorkStore workRepository;

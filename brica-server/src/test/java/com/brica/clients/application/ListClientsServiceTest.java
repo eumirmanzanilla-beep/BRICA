@@ -28,8 +28,8 @@ class ListClientsServiceTest {
     @Test
     void shouldListClients() {
         List<Client> clients = List.of(
-            new Client("Constructora ABC", "Jane Doe"),
-            new Client("Constructora XYZ", "John Doe")
+            new Client("Constructora_ABC", "Jane Doe"),
+            new Client("Constructora_XYZ", "John Doe")
         );
 
         when(clientRepository.list(0, 50))

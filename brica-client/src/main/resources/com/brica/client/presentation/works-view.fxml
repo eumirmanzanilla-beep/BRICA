@@ -1,145 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TableColumn?>
-<?import javafx.scene.control.TableView?>
-<?import javafx.scene.layout.FlowPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.Region?>
-<?import javafx.scene.layout.VBox?>
-
-<VBox
-    xmlns="http://javafx.com/javafx/25"
-    xmlns:fx="http://javafx.com/fxml/1"
-    fx:controller="com.brica.client.presentation.WorksController"
-    spacing="16.0"
-    fillWidth="true"
-    styleClass="clients-root">
-
-    <!-- ENCABEZADO -->
-    <VBox spacing="5.0">
-
-        <Label
-            text="Directorio de obras"
-            styleClass="content-title"/>
-
-        <Label
-            text="Consulta, registra y administra las obras de tus clientes."
-            wrapText="true"
-            styleClass="content-description"/>
-
-    </VBox>
-
-    <!-- ACCIONES -->
-    <FlowPane
-        hgap="8.0"
-        vgap="8.0"
-        alignment="CENTER_LEFT">
-
-        <Button
-            fx:id="newWorkButton"
-            text="+ Nueva obra"
-            onAction="#onNewWork"
-            styleClass="primary-button"/>
-
-        <Button
-            fx:id="editWorkButton"
-            text="Corregir información"
-            onAction="#onEditWork"
-            styleClass="secondary-button"/>
-
-        <Button
-            fx:id="deleteWorkButton"
-            text="Eliminar"
-            onAction="#onDeleteWork"
-            styleClass="danger-button"/>
-
-        <Button
-            fx:id="refreshButton"
-            text="Actualizar"
-            onAction="#onRefresh"
-            styleClass="secondary-button"/>
-
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<VBox xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.brica.client.presentation.WorksController" spacing="16" styleClass="clients-root">
+    <Label text="Obras" styleClass="content-title"/>
+    <Label text="Datos generales, documentos base y paquetes de cada obra." styleClass="content-description"/>
+    <FlowPane hgap="8" vgap="8">
+        <Button fx:id="newWorkButton" text="Nueva obra" onAction="#onNewWork" styleClass="primary-button"/>
+        <Button fx:id="refreshButton" text="Actualizar" onAction="#onRefresh" styleClass="secondary-button"/>
+        <Button fx:id="deleteWorkButton" text="Eliminar" onAction="#onDeleteWork" styleClass="danger-button"/>
+        <Button text="Generar documentos" disable="true" styleClass="secondary-button"><tooltip><Tooltip text="Disponible en una próxima iteración."/></tooltip></Button>
     </FlowPane>
-
-    <!-- TABLA DE OBRAS -->
-    <TableView
-        fx:id="worksTable"
-        VBox.vgrow="ALWAYS"
-        minHeight="190.0"
-        prefHeight="390.0"
-        styleClass="data-table">
-
+    <TableView fx:id="worksTable" VBox.vgrow="ALWAYS" minHeight="240" styleClass="data-table">
         <columns>
-
-            <TableColumn
-                fx:id="idColumn"
-                text="ID"
-                prefWidth="65.0"/>
-
-            <TableColumn
-                fx:id="nameColumn"
-                text="Obra"
-                prefWidth="220.0"/>
-
-            <TableColumn
-                fx:id="clientColumn"
-                text="Cliente"
-                prefWidth="180.0"/>
-
-            <TableColumn
-                fx:id="locationColumn"
-                text="Ubicación"
-                prefWidth="170.0"/>
-
-            <TableColumn
-                fx:id="startDateColumn"
-                text="Inicio"
-                prefWidth="110.0"/>
-
-            <TableColumn
-                fx:id="endDateColumn"
-                text="Terminación"
-                prefWidth="110.0"/>
-
+            <TableColumn fx:id="clientColumn" text="Cliente" prefWidth="190"/>
+            <TableColumn fx:id="nameColumn" text="Nombre" prefWidth="200"/>
+            <TableColumn fx:id="descriptionColumn" text="Descripción" prefWidth="240"/>
+            <TableColumn fx:id="actionsColumn" text="Acciones" prefWidth="285" minWidth="265" maxWidth="310" sortable="false"/>
         </columns>
-
-        <placeholder>
-            <Label
-                text="No hay obras para mostrar."
-                styleClass="empty-state"/>
-        </placeholder>
-
+        <placeholder><Label text="No hay obras. Crea una con cliente, nombre y descripción."/></placeholder>
     </TableView>
-
-    <!-- ESTADO -->
-    <Label
-        fx:id="statusLabel"
-        text="Cargando obras..."
-        wrapText="true"
-        styleClass="content-note"/>
-
-    <!-- PAGINACIÓN -->
-    <HBox alignment="CENTER_RIGHT" spacing="10.0">
-
-        <Button
-            fx:id="previousPageButton"
-            text="Anterior"
-            onAction="#onPreviousPage"
-            styleClass="secondary-button"/>
-
-        <Label
-            fx:id="pageLabel"
-            text="Página 1"
-            styleClass="content-note"/>
-
-        <Button
-            fx:id="nextPageButton"
-            text="Siguiente"
-            onAction="#onNextPage"
-            styleClass="secondary-button"/>
-
+    <Label fx:id="statusLabel" wrapText="true" styleClass="content-note"/>
+    <HBox alignment="CENTER_RIGHT" spacing="10">
+        <Button fx:id="previousPageButton" text="Anterior" onAction="#onPreviousPage" visible="false" managed="false"/>
+        <Label fx:id="pageLabel"/>
+        <Button fx:id="nextPageButton" text="Siguiente" onAction="#onNextPage" visible="false" managed="false"/>
     </HBox>
-
 </VBox>

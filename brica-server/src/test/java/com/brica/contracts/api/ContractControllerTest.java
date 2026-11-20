@@ -27,8 +27,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ContractController.class)
-@Import(ApiExceptionHandler.class)
+@org.springframework.security.test.context.support.WithMockUser
+@Import({ApiExceptionHandler.class, com.brica.server.security.infrastructure.SecurityConfiguration.class,
+        com.brica.server.security.infrastructure.PasswordConfiguration.class})
 class ContractControllerTest {
+    @MockitoBean private com.brica.server.security.infrastructure.AppUserRepository securityUsers;
+    @Autowired private org.springframework.web.context.WebApplicationContext context;
+
+    @org.junit.jupiter.api.BeforeEach
+    void prepareAuthenticatedRequests() {
+        mockMvc = org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup(context)
+                .apply(org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity())
+                .defaultRequest(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/").secure(true)
+                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf())).build();
+    }
 
     @Autowired
     private MockMvc mockMvc;

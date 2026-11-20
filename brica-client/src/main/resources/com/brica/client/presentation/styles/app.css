@@ -27,6 +27,22 @@
     -fx-text-fill: #263746;
 }
 
+.work-icon-button {
+    -fx-min-height: 30px;
+    -fx-pref-height: 30px;
+    -fx-alignment: center;
+    -fx-min-width: 30px;
+    -fx-pref-width: 30px;
+    -fx-max-width: 30px;
+    -fx-padding: 4px;
+    -fx-background-color: transparent;
+    -fx-text-fill: #326781;
+    -fx-font-size: 16px;
+}
+.work-icon-button:hover, .work-icon-button:focused {
+    -fx-background-color: #E8F0F8;
+}
+
 .separator .line {
     -fx-border-color: #E2E8F0;
     -fx-border-width: 1 0 0 0;
@@ -469,5 +485,3 @@
 .client-dialog .content {
     -fx-text-fill: #263746;
 }
-
-

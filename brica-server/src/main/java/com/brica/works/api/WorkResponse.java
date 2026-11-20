@@ -11,7 +11,8 @@ public record WorkResponse(
         String location,
         String description,
         LocalDate startDate,
-        LocalDate endDate
+        LocalDate endDate,
+        String documentName
 ) {
 
     public static WorkResponse from(Work work) {
@@ -22,7 +23,8 @@ public record WorkResponse(
             work.getLocation(),
             work.getDescription(),
             work.getStartDate(),
-            work.getEndDate()
+            work.getEndDate(),
+            work.getDocumentName()
         );
     }
 }

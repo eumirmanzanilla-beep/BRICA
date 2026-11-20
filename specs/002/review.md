@@ -33,6 +33,8 @@ La bitácora anterior indicaba F1–F11 no iniciadas: era cierta para el bloque 
 
 No se registró autorización para leer muestras reales por su mera presencia en el repositorio. No se infieren aprobadores o fechas individuales para decisiones que no los identifican.
 
+La [bitácora histórica completa de F0](review-history-f0.md) se conserva sin cambios de contenido.
+
 ## 3. Bitácora cronológica
 
 ### 2026-11-17 — Alcance y evaluación inicial F0
@@ -53,7 +55,7 @@ No se registró autorización para leer muestras reales por su mera presencia en
 
 - La imagen inicial devolvió `EPERM` al crear namespaces. Una imagen/perfil específicos y filtro interior obligatorio permitieron probar el aislamiento sin Docker socket ni capacidades amplias; el perfil default siguió fallando cerrado.
 - Ejecución final de contenedor: **13/13 comprobaciones y 28/28 aserciones**; límites agregados de scratch, tareas y memoria probados para el **contenedor completo**, no para un worker dentro del backend. La prueba de estrés registró OOM esperado de un hijo; no demuestra protección del backend.
-- Regresión del banco host: **10/10**; unitarias de experimentos: **6/6**. Sin suite Maven en ese bloque. Los informes en `/tmp/opencode` eran temporales y pueden no existir; instrucciones y anotaciones se conservan en `specs/002/experiments/` de la rama funcional; no forman parte de esta integración documental.
+- Regresión del banco host: **10/10**; unitarias de experimentos: **6/6**. Sin suite Maven en ese bloque. Los informes en `/tmp/opencode` eran temporales y pueden no existir; instrucciones y anotaciones se conservan en [experiments/](experiments/README.md), incorporado desde la rama funcional.
 - F0 quedó abierta entonces: faltaban delegación de cgroup por worker, revisión de licencias/seguridad nativas y del grafo integrado, corpus ampliado y aceptación manual. No se autorizaron cambios de despliegue ni purgas.
 
 ### 2026-11-20 — Consolidación y contraste con código

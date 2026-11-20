@@ -1,4 +1,5 @@
 package com.brica.clients.application;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.brica.clients.domain.Client;
 import com.brica.clients.application.port.ClientStore;
@@ -6,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@PreAuthorize("@accessPolicy.hasPermission('CLIENTS_WRITE')")
 public class RegisterClientService{
     private final ClientStore  clientRepository;
 

@@ -28,12 +28,12 @@ class RegisterClientServiceTest {
             .thenAnswer(invocation -> invocation.getArgument(0));
 
         Client client = registerClientService.registerClient(
-            "Constructora ABC",
+            "Constructora_ABC",
             "Jane Doe"
         );
 
         assertEquals(
-            "Constructora ABC",
+            "Constructora_ABC",
             client.getName()
         );
 

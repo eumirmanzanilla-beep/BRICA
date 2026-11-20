@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<VBox xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.brica.client.presentation.TemplatesController" fx:id="pane" spacing="8" styleClass="content-card">
+    <padding><Insets top="12" right="16" bottom="12" left="16"/></padding>
+    <Label text="Plantillas y versiones" styleClass="content-title"/>
+    <Label text="Borrador y No disponible se conservan para administrar y consultar; solo Vigente se ofrece para uso." wrapText="true"/>
+    <ListView fx:id="templates" minHeight="75" prefHeight="120" VBox.vgrow="ALWAYS"/>
+    <HBox spacing="8"><Button text="Anterior" onAction="#previous"/><Label fx:id="pageLabel"/><Button text="Siguiente" onAction="#next"/><Button text="Actualizar" onAction="#refresh"/><CheckBox fx:id="includeDeleted" text="Incluir eliminadas (historial)" onAction="#changeDeletedFilter"/></HBox>
+    <HBox spacing="8"><Button text="Crear plantilla" onAction="#create"/><Button text="Editar seleccionada" onAction="#update"/>
+        <Button text="Eliminar lógicamente" onAction="#delete"/><Button text="Agregar versión" onAction="#addVersion"/></HBox>
+    <HBox spacing="12" VBox.vgrow="ALWAYS"><ListView fx:id="versions" minWidth="180" prefWidth="210"/>
+        <TextArea fx:id="detail" editable="false" wrapText="true" HBox.hgrow="ALWAYS" prefHeight="110"/></HBox>
+    <HBox spacing="8"><TextField fx:id="operationId" promptText="ID de confirmación pendiente" HBox.hgrow="ALWAYS"/><Button text="Recuperar registro" onAction="#recover"/></HBox>
+    <Label fx:id="message" wrapText="true"/>
+</VBox>

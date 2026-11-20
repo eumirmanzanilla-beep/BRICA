@@ -6,6 +6,11 @@ spring:
     deserialization:
       fail-on-unknown-properties: true
 
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 11MB
+
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:${POSTGRES_PORT:5433}/${POSTGRES_DB:brica}}
     username: ${DB_USER:brica}
@@ -20,3 +25,31 @@ spring:
     enabled: true
     locations: classpath:db/migration
     validate-on-migrate: true
+
+server:
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        same-site: strict
+
+brica:
+  extraction:
+    worker-enabled: ${BRICA_EXTRACTION_ENABLED:true}
+    python: ${BRICA_EXTRACTION_PYTHON:python3}
+    script: ${BRICA_EXTRACTION_SCRIPT:src/main/python/brica_extraction.py}
+    # A delegated, writable cgroup-v2 subtree is mandatory; blank fails closed.
+    cgroup-root: ${BRICA_EXTRACTION_CGROUP_ROOT:}
+  documents:
+    python: ${BRICA_DOCUMENT_PYTHON:python3}
+    script: ${BRICA_DOCUMENT_SCRIPT:src/main/python/brica_docx.py}
+    # Límites conservadores para las pruebas construidas; no constituyen despliegue definitivo.
+    max-bytes: 1048576
+    storage-max-bytes: 10485760
+    max-expanded-bytes: 20971520
+    max-entries: 512
+    timeout-seconds: 20
+    storage-root: ${BRICA_DOCUMENT_STORAGE:./var/documents}
+  security:
+    # Solo para desarrollo local explícito; en operación se requiere HTTPS.
+    allow-insecure-http: ${BRICA_ALLOW_HTTP:false}
