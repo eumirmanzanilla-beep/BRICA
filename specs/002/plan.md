@@ -1,6 +1,5 @@
 # Plan de implementación — Spec 002
 
-> **Contexto de integración:** el estado técnico descrito procede de la rama de trabajo `actualization`; parte del código, rutas y experimentos aún no están integrados en `main`. Contrasta con la rama que estés utilizando.
 **Funcionalidad:** extracción, revisión y confirmación de fuentes
 **Actualización:** 2026-11-20
 **Estado:** implementación parcial; aislamiento operativo y aceptación pendientes
@@ -24,44 +23,6 @@ Procesar PDF/XLS/XLSX/DOCX de una obra, revisar propuestas o captura manual y co
 | `experiments/` | Banco sintético y aislamiento experimental independiente. | Conservar por ahora; extraer herramientas útiles antes de considerar su eliminación en otra tarea. |
 
 ## 3. Decisiones técnicas y de negocio
-
-Las elecciones P01–P33 se registraron el 2026-11-17; sus letras corresponden a las alternativas originales. No atribuir aprobador o fecha individual no documentados. Los detalles DP de F0 se resumen abajo y en [review.md](review.md); una política elegida no demuestra su implementación ni su verificación.
-
-| ID | Elección | Consecuencia para la implementación | Fases |
-|---|---|---|---|
-| P01 | B | Extraer, revisar y confirmar selectivamente; no solo mostrar texto. | F3, F7–F10 |
-| P02 | C | Añadir DOCX fuente a PDF/XLS/XLSX; no reutilizar el analizador de plantillas como lector. | F1, F4–F5 |
-| P03 | B | Lectura genérica y mapeo manual asistido, sin perfiles rígidos por cliente como condición. | F0, F4–F6 |
-| P04 | A | Intentar los destinos de negocio admitidos sin depender de un paquete. | F1, F6 |
-| P05 | B | Asociar candidatos a destinos permitidos y guardar opcionalmente un perfil de mapeo. | F6, F9 |
-| P06 | B | Prioridad explícita por campo/clase de fuente, conservando alternativas y confirmación humana. | F0, F6 |
-| P07 | B | Leer posiciones/bloques y tablas identificables en PDF. | F4 |
-| P08 | A | OCR únicamente en páginas/regiones con lectura digital insuficiente. | F4 |
-| P09 | A | Lectores Java; OCR como proceso local externo, sin nuevo servicio. | F0, F3–F5 |
-| P10 | B | Detectar estructura Excel y permitir corregir columnas/rangos/filas. | F5, F9 |
-| P11 | A | Usar valores almacenados de fórmulas; conservar la fórmula como evidencia, no evaluarla. | F5 |
-| P12 | B | Usuario agrupa hojas como partes, resúmenes o alternativas; no fusionar automáticamente. | F5, F8–F9 |
-| P13 | C | Cabecera/identidad/revisiones explícitas y contenido flexible acotado. | F1, F8 |
-| P14 | B | Revisiones presupuestales inmutables y elección explícita de revisión principal. | F8 |
-| P15 | A | Evidencia mínima: fuente/hash, ubicación, original y destino sugerido. | F1, F4–F6 |
-| P16 | B | Separar nombre técnico y denominación documental literal. | F1–F2, F7 |
-| P17 | A | Convenciones regionales explícitas por fuente/perfil y cronología vigente. | F0, F6 |
-| P18 | B | Comprobar cantidades/importes por separado, sin sustituir los importes fuente. | F6, F8 |
-| P19 | B | Datos sin atributo fijo pueden asociarse expresamente a adicionales existentes. | F6–F7 |
-| P20 | A | Fuente común en obra/cliente y presupuestos propios; no duplicar valores en `contracts.data`. | F7–F8 |
-| P21 | A | Completar ausentes o corregir captura con justificación; no tramitar convenios. | F7–F8 |
-| P22 | B | Confirmaciones independientes con resultados claros por destino. | F7–F9 |
-| P23 | A | Control optimista por destino, incluido cliente; sin fusión automática por campo. | F2, F7–F8 |
-| P24 | A | Clave y fingerprint por petición/contexto; reintentar no vuelve a aplicar cambios. | F3, F7–F8 |
-| P25 | B | Trabajos persistidos y ejecución local limitada con consulta de estado. | F3 |
-| P26 | B | Borradores de revisión en servidor, con reanudación y control de revisión. | F3, F6–F9 |
-| P27 | B | Ventana separada de extracción, no agrandar el asistente actual. | F9 |
-| P28 | A | Reutilizar permisos por destino, sin nuevos permisos ni roles. | F1–F10 |
-| P29 | A | Procesos limitados dentro del despliegue actual; un subproceso no equivale a sandbox. | F0, F3–F5 |
-| P30 | A | Referenciar el adjunto existente; no copiarlo por análisis. | F1, F3 |
-| P31 | A | Operación durable en fases, publicación verificable, auditoría y recuperación idempotente. | F1–F3, F7–F11 |
-| P32 | A | Entregar datos/colecciones confirmados mediante contratos propios; sin generación. | F8, F10 |
-| P33 | A + validación manual de B | Corpus anotado, métricas por campo/fila y prueba manual con archivos reales autorizados. | F0, F10–F11 |
 
 - **Precedencia:** contrato para número, contratista, fechas y montos contractuales; Excel seleccionado para conceptos, unidades, cantidades y precios. Otras claves y contradicciones permanecen sin elección automática.
 - **Valores:** `CONTROL_V1` usa producto exacto, redondeo `HALF_UP` a escala 2 por concepto y suma de controles; conservar total declarado y suma exacta. Diferencias requieren justificación de 10–2000 caracteres; no suponer moneda/IVA.
