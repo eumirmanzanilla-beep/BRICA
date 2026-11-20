@@ -46,7 +46,6 @@ Para una copia nueva:
 
 ```powershell
 Copy-Item .env.example .env
-notepad .env
 ```
 
 Configura:
