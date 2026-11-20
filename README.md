@@ -1,164 +1,183 @@
 # BRICA
 
-Sistema interno para una constructora que centraliza clientes, obras, contratos y documentación. La obra es el eje del negocio. El escritorio JavaFX consume una API REST; las reglas y la persistencia residen en el servidor.
+> **Nota de integración:** esta documentación describe también el trabajo de la rama documental/funcional aún no integrado en `main`, incluida la extracción y la reorganización JavaFX. Consulta el código de tu rama antes de usar rutas o capacidades.
 
-## Empezar desde cero
+BRICA es un sistema interno para una constructora que centraliza clientes, obras, datos y archivos usados durante la operación. **La obra es el eje del sistema.** Un escritorio JavaFX consume la API REST; el servidor Spring Boot aplica las reglas, autorización y persistencia. El cliente no accede directamente a PostgreSQL.
 
-Consulta la **[guía de instalación paso a paso](docs/installation-guide.md)** para descargar esta rama, instalar los requisitos, configurar `.env`, iniciar PostgreSQL y servidor con Docker, crear cuentas y abrir el escritorio desde Windows.
+## Requisitos y tecnologías
 
-- Requiere Git, Docker Desktop y JDK 25 para el escritorio. La imagen del servidor ya incluye Python y sus dependencias documentales.
-- No hay cuentas ni contraseñas predeterminadas: las migraciones crean los roles y la consola `security-admin` permite crear tus usuarios.
-- Los usuarios PostgreSQL y del escritorio son distintos. La guía indica los nombres, puertos y valores concretos, sin incluir credenciales reales.
-- Es una instalación local; el despliegue público requiere HTTPS y configuración operativa adicional.
-
-## Estado actual
-
-El repositorio ya contiene:
-
-- API de salud: `GET /api/v1/health`.
-- Clientes: registro, listado paginado, consulta, actualización y eliminación lógica.
-- Obras: registro, listado paginado, consulta, corrección de información general y eliminación lógica. La corrección utiliza `ETag` / `If-Match` para detectar cambios concurrentes.
-- Contratos: registro mediante `POST /api/v1/contracts`, asociado a una obra, con datos JSON almacenados en PostgreSQL. No incluye carga ni extracción de PDF.
-- Persistencia JPA, validaciones del servidor, errores `ProblemDetail` y migraciones Flyway V1–V14.
-- Autenticación por sesión de servidor, BCrypt coste 10, CSRF y autorización por permisos vigentes en los casos de uso de negocio. Inicio/cierre de sesión en JavaFX y administración local inicial de cuentas/roles.
-- Configuración documental por API y JavaFX: campos fijos y adicionales tipados, fechas españolas e importes precisos, análisis DOCX mediante docxtpl, versiones inmutables, recuperación/idempotencia, paquetes por obra/cliente con borradores y concurrencia, opciones y resolución por tipo documental.
-- Obras con alta mínima, edición completa con concurrencia, asistente de adjuntos/información/revisión y consulta. Adjuntos DOCX/PDF/XLSX persistentes de hasta 10 MiB, sin extracción automática.
-- Escritorio con panel de inicio, pantallas de clientes y obras y comprobación de conexión. La sección Contratos todavía muestra un contenido provisional; no existe su formulario FXML.
-- Pruebas unitarias, de API y de persistencia/HTTP con PostgreSQL en Testcontainers.
-
-**Pendiente de aceptación:** recorrido manual Windows/Word, plantilla operativa conjunta y despliegue público/HTTPS y retención operativa. La instalación local usa almacenamiento persistente; extracción, previsualización renderizada y generación/exportación definitiva siguen fuera de esta entrega.
-
-## Stack y estructura
-
-Java 25, Maven Wrapper, Spring Boot 4.1.1, JavaFX 25.0.2 y PostgreSQL 18.
-
-| Ruta | Contenido |
+| Tecnología | Uso |
 |---|---|
-| `brica-server/` | Servidor organizado por funcionalidad: API, aplicación, dominio e infraestructura. |
-| `brica-client/` | Cliente JavaFX, recursos FXML y clientes HTTP asíncronos. |
-| `brica-server/src/main/resources/db/migration/` | Migraciones SQL versionadas; no modificar las ya aplicadas. |
-| `specs/001/` | Configuración documental: campos, plantillas, versiones y paquetes. |
-| `specs/002/` | Motor documental: extracción de PDF y generación. |
-| `docs/constitution.md` | Principios de BRICA. |
+| Java 25 y Maven Wrapper | Compilar y ejecutar los módulos Java. |
+| Spring Boot 4.1.1 | API REST y lógica del servidor. |
+| JavaFX 25.0.2 y FXML | Aplicación de escritorio. |
+| PostgreSQL 18, JPA/Hibernate y Flyway | Persistencia y evolución versionada del esquema. |
+| Docker Compose | Entorno local de PostgreSQL y servidor. |
+| Python 3 y dependencias fijadas | Procesamiento documental invocado por el servidor; requerido en desarrollo local para funciones/pruebas que lo utilizan. |
+| JUnit, Spring Boot Test y Testcontainers | Pruebas Java; las pruebas de integración requieren Docker. |
 
-Las versiones y la configuración efectiva están en los POM, `compose.yml` y `brica-server/src/main/resources/application.yml`.
+Instala Git, JDK 25 y Docker Desktop. Para compilar no instales Maven globalmente: utiliza el Wrapper incluido. Python no es necesario para el recorrido instalado completamente en Docker; sí para ejecutar localmente las tareas Python del servidor. Consulta la [guía de instalación paso a paso](docs/installation-guide.md) para requisitos, cuentas, puertos y resolución de problemas.
 
-## Desarrollo local
+## Inicio
 
-Para una primera instalación usa la [guía de instalación](docs/installation-guide.md). Para desarrollar el backend fuera de Docker o ejecutar sus pruebas, requiere JDK 25, Docker activo y Python con las dependencias de `brica-server/src/main/python/requirements.txt`. Desde WSL prepara el entorno:
+Antes de instalar, confirma que tienes acceso al repositorio y cuál rama o versión debes probar. Clona el repositorio, entra en su raíz y comprueba el estado:
 
 ```bash
-python3 -m venv .venv-documents
-.venv-documents/bin/python -m pip install -r brica-server/src/main/python/requirements.txt
-export BRICA_DOCUMENT_PYTHON="$PWD/.venv-documents/bin/python"
-export BRICA_DOCUMENT_SCRIPT="$PWD/brica-server/src/main/python/brica_docx.py"
+git clone https://github.com/eumirmanzanilla-beep/BRICA.git
+cd BRICA
+git switch <rama-publicada>
+git status --short --branch
 ```
 
-Python debe estar instalado en el host para crear ese entorno. La imagen Docker ya lo incluye y no necesita esta preparación. Usar WSL para desarrollo/pruebas y Windows para validar JavaFX; comandos desde la raíz. Preparar el entorno no ejecuta pruebas ni sustituye la aceptación manual.
+Sustituye `<rama-publicada>` por la rama entregada por el responsable. No todas las ramas locales están publicadas en GitHub. La guía de instalación actual contiene un ejemplo con `feat/23-documents-secure-reference-catalog`; si instalas otra rama, selecciona la versión correspondiente en lugar de asumir que ese nombre sigue vigente.
 
-### 1. Preparar PostgreSQL
+### Puesta en marcha local
 
-Crear `.env` a partir de `.env.example` y reemplazar la contraseña de ejemplo. No versionar credenciales. Compose utiliza estas variables; Maven **no carga `.env` automáticamente**.
+El flujo de referencia usa PostgreSQL y servidor en Docker, y escritorio JavaFX en Windows. En PowerShell, desde la raíz:
 
-```bash
-docker compose up -d postgres
-```
-
-Por defecto, Compose publica PostgreSQL en el puerto `5433` del host y conserva los datos en un volumen. No eliminar el volumen para resolver errores de migración.
-
-### 2. Iniciar el backend desde WSL
-
-Definir `DB_URL`, `DB_USER` y `DB_PASSWORD` en el entorno del proceso, usando los valores configurados para PostgreSQL. Ejemplo sin credenciales reales:
-
-```bash
-export DB_URL='jdbc:postgresql://localhost:5433/brica'
-export DB_USER='brica'
-read -rsp 'Contraseña de PostgreSQL: ' DB_PASSWORD
-export DB_PASSWORD
-export BRICA_ALLOW_HTTP=true # Exclusivamente desarrollo local sin TLS.
-./mvnw -pl brica-server spring-boot:run
-```
-
-Al arrancar, Flyway aplica las migraciones y Hibernate valida el esquema. Comprobar `http://localhost:8080/api/v1/health`; devuelve `{"status":"UP","service":"brica-server"}`.
-
-Como alternativa al backend local, Compose dispone de un servicio de servidor con construcción multietapa:
-
-```bash
+```powershell
+Copy-Item .env.example .env
+# Editar .env y reemplazar la contraseña de ejemplo.
 docker compose up -d --build brica-server
 ```
 
-No ejecutar ambos servidores simultáneamente en el mismo puerto. El servidor en Compose recibe las variables de conexión desde su configuración y se conecta al servicio `postgres`.
+No publiques `.env`. Compose aplica las migraciones Flyway al iniciar; verifica el servidor en `http://localhost:8080/api/v1/health`. Una instalación nueva crea roles, no usuarios. Crea las cuentas interactivamente con `security-admin`, siguiendo [el paso de alta de cuentas](docs/installation-guide.md#6-crear-las-cuentas-del-escritorio).
 
-Las operaciones de negocio requieren HTTPS por defecto; HTTP se rechaza salvo `BRICA_ALLOW_HTTP=true`, reservado para desarrollo local. Para Compose, configurar ese valor en su entorno o `.env` únicamente en desarrollo. No confiar en cabeceras reenviadas de clientes para fingir HTTPS; el despliegue TLS/reverse proxy debe configurarse expresamente antes de uso operativo.
-
-### Crear roles y cuentas iniciales
-
-En una instalación nueva, consulta los IDs de los roles creados por las migraciones y crea las cuentas con `security-admin`, como muestra la [guía](docs/installation-guide.md#6-crear-las-cuentas-del-escritorio). No ejecutes herramientas de sustitución de cuentas ni el entorno temporal `tools/review-environment.py` para instalar desde cero. El sistema habitual utiliza Compose y volúmenes persistentes.
-
-No existen usuarios ni contraseñas de acceso por defecto. V10 prepara Gerencial (4), Administrativo (3), Practicante (2) e Invitado (1), sin crear cuentas; ante un rol homónimo existente falla en vez de sobrescribirlo. Gerencial y Administrativo tienen los ocho permisos actuales. Practicante e Invitado tienen solo los cuatro permisos de lectura; propuestas/aprobación quedan fuera de este sprint. En un destino expresamente autorizado, tras compilar y desde una terminal interactiva del servidor, con `DB_*` configuradas:
-
-```bash
-java -jar brica-server/target/brica-server-0.1.0-SNAPSHOT.jar --spring.main.web-application-type=none --spring.profiles.active=security-admin
-```
-
-Este perfil **no abre un servidor web**. El acceso administrativo depende de los permisos del sistema operativo sobre el servidor y sus credenciales de base. Usar `role` para crear un rol y anotar su ID; después `user` para asignarlo a una cuenta. `permissions`, `user-state`, `role-state` y `password` permiten gestionar permisos, estados y restablecer contraseñas; `exit` termina. Las contraseñas se solicitan sin eco, nunca como argumentos ni en migraciones.
-
-Claves disponibles: `CLIENTS_READ`, `CLIENTS_WRITE`, `WORKS_READ`, `WORKS_WRITE`, `CONTRACTS_READ`, `CONTRACTS_WRITE`, `DOCUMENT_VALUES_READ`, `DOCUMENT_CONFIG_ADMIN`. Se asignan por separado: administración documental no concede consulta de valores, ni un nivel jerárquico alto concede permisos implícitos. `CONTRACTS_READ` no crea una consulta de contratos aún inexistente.
-
-Los identificadores de usuario se comparan exactamente, sin recortar ni convertir mayúsculas. Contraseñas: al menos 8 caracteres, una mayúscula y un número, máximo técnico 72 bytes UTF-8, sin truncamiento. Usuarios/roles desactivados y permisos retirados dejan de autorizar operaciones aunque exista una sesión previa.
-
-En la instalación local previamente autorizada se habilitaron `UsuarioGerencial` y `UsuarioAdministrativo`; esas cuentas no se descargan con Git ni existen automáticamente en una base nueva. `tools/ReplaceTestAccounts.java` corresponde a esa sustitución específica y explícita, no al alta inicial ni a un seed de arranque: exige confirmación, identidad de base/proceso PostgreSQL y coincidencia exacta del conjunto anterior; su transacción se revierte si algo difiere. No se guardan contraseñas en migraciones, ni se restablecen cuentas al reiniciar.
-
-### 3. Iniciar el escritorio desde Windows
-
-Desde PowerShell, con JDK 25 disponible:
+En otra terminal PowerShell, abre el escritorio:
 
 ```powershell
 $env:BRICA_ALLOW_HTTP="true" # Solo desarrollo local sin TLS.
-.\mvnw.cmd -pl brica-client javafx:run
-```
-
-El cliente utiliza `http://localhost:8080`. Para otro destino:
-
-```powershell
 $env:BRICA_SERVER_URL="http://localhost:8080"
 .\mvnw.cmd -pl brica-client javafx:run
 ```
 
-También admite la propiedad de JVM `brica.server.url`, que tiene precedencia sobre la variable de entorno. Si el servidor corre en otro host, ajustar la URL al destino accesible desde Windows.
+`BRICA_ALLOW_HTTP=true` se permite exclusivamente para desarrollo local; el servidor exige HTTPS por defecto. Para ejecutar el backend fuera de Docker, configura `DB_URL`, `DB_USER` y `DB_PASSWORD` en el entorno (Maven no carga `.env`). Los comandos de Python local y el recorrido completo de instalación están en [`docs/installation-guide.md`](docs/installation-guide.md) y en la sección de desarrollo de este README.
 
-La sesión no caduca por tiempo, según la política aprobada. Cookie y CSRF permanecen únicamente en memoria del escritorio; cerrar sesión los descarta e invalida la sesión del servidor. Cerrar la aplicación intenta logout sin bloquear JavaFX. Un cierre abrupto puede dejar una sesión remota huérfana hasta reiniciar el servidor; no se implementa «recordar acceso» ni se persisten cookies/contraseñas.
+### Recorrido funcional disponible
 
-## Verificación
+1. Inicia sesión con la cuenta creada; registra un cliente y una obra.
+2. Desde la obra, administra información y adjunta archivos fuente autorizados. El servidor admite PDF, XLS/XLSX y DOCX sin macros, con límites definidos en la configuración.
+3. El código de esta rama incluye un flujo de extracción para revisar candidatos/evidencia, guardar borradores y confirmar datos de obra, cliente o presupuesto por separado. Los resultados requieren revisión humana.
+4. Configura campos de referencia, plantillas DOCX, versiones y paquetes asociados a cliente u obra; consulta los valores que resuelve una selección.
+5. Se pueden consultar/descargar adjuntos de entrada. **No están disponibles la previsualización de documentos de salida, su generación definitiva ni su exportación.** La configuración o resolución de campos no produce un documento.
 
-Desde WSL, con Docker activo y `BRICA_DOCUMENT_PYTHON` apuntando al entorno preparado:
+La extracción existe en el código, pero su verificación integral y aceptación siguen pendientes; consulta `specs/002/review.md` antes de depender de ese flujo. Tampoco se ha completado la aceptación manual Windows/Word ni la preparación de despliegue público.
 
-```bash
-./mvnw test
-./mvnw clean verify
-git diff --check
+## Organización del proyecto
+
+```text
+./                                      # Raíz del repositorio
+├── README.md                           # Entrada al proyecto, instalación y estado funcional
+├── AGENTS.md                           # Instrucciones operativas para desarrollo y agentes
+├── CONTRIBUTING.md                     # Flujo de issues, commits, PR y estado de CI/CD
+├── MEMORY.md                           # Diario de trabajo entre sesiones; no normativo
+├── pom.xml                             # Reactor Maven y configuración compartida
+├── mvnw, mvnw.cmd, .mvn/               # Maven Wrapper para Linux/WSL y Windows
+├── compose.yml                         # PostgreSQL y servidor para desarrollo local
+├── .env.example                        # Variables de ejemplo; no contiene credenciales reales
+├── docs/                               # Instalación, constitución y fuentes de requisitos/diseño/datos
+├── specs/                              # Especificaciones, planes, seguimiento y plantillas SDD
+├── brica-server/                       # API, dominio, aplicación, persistencia e integraciones
+│   └── src/main/resources/db/migration/ # Migraciones SQL versionadas de Flyway (hasta V18 en esta rama)
+└── brica-client/                       # Escritorio JavaFX, clientes HTTP, FXML y estilos
 ```
 
-Las pruebas de integración usan PostgreSQL 18 en Testcontainers; no necesitan apuntar a la base de desarrollo. La ejecución manual del backend sí requiere sus variables de conexión. Compilar no sustituye abrir y verificar las pantallas en Windows. Registrar por separado las comprobaciones ejecutadas y las pendientes.
+El servidor está organizado por funcionalidad: `clients`, `works`, `contracts`, `budgets`, `documents`, `extraction` y `server`. Sus módulos suelen separar `api`, `application`, `domain` e `infrastructure`; sigue el patrón específico existente en vez de imponer una estructura nueva.
 
-## Configuración documental — preliminar hasta F6
+El cliente real se organiza principalmente en `api`, `config` y `presentation`. Sus vistas FXML y estilos están en `brica-client/src/main/resources/com/brica/client/presentation/`. Los README de módulo pueden presentar estructuras objetivo; no todas las clases que muestran existen necesariamente en esta rama.
 
-La [Spec 001](specs/001/spec.md) define el catálogo de campos, la consulta de valores por obra, el análisis de DOCX, las versiones de plantilla y los paquetes documentales. Su [plan de trabajo](specs/001/plan.md) detalla fases, archivos, funciones, validaciones y criterios de salida. La aceptación completa requiere permisos reales comprobados en el servidor.
+### Integraciones principales
 
-El [seguimiento](specs/001/review.md) separa implementación, evidencia automática y aceptación pendiente. El [recorrido manual](specs/001/manual-test.md) cubre permisos, estados, análisis, versiones, borradores, concurrencia y valores. Los documentos construidos para pruebas no son formatos operativos aprobados.
+| Flujo | Responsabilidad |
+|---|---|
+| JavaFX → API REST | Sesión/CSRF y llamadas HTTP asíncronas. La UI no es frontera de seguridad. |
+| API → aplicación/dominio | Validaciones, casos de uso, permisos y controles de concurrencia. |
+| Servidor → PostgreSQL | JPA/Hibernate valida el esquema; Flyway crea/evoluciona migraciones. |
+| Servidor → almacenamiento local | Bytes de archivos en almacenamiento del servidor; metadatos en PostgreSQL. Respaldar ambos juntos. |
+| Servidor → Python | Análisis documental mediante proceso local configurado, no acceso a base desde Python. |
+| Pruebas → Testcontainers | PostgreSQL desechable para integración; no usar datos de la instalación local. |
 
-La navegación habitual es **Obras**, **Clientes** y **Catálogo de campos**. Una obra se crea con cliente, nombre y descripción; ubicación y fechas son opcionales y se completan después. Sus acciones por fila permiten editar, seguir el asistente de documentos/información/revisión, consultar toda la información y configurar paquetes → plantillas → versiones. El botón Generar documentos permanece sin implementación en esta iteración.
+La configuración efectiva está en los POM, `compose.yml`, `.env.example` y `brica-server/src/main/resources/application.yml`. No hay workflows de GitHub Actions ni pipeline de despliegue automático en esta rama; consulta [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
-Los nombres de cliente/obra/paquete/plantilla/versión solo admiten letras sin acentos (ñ/Ñ sí), números y `_`, con al menos una letra y sin `_` inicial. La captura filtra caracteres inválidos y el servidor valida la regla completa. Las fechas de obra tienen calendario y ninguna terminación puede ser anterior al inicio. Los paquetes de cliente se reutilizan en sus obras; los exclusivos de obra se identifican también en la consulta del cliente sin habilitarse para otras obras. Pueden agregarse varias plantillas a borradores y confirmados, preparando primero una versión elegible para no invalidar la composición confirmada.
+Variables principales:
 
-Las versiones tienen nombre independiente de su número/archivo, se pueden renombrar y eliminar lógicamente con confirmación. La última versión no eliminada se usa para nuevas selecciones, sin reutilizar números ni perder el historial. Los adjuntos de obra también tienen eliminación lógica con confirmación; no se purgan sus archivos físicos.
+| Variable | Dónde se usa | Propósito |
+|---|---|---|
+| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_PORT` | `.env` / Compose | Base y acceso de PostgreSQL; no son las cuentas de BRICA. Puerto host por defecto `5433`. |
+| `BRICA_SERVER_PORT` | `.env` / Compose | Puerto publicado del servidor; por defecto `8080`. |
+| `DB_URL`, `DB_USER`, `DB_PASSWORD` | Proceso Maven local | Conexión del backend local; Maven no importa `.env`. |
+| `BRICA_SERVER_URL` / `brica.server.url` | Cliente JavaFX | URL base de API; la propiedad JVM prevalece sobre la variable. |
+| `BRICA_ALLOW_HTTP` | Servidor y cliente | Habilita HTTP solo en desarrollo local; el valor seguro por defecto lo mantiene desactivado. |
+| `BRICA_DOCUMENT_PYTHON`, `BRICA_DOCUMENT_SCRIPT`, `BRICA_DOCUMENT_STORAGE` | Servidor | Python analizador y ruta de almacenamiento documental. En Docker se configuran dentro de la imagen. |
 
-Desde una obra se crean paquetes/plantillas exclusivos de ella; desde Clientes → Paquetes documentales, exclusivos de ese cliente y enlazados automáticamente. Los campos fijos se predefinen internamente y el catálogo crea adicionales tipados sin pedir elegir rutas de origen; el nombre visible coincide con la clave. El asistente admite adjuntos DOCX, PDF y XLSX de hasta 10 MiB, sin extracción; las plantillas siguen siendo DOCX con límite de análisis de 1 MiB.
+El procesamiento de extracción tiene además configuración `BRICA_EXTRACTION_*` en `application.yml`; en particular, revisa el requisito de aislamiento (`BRICA_EXTRACTION_CGROUP_ROOT`) antes de habilitarlo en un entorno distinto al local. No copies valores o secretos de una instalación personal.
 
-Base de datos y archivos usan los volúmenes de Compose. El volumen de archivos mantiene su nombre histórico para conservar los existentes, no es almacenamiento temporal. No ejecutar `down -v` ni borrar volúmenes. Los contenedores se reinician con `unless-stopped`; la sesión de acceso deberá renovarse tras un reinicio del servidor. La [guía vigente](specs/001/manual-test.md) cubre este recorrido persistente y los límites de la verificación.
+## Archivos relevantes
 
-La [Spec 002](specs/002/spec.md) corresponde al motor documental posterior. No confundir la consulta de valores de la configuración documental con una previsualización renderizada o una generación definitiva.
+| Ruta | Por qué es relevante |
+|---|---|
+| `pom.xml`, `brica-server/pom.xml`, `brica-client/pom.xml` | Módulos Maven, versiones, dependencias y plugins de ejecución. |
+| `compose.yml`, `.env.example` | Topología local y nombres de variables de entorno de ejemplo. Maven no carga `.env`. |
+| `brica-server/src/main/resources/application.yml` | Límites, seguridad, conexión, almacenamiento y configuración de procesos del servidor. |
+| `brica-server/src/main/resources/db/migration/` | Historial del esquema; crea migraciones nuevas, no edites las aplicadas. |
+| `brica-server/src/main/java/com/brica/` | API, casos de uso, reglas de dominio y adaptadores, organizados por funcionalidad. |
+| `brica-server/src/main/python/requirements.txt` | Versiones Python fijadas para los analizadores. |
+| `brica-server/src/test/` | Pruebas Java/Python y fixtures de integración/documentos. |
+| `brica-client/src/main/java/com/brica/client/` | Clientes HTTP, configuración y presentación JavaFX. |
+| `brica-client/src/main/resources/` | FXML, CSS y otros recursos del escritorio. |
+| `AGENTS.md` | Convenciones, fuentes de verdad, seguridad y límites de trabajo del repositorio. |
+| `CONTRIBUTING.md` | Cómo describir issues, ramas, commits y PR; CI/CD actual y recomendaciones futuras. |
+| `brica-client/README.md`, `brica-server/README.md` | Mapas de módulos; contrastar sus estructuras objetivo con el código real. |
+| `specs/README.md`, `specs/templates/` | Flujo SDD y plantillas que integran `spec.md`, `plan.md` y `review.md`. |
+| `specs/001/` | Configuración documental: catálogo, plantillas, versiones, paquetes, plan y aceptación. |
+| `specs/002/` | Extracción de fuentes: alcance, plan, decisiones, pruebas experimentales y seguimiento. |
+| `docs/informative/ERS_BRICA.docx`, `docs/informative/DAS_BRICA.docx`, `docs/informative/DiccionarioDatos_BRICA.docx` | Requisitos y modelo iniciales; no sustituyen el código ni el esquema Flyway vigente. |
+| `docs/installation-guide.md`, `docs/constitution.md` | Guía reproducible de instalación y principios del proyecto. |
+| `MEMORY.md` | Contexto temporal entre sesiones; puede quedar desactualizado y no es fuente normativa. |
 
-## Reglas de contribución
+## Flujo de construcción (SDD)
 
-Consultar [AGENTS.md](AGENTS.md) y la [constitución](docs/constitution.md). Presentar y aprobar el plan antes de cambios no triviales, conservar el trabajo local y consultar antes de incorporar dependencias o cambiar la arquitectura. No hacer commits, push ni abrir PR sin solicitud expresa.
+BRICA usa **Specification-Driven Development (SDD)** para hacer explícitos el comportamiento deseado, el plan de cambio y la evidencia. Los tres documentos tienen propósitos distintos y se mantienen vinculados:
+
+1. **`spec.md` — qué y por qué.** Antes de implementar, delimita resultado, actores, alcance/exclusiones, reglas, requisitos verificables, criterios de aceptación, dependencias y dudas. Los requisitos y criterios deben tener identificadores estables.
+2. **`plan.md` — cómo y en qué orden.** Diagnostica el código/configuración existentes, propone decisiones/rutas, fases, migraciones, riesgos y pruebas. Diferencia propuestas de decisiones aprobadas; no autoriza por sí solo cambios de arquitectura, dependencias, datos o despliegue.
+3. **Aprobación e implementación por bloques.** Revisa el estado Git, presenta plan y espera aprobación antes de trabajo no trivial. Implementa unidades acotadas; actualiza el plan si cambia el alcance autorizado.
+4. **`review.md` — qué ocurrió realmente.** Registra cronológicamente archivos tocados, decisiones, pruebas y resultados exactos, tareas/criterios cerrados o pendientes, aceptación manual y bloqueos. No convierte implementación en aceptación ni elimina los fallos históricos.
+5. **Cierre o continuación.** Contrasta criterios de la spec con evidencia de review; conserva pendientes explícitos y coordina el README cuando cambie el alcance funcional visible.
+
+La guía y las plantillas copiables están en [`specs/README.md`](specs/README.md) y [`specs/templates/`](specs/templates/). Para una funcionalidad nueva, crea `specs/NNN-nombre/spec.md`, `plan.md` y `review.md` en el mismo directorio; no sobrescribas una spec existente sin revisar su historial.
+
+## Convenciones de construcción
+
+- **Flujo GitHub:** busca/define issue, rama por resultado, commits atómicos y PR revisable. Usa los formatos y ejemplos de [`CONTRIBUTING.md`](CONTRIBUTING.md). En esta rama no existe CI/CD automatizado: las verificaciones deben informarse manualmente.
+- **Código:** nombres nuevos en inglés; paquetes en minúsculas, clases `PascalCase`, métodos/variables `camelCase`, constantes `UPPER_SNAKE_CASE`. Respeta los límites del módulo y separa solicitudes/respuestas HTTP de entidades persistidas.
+- **Arquitectura:** el servidor valida datos y permisos. Mantén el flujo existente `api → application → domain`; infraestructura implementa persistencia e integraciones. JavaFX consume la API, no PostgreSQL, y no bloquea el hilo UI.
+- **Concurrencia e historial:** conserva ETag/`If-Match`, idempotencia, borrado lógico y versiones donde existan. Los documentos históricos no se sobrescriben silenciosamente.
+- **Base de datos:** usa Flyway para evolucionar PostgreSQL. Agrega una migración nueva con número único; no edites migraciones ya aplicadas ni borres volúmenes para resolver problemas.
+- **Pruebas:** Java en `src/test/java`, paquetes equivalentes y nombres `*Test`; Python documental en `brica-server/src/test/python`. Usa datos sintéticos/autorizados. Testcontainers requiere Docker.
+- **Verificación habitual** desde la raíz:
+
+  ```bash
+  ./mvnw test
+  ./mvnw verify
+  git diff --check
+  ```
+
+  En PowerShell usa `./mvnw.cmd`. JavaFX también requiere validación visual en Windows; compilar no sustituye ese recorrido.
+- **Seguridad:** nunca subas `.env`, credenciales, documentos reales o datos sensibles. HTTP con `BRICA_ALLOW_HTTP=true` solo para desarrollo local; no habilita un despliegue seguro.
+- **Cambios asistidos:** revisa rama/estado, presenta plan para tareas no triviales, preserva trabajo local y reporta con precisión qué verificaste. No hagas commit, push, PR ni operaciones destructivas sin autorización.
+
+Para convenciones detalladas consulta [`AGENTS.md`](AGENTS.md), la [constitución](docs/constitution.md) y la [guía de contribución](CONTRIBUTING.md).
+
+## Estado actual del programa
+
+El programa avanza por funcionalidades integrables; esta vista resume el recorrido sin fijar una meta final:
+
+1. **Fundación:** aplicación Java multimódulo, servidor REST y cliente JavaFX; persistencia PostgreSQL/Flyway, validación y pruebas automatizadas.
+2. **Operación central:** clientes y obras con consulta/edición, eliminación lógica y control de concurrencia. La obra agrupa datos y adjuntos.
+3. **Acceso y protección:** sesión de servidor, CSRF, permisos por operación y administración local de usuarios/roles.
+4. **Configuración documental:** campos fijos/adicionales, análisis y versionado de plantillas DOCX, paquetes por cliente/obra y resolución de valores para selecciones.
+5. **Fuentes y presupuestos:** adjuntos persistentes y código de extracción/revisión humana; presupuestos con revisiones inmutables. La implementación de extracción está presente, pero su seguimiento/aceptación no está alineado completamente con el código y aún requiere validación.
+6. **Salida documental:** la generación, previsualización renderizada e importación/exportación de documentos finales siguen fuera del alcance funcional disponible. Es una capacidad futura separada, no un paso que pueda completarse hoy desde la instalación.
+
+Para el detalle vigente por funcionalidad, consulta [`specs/001/review.md`](specs/001/review.md) y [`specs/002/review.md`](specs/002/review.md). La aceptación manual de Windows/Word, la plantilla operativa conjunta y la preparación operativa de HTTPS, respaldos y retención siguen pendientes. No se debe inferir que una función está aceptada solo porque existan clases, endpoints o pruebas.

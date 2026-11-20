@@ -1,5 +1,6 @@
 # BRICA: instalación desde cero
 
+> **Contexto de integración:** el estado técnico descrito procede de la rama de trabajo `actualization`; parte del código, rutas y experimentos aún no están integrados en `main`. Contrasta con la rama que estés utilizando.
 Esta guía prepara una instalación **local de desarrollo o pruebas en Windows**:
 
 - PostgreSQL y servidor dentro de Docker.
@@ -272,4 +273,4 @@ Cierra y vuelve a abrir el escritorio con el paso 7. Flyway aplica las nuevas mi
 | Salud | `http://localhost:8080/api/v1/health` |
 | PostgreSQL desde el equipo | `localhost:5433`, base `brica`. |
 
-Para desarrollo del backend fuera de Docker y pruebas automatizadas, consulta [README.md](../README.md). Para la aceptación funcional, consulta el [recorrido manual](../specs/001/manual-test.md). La aceptación visual Windows/Word y el despliegue público con HTTPS se verifican por separado; esta guía no afirma que estén completados.
+Para desarrollo del backend fuera de Docker y pruebas automatizadas, consulta [README.md](../README.md). Para la aceptación funcional, consulta el [condición de aceptación](../specs/001/spec.md#9-condición-de-aceptación). La aceptación visual Windows/Word y el despliegue público con HTTPS se verifican por separado; esta guía no afirma que estén completados.

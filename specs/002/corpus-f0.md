@@ -1,6 +1,6 @@
 # F0 — Corpus sintético propuesto para SPEC002
 
-**Estado actualizado:** corpus parcial generado y leído mediante [experiments/](experiments/README.md); expectativas independientes en `experiments/expected.json` y evidencia en [Review.md](Review.md). Los datos son ficticios. No se utiliza contenido de documentos reales. La tabla conserva el diseño de aceptación completo, no afirma que cada caso ya esté cubierto.
+**Estado actualizado:** corpus parcial generado y leído mediante [experiments/](experiments/README.md); expectativas independientes en `experiments/expected.json` y evidencia en [Review.md](review-history-f0.md). Los datos son ficticios. No se utiliza contenido de documentos reales. La tabla conserva el diseño de aceptación completo, no afirma que cada caso ya esté cubierto.
 
 La aprobación para usar ejemplos construidos permite preparar estos casos; los criterios numéricos de precisión y los límites efectivos se acordarán antes de la aceptación. El contenido esperado se conservará separado del resultado del extractor; no se construirá automáticamente a partir de lo que el lector devuelva.
 
