@@ -1,84 +1,228 @@
 # Contribuir a BRICA
 
-BRICA centraliza obras, clientes, contratos y documentación de una constructora. El servidor Spring Boot concentra las reglas del negocio y el cliente JavaFX consume su API. La obra es el punto de partida para contratos, presupuestos y documentación.
+Esta guía define cómo llevar un cambio desde su necesidad hasta su revisión en GitHub. Distingue el flujo operativo actual de la automatización propuesta: **en la rama inspeccionada no hay workflows de GitHub Actions ni plantillas de issues o pull requests**. Por tanto, las validaciones descritas se ejecutan manualmente; no hay CI automatizado ni CD/despliegue continuo configurado.
 
-## Preparar el entorno
+Para las reglas de trabajo asistido, seguridad y cuidado del árbol de trabajo, consulta también [`AGENTS.md`](AGENTS.md). Para principios arquitectónicos, consulta [`docs/constitution.md`](docs/constitution.md).
 
-Instala Java 25 y habilita Docker Desktop para tu distribución de WSL. Usa el Maven Wrapper del repositorio. Trabaja desde la raíz en WSL y usa PowerShell para validar la interfaz JavaFX en Windows.
+## 1. Flujo resumido
 
-1. Configura `.env` con base en `.env.example` para Docker Compose.
-2. Si ejecutas el backend con Maven, exporta las variables `DB_*` que indique la configuración del servidor. Maven no carga `.env` automáticamente.
-3. Inicia PostgreSQL y el backend desde WSL.
+1. Aclarar el problema y registrar un issue con alcance y criterios de aceptación.
+2. Revisar el estado del repositorio, las especificaciones aplicables y la configuración real.
+3. Crear una rama de trabajo desde `main` actualizado, conservando cambios locales ajenos.
+4. Implementar un resultado acotado, probarlo y documentar limitaciones.
+5. Crear commits pequeños y relacionados con el issue, cuando estén autorizados.
+6. Abrir un pull request (PR) hacia `main`, describir las pruebas y solicitar revisión.
+7. Resolver observaciones y verificar el resultado antes de integrar.
+8. Tras integrar, desplegar solo mediante el procedimiento operativo autorizado. No hay despliegue automático configurado.
 
-   ```bash
-   docker compose up -d postgres
-   ./mvnw -pl brica-server spring-boot:run
-   ```
+Los commits, el push, la apertura del PR, la integración y cualquier despliegue requieren autorización del responsable del proyecto; esta guía no concede por sí sola esa autorización.
 
-4. Para probar la interfaz, abre PowerShell en la raíz de tu copia de BRICA y ejecuta:
+## 2. Issues: definir el trabajo
 
-   ```powershell
-   .\mvnw.cmd -pl brica-client javafx:run
-   ```
+Busca primero issues existentes para evitar duplicados. No hay una plantilla de issue versionada actualmente, así que incluye manualmente la información pertinente.
 
-Si usas copias separadas del repositorio en Windows y WSL, verifica que ambas incluyan los cambios que vas a probar.
+### Título
 
-## De issue a rama
+Usa el formato:
 
-1. **Define el issue.** Usa la plantilla del repositorio. Titúlalo `[Área] Verbo + resultado verificable`, por ejemplo `[Obras] Impedir la edición de obras eliminadas`. Incluye el problema, el alcance, los criterios de aceptación y, para errores, los pasos de reproducción.
-2. **Divide el trabajo antes de editar.** Propón qué entregará cada commit y qué prueba lo verificará. Si el issue reúne resultados que se pueden revisar y entregar por separado, crea issues hijos o plantea PR separados con un alcance claro. Revisa la especificación aplicable y consulta [AGENTS.md](AGENTS.md) para el flujo y las autorizaciones del agente.
-3. **Abre una rama por PR desde `main` actualizado.** Revisa `git status` y conserva el trabajo local ajeno al issue. Nombra la rama `tipo/N-area-resumen`, con el número de issue y un resumen en inglés en `kebab-case`. Usa `feat`, `fix`, `refactor`, `docs`, `chore` o `test` según corresponda.
-
-   ```bash
-   git switch main
-   git pull --ff-only origin main
-   git switch -c fix/42-works-reject-deleted-updates
-   ```
-
-Si el pull indica que las ramas divergieron, revisa el historial antes de elegir cómo integrarlas.
-
-## Implementar y verificar
-
-- **Servidor.** Organiza el código por funcionalidad. Conserva la dirección `api → application → domain` y deja las implementaciones de los puertos en infraestructura. Valida las reglas de negocio en el servidor.
-- **Cliente.** Accede a los datos mediante la API. Si cambias una vista, comprueba el controlador, sus referencias FXML y el flujo en JavaFX. Mantén las llamadas de red fuera del hilo de la interfaz.
-- **Base de datos.** Agrega una migración Flyway para los cambios de esquema. Conserva las migraciones ya aplicadas. Usa datos de prueba y mantén fuera de Git las credenciales, `.env` y los documentos reales de la empresa.
-- **Pruebas.** Cubre el comportamiento que cambia y sus errores relevantes. Ejecuta `./mvnw test` antes del commit cuando cambies código. Las pruebas de integración con Testcontainers requieren Docker activo.
-
-Antes de abrir un PR con cambios de código, ejecuta desde WSL:
-
-```bash
-./mvnw clean verify
-git diff --check main...HEAD
+```text
+[Área] Verbo + resultado verificable
 ```
 
-El segundo comando revisa espacios en los commits de la rama. Si cambias JavaFX, ejecuta también el cliente en Windows y recorre la pantalla afectada. Para un cambio solo de documentación, revisa el Markdown, los enlaces y el diff.
+Ejemplos:
 
-## Commits atómicos
+- `[Obras] Rechazar cambios en obras eliminadas`
+- `[Documentación] Aclarar el origen de los campos de referencia`
+- `[Cliente] Mostrar un error comprensible si falla la carga de adjuntos`
 
-- **Un propósito por commit.** Haz cambios pequeños y significativos que se puedan entender, validar y revertir como unidad. Agrupa el código, las pruebas y los ajustes indispensables para que ese paso compile y pase sus verificaciones. Si el diff reúne dos motivos de cambio, divídelo. Si dividirlo deja un estado roto, conserva juntos los archivos necesarios.
-- **Registra cada avance al terminarlo.** Implementa un paso, verifica su resultado y revisa `git diff --staged` antes de confirmar. Agrega solo los archivos o fragmentos de ese paso. Cuando los commits estén autorizados, crea cada uno antes de iniciar el siguiente. Si falta autorización, presenta el avance y su mensaje propuesto.
-- **Usa inglés y el formato `tipo(ámbito): descripción`.** Usa un ámbito del proyecto, como `works`, `desktop` o `repo`, y empieza la descripción con un verbo en imperativo, como `reject`, `add` o `extract`. Agrega `Refs #N` en el cuerpo para enlazar el commit al issue. Reserva el cierre del issue para el PR.
-- **Mantén el historial legible.** Conserva los commits significativos durante la revisión. Evita mezclar reformateos, refactors independientes y arreglos ajenos al alcance. Si la política del repositorio permite elegir el método de integración, usa uno que preserve esos commits.
+### Contenido recomendado
 
-## Pull requests acotados
+**Para una funcionalidad o mejora:**
 
-Cada PR hacia `main` entrega **un resultado coherente**. Incluye varios commits atómicos cuando el alcance tenga varios pasos significativos. Un ajuste puntual puede tener un solo commit. Si el diff crece hasta abarcar resultados que se pueden entregar por separado, divide el PR antes de seguir. Cada parte debe quedar en un estado verificable.
+```markdown
+## Problema o necesidad
+¿Qué situación concreta se quiere resolver y para quién?
 
-Titula el PR en inglés con `tipo(ámbito): resultado`. El título resume el resultado de todo el PR, aunque sus commits tengan otros tipos o ámbitos. Usa la plantilla del repositorio e incluye:
+## Resultado esperado
+¿Qué debe poder hacer el usuario o qué propiedad debe cumplir el sistema?
 
-- **Alcance general.** Qué resultado entrega y qué criterio de aceptación cubre.
-- **Descripción.** Qué cambió, por qué y cómo se relacionan los pasos si el orden importa.
-- **Issue relacionado.** Escribe `Closes #N` si el PR completa el issue. Si entrega solo una parte, escribe `Refs #N` y explica qué queda pendiente.
-- **Validación e impacto.** Anota comandos, resultados y comprobaciones pendientes. Si aplica, adjunta una captura con datos de prueba o explica cambios de API, migraciones y configuración.
+## Alcance
+- Incluye:
+- No incluye:
 
-Antes de publicar el PR, revisa el historial con `git log --oneline main..HEAD` y el alcance con `git diff --stat main...HEAD`. Confirma que cada commit aporta al resultado declarado y que la descripción coincide con lo entregado. Haz commits, push y apertura de PR según las autorizaciones de [AGENTS.md](AGENTS.md). Resuelve los comentarios de revisión y confirma las verificaciones aplicables antes de integrar.
+## Criterios de aceptación
+- [ ] Dado ... cuando ... entonces ...
+- [ ] ...
 
-## Ejemplo de trazabilidad
+## Referencias
+- Spec, requisito, decisión o pantalla aplicable:
+- Issue relacionado:
+```
+
+**Para un error**, añade pasos reproducibles, resultado actual, resultado esperado, versión/rama o entorno afectado y, si es posible, registros o capturas sin datos sensibles. No incluyas credenciales, datos reales de clientes/obras ni documentos confidenciales.
+
+Los criterios deben ser observables y comprobables. Identifica explícitamente dudas de negocio, migraciones, contratos de API, permisos, compatibilidad, aceptación manual y trabajo fuera de alcance. Consulta ERS/DAS/Diccionario como fuentes de intención y confirma el comportamiento vigente en specs, código y migraciones; esos documentos no prueban que una función ya esté implementada.
+
+## 3. Ramas
+
+Usa una rama por PR, basada en `main` actualizado. Convención:
+
+```text
+tipo/N-área-resumen
+```
+
+Usa un tipo coherente con el cambio (`feat`, `fix`, `refactor`, `docs`, `chore` o `test`), el número de issue y un resumen corto en inglés `kebab-case`.
+
+```bash
+git status --short --branch
+git switch main
+git pull --ff-only origin main
+git switch -c fix/42-works-reject-deleted-updates
+```
+
+Antes de cambiar de rama, inspecciona y conserva el trabajo local. No fuerces un `pull` si las ramas divergieron: revisa el historial y acuerda cómo integrarlas. No reutilices una rama de otra entrega como base de un PR nuevo sin confirmar que ese es el propósito.
+
+## 4. Implementar y validar
+
+- Mantén el cambio limitado al resultado aprobado. En backend sigue la estructura funcional existente y valida reglas/autorización en el servidor; JavaFX consume la API y no debe bloquear su hilo de interfaz.
+- Para cambios de esquema, agrega una migración Flyway nueva; no edites migraciones ya aplicadas. No elimines datos o volúmenes para hacer pasar verificaciones.
+- Añade o actualiza pruebas para el comportamiento y los errores relevantes. Las pruebas de integración usan Testcontainers y requieren Docker.
+- Para cambios Java, las verificaciones habituales desde la raíz son:
+
+  ```bash
+  ./mvnw test
+  ./mvnw verify
+  git diff --check
+  ```
+
+  En PowerShell usa `./mvnw.cmd` en lugar de `./mvnw`. `verify` puede ejecutar pruebas de integración, que requieren Docker y, para determinadas pruebas documentales, el entorno Python preparado según `README.md`.
+- Si se modifica JavaFX, además de compilar, abre y recorre la pantalla afectada en Windows. Comprueba FXML, navegación y estados asíncronos. Si la aceptación requiere Word o un formato operativo, registra esa comprobación por separado.
+- Para documentación, revisa el Markdown, enlaces, comandos y consistencia con el estado actual; ejecuta `git diff --check`.
+- Registra con honestidad qué se ejecutó, qué resultado tuvo y qué queda pendiente. No sustituyas una comprobación visual por una prueba HTTP o una compilación.
+
+## 5. Commits
+
+Un commit debe representar un propósito coherente, revisable y, cuando sea razonable, verificable por sí mismo. Incluye juntos código, pruebas, migración y documentación que sean necesarios para ese paso. Divide motivos independientes; no separes archivos si eso deja el cambio roto.
+
+Usa inglés y este formato:
+
+```text
+tipo(ámbito): verbo en imperativo + resultado
+```
+
+Ejemplos:
+
+```text
+fix(works): reject updates to deleted works
+test(documents): cover reference value resolution
+docs(repo): describe pull request checks
+```
+
+Usa un ámbito reconocible (`works`, `documents`, `desktop`, `server`, `repo`, etc.) y una descripción breve que explique el resultado, no cada archivo. En el cuerpo enlaza el issue:
+
+```text
+Refs #42
+```
+
+Antes de confirmar, revisa `git diff --staged` y prepara solo los archivos del cambio. No incluyas `.env`, secretos, datos reales, salidas de compilación ni modificaciones incidentales. No reescribas o descartes commits ajenos. Si la autorización para hacer commits no está clara, presenta el mensaje propuesto y espera confirmación.
+
+## 6. Pull requests
+
+No hay una plantilla de PR versionada actualmente. Abre un PR hacia `main` cuando el cambio esté listo para revisión y exista autorización. Mantén un PR por resultado coherente; usa varios commits atómicos si el resultado requiere pasos relacionados.
+
+### Título
+
+Usa inglés y el mismo patrón general:
+
+```text
+tipo(ámbito): resultado del PR
+```
+
+El título resume el resultado global y no tiene que repetir el tipo de cada commit.
+
+### Descripción
+
+Incluye, como mínimo:
+
+```markdown
+## Resumen
+Qué resultado entrega y qué problema resuelve.
+
+## Cambios
+- Principales cambios y motivo.
+- Decisiones relevantes o dependencias entre pasos.
+
+## Issue
+Closes #N
+
+## Verificación
+- [ ] `./mvnw test` — resultado:
+- [ ] `./mvnw verify` — resultado:
+- [ ] `git diff --check` — resultado:
+- [ ] Validación manual/UI/Word, si aplica:
+
+## Riesgos e impacto
+API, migraciones, configuración, seguridad, persistencia, compatibilidad o limitaciones.
+
+## Evidencia y pendientes
+Capturas con datos de prueba, decisiones por confirmar y aceptación todavía pendiente.
+```
+
+Usa `Closes #N` solo si el PR satisface todos los criterios del issue. Si entrega una parte, usa `Refs #N` y especifica lo que queda. No cierres un issue solo porque el PR esté relacionado.
+
+Antes de publicar, revisa el alcance y el historial respecto de la base del PR:
+
+```bash
+git log --oneline origin/main..HEAD
+git diff --stat origin/main...HEAD
+git diff --check origin/main...HEAD
+```
+
+Confirma que no haya secretos ni cambios no relacionados. Atiende los comentarios, vuelve a ejecutar las verificaciones afectadas y comunica lo que falta. No integres el PR hasta contar con las revisiones y aprobaciones requeridas por el responsable del proyecto.
+
+## 7. CI de GitHub: estado actual y criterio futuro
+
+### Estado actual
+
+En esta rama no existe `.github/workflows/` ni configuración de GitHub Actions. Por ello:
+
+- GitHub no ejecuta automáticamente build, pruebas, análisis ni despliegue al abrir o actualizar un PR.
+- No hay checks de estado requeridos configurados por el repositorio que puedan considerarse una barrera automática de integración.
+- Las verificaciones de la sección 4 son pasos manuales que el autor debe informar en el PR.
+- Una marca verde de revisión o la existencia de un PR no significa que la CI haya pasado.
+
+No describas workflows propuestos como si estuvieran activos. Si se configura CI posteriormente, debe documentarse aquí y versionarse en `.github/workflows/`.
+
+### Recomendación para incorporar CI
+
+Al aprobar su implementación, configurar un workflow de GitHub Actions en PRs contra `main` y en pushes a `main`, como mínimo para:
+
+1. Configurar JDK 25 y utilizar Maven Wrapper.
+2. Ejecutar `./mvnw verify` en ambos módulos; asegurar que Docker esté disponible para Testcontainers y configurar el entorno Python documental requerido por la suite.
+3. Ejecutar `git diff --check` sobre los cambios del PR.
+4. Publicar logs/resultados como checks y fallar el workflow si una verificación falla; no exponer secretos en logs.
+5. Habilitar protección de `main` y exigir el check exitoso y revisión humana antes de integrar, una vez comprobado que el workflow es estable.
+
+Las pruebas visuales de JavaFX en Windows/Word y las aceptaciones de negocio que no estén automatizadas deben seguir apareciendo como verificaciones manuales en el PR. No inventar un check automatizado para ellas.
+
+## 8. CD y despliegue
+
+No hay CD, publicación de artefactos ni despliegue automático configurados en esta rama. `compose.yml` y `docs/installation-guide.md` describen un entorno local de desarrollo/pruebas; no equivalen a un pipeline de producción. No se debe desplegar automáticamente al cerrar un PR ni presentar Compose local como infraestructura de producción.
+
+Si se aprueba CD en el futuro, diseñarlo como un cambio separado, con destino y responsables definidos, credenciales almacenadas en GitHub Environments/secrets, aprobación para producción, TLS, respaldo/restauración de PostgreSQL y archivos, política de migraciones Flyway, observabilidad y procedimiento de rollback. Probar primero en un entorno de staging equivalente. Los secretos y datos de producción nunca deben entrar al repositorio ni a artefactos públicos.
+
+## 9. Trazabilidad de ejemplo
 
 | Elemento | Ejemplo |
 |---|---|
-| Issue ficticio | `#42 [Obras] Impedir la edición de obras eliminadas` |
+| Issue | `#42 [Obras] Rechazar cambios en obras eliminadas` |
 | Rama | `fix/42-works-reject-deleted-updates` |
-| Commit 1 | `fix(works): reject updates to deleted works` · Incluye la prueba del servidor y `Refs #42` en el cuerpo. |
-| Commit 2 | `fix(desktop): explain why deleted works cannot be edited` · Incluye la comprobación del mensaje en JavaFX y `Refs #42` en el cuerpo. |
-| PR | `fix(works): prevent editing deleted works` · Describe el rechazo en la API y el mensaje en el cliente. Incluye `Closes #42` si cumple todos los criterios. |
+| Commit | `fix(works): reject updates to deleted works` con `Refs #42` |
+| PR | `fix(works): prevent editing deleted works` con pruebas, impacto y `Closes #42` si completa todos los criterios |
+
+## 10. Seguridad y datos
+
+- No subas `.env`, contraseñas, tokens, claves privadas, datos de clientes/obras ni documentos reales.
+- Usa `.env.example` solo con valores ficticios y configuraciones no secretas.
+- Revisa que el diff no incluya archivos locales, logs, PDFs/DOCX reales ni resultados generados.
+- Nunca borres volúmenes, bases, historial o trabajo local para corregir CI sin autorización expresa.
