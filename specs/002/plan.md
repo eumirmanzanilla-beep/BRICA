@@ -20,7 +20,7 @@ Procesar PDF/XLS/XLSX/DOCX de una obra, revisar propuestas o captura manual y co
 | `db/migration/V15–V18` | Denominaciones/revisión de cliente, trabajos, presupuestos e historial de intentos definidos. | No editar migraciones; esquema inferido del código, no consultado en base alguna. |
 | `application.yml` / `brica_extraction.py` | Worker habilitado por defecto; `BRICA_EXTRACTION_CGROUP_ROOT` vacío por defecto. | Sin cgroup delegado Linux el procesador falla cerrado; no asumir despliegue listo. |
 | `pom.xml` | PDFBox 3.0.8 y POI 6.0.0 declarados. | La bitácora F0 que los describe como no integrados es histórica, no estado actual. |
-| `experiments/` | Banco sintético y aislamiento experimental independiente. | Conservar por ahora; extraer herramientas útiles antes de considerar su eliminación en otra tarea. |
+| Banco experimental F0 | Retirado por decisión posterior; sus resultados quedan solo como evidencia histórica en `review.md`. | No es parte del código ni de las verificaciones ejecutables actuales. |
 
 ## 3. Decisiones técnicas y de negocio
 
@@ -59,7 +59,7 @@ Los estados indican presencia de código observada, no aceptación ni prueba eje
 
 | Fase | Implementación / áreas | Salida y dependencia | Estado observado |
 |---|---|---|---|
-| F0 · Contrato y seguridad | Alcance, corpus sintético, límites, lectores y aislamiento; `experiments/`. | Evaluar licencias, corpus y frontera efectiva por worker antes de operación. | Experimentos históricos parciales; aislamiento del destino y evaluación ampliada pendientes. |
+| F0 · Contrato y seguridad | Alcance, corpus sintético, límites, lectores y aislamiento. | Evaluar licencias, corpus y frontera efectiva por worker antes de operación. | Experimentos históricos parciales; aislamiento del destino y evaluación ampliada pendientes. |
 | F1 · Modelo | Contratos, referencias, fuentes, trabajos, auditoría y migraciones; V16–V18. | Integridad en instalación nueva y actualización con datos de prueba; depende del diseño F0. | Esquema y pruebas de migración presentes; no ejecutadas aquí. |
 | F2 · Destinos | Denominaciones separadas, claves nuevas, ETag de cliente/obra y comandos selectivos; V15. | Cambios concurrentes rechazados; claves históricas intactas. | Código y migración presentes; regresión integral pendiente. |
 | F3 · Ejecución | Adjuntos verificados, trabajos, leases, intentos, cancelación y sandbox; `extraction/.../worker`, Python. | Recuperación/idempotencia y límites agregados comprobados; depende de F0–F2. | Componentes presentes; cgroup delegado y prueba del destino pendientes. |
@@ -96,7 +96,7 @@ Los identificadores EX siguientes son los criterios históricos del plan, preser
 | Comprobación | Comando / entorno | Criterio |
 |---|---|---|
 | Regresión | `./mvnw test` y `./mvnw verify`; Docker/Testcontainers y Python según README. | Sin fallos ni omisiones injustificadas; registrar resultados reales. |
-| Banco sintético | `python3 -B -m unittest discover -s specs/002/experiments -p '*_test.py' -v`; ejecución completa según `experiments/README.md`. | Resultados y límites por formato registrados; no sustituye pruebas de aplicación. |
+| Banco sintético | No hay banco ejecutable en el árbol actual. | Los resultados históricos no sustituyen pruebas de aplicación; preparar una nueva evidencia aprobada si vuelve a ser necesaria. |
 | Diff y enlaces | `git diff --check` y comprobación de enlaces afectados. | Sin errores introducidos. |
 | Manual | Flujo de [spec.md](spec.md), permisos y concurrencia; Windows y datos de prueba. | Evidencia por criterio, actor y entorno; muestras reales solo con permiso por archivo. |
 
@@ -104,4 +104,4 @@ Los identificadores EX siguientes son los criterios históricos del plan, preser
 
 - No se ha demostrado en esta revisión una frontera agregada independiente por worker en el despliegue; falta comprobar también dependencias nativas, corpus hostil, OCR degradado/mixto y cachés XLS.
 - No consultar ni modificar bases, volúmenes o documentos reales sin autorización. Código y resultados experimentales históricos no implican despliegue ni aceptación.
-- Siguiente paso sujeto a autorización: preparar verificación técnica focalizada y después recorrido manual; extraer herramientas útiles de `experiments/` en una tarea independiente antes de decidir su destino.
+- Siguiente paso sujeto a autorización: completar la verificación técnica en el entorno de destino y el recorrido manual. El banco F0 fue retirado y no se incorpora al backend.
