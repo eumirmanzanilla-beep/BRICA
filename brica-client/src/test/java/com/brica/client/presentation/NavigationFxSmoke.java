@@ -1,5 +1,7 @@
 package com.brica.client.presentation;
 
+import com.brica.client.core.ui.AsyncDialogSave;
+import com.brica.client.shared.presentation.NameInputRules;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -21,10 +23,10 @@ public final class NavigationFxSmoke {
             try {
                 var loader = new FXMLLoader(NavigationFxSmoke.class.getResource("works-view.fxml"));
                 var root = loader.<javafx.scene.Parent>load(); var owner = new Stage(); owner.setScene(new Scene(root, 1100, 700)); owner.show();
-                @SuppressWarnings("unchecked") var table = (TableView<com.brica.client.api.WorkDto>) member(loader.getController(), "worksTable");
+                @SuppressWarnings("unchecked") var table = (TableView<com.brica.client.works.api.WorkDto>) member(loader.getController(), "worksTable");
                 check(table.getColumns().stream().map(TableColumn::getText).toList().equals(List.of("Cliente", "Nombre", "Descripción", "Acciones")), "Columnas mínimas");
                 check(!((Button) member(loader.getController(), "previousPageButton")).isVisible(), "Sin paginación innecesaria");
-                var sample = new com.brica.client.api.WorkDto(99L, 1L, "Obra_minima", null, "Descripción", null, null);
+                var sample = new com.brica.client.works.api.WorkDto(99L, 1L, "Obra_minima", null, "Descripción", null, null);
                 table.getItems().add(sample); root.applyCss(); root.layout();
                 check(root.lookupAll(".work-icon-button").size() >= 4, "Cuatro acciones pequeñas por obra");
                 for (var control : root.lookupAll(".work-icon-button")) {
@@ -39,10 +41,10 @@ public final class NavigationFxSmoke {
                 check(WorkDatePicker.read(date).equals(java.time.LocalDate.of(2026, 2, 1)), "Selección de calendario");
                 date.getEditor().setText("31/02/2026");
                 try { WorkDatePicker.read(date); throw new AssertionError("Fecha inválida aceptada"); } catch (java.time.format.DateTimeParseException expected) { }
-                var information = new com.brica.client.api.WorksApiClient.DocumentInformation(null, null, null, null, null,
+                var information = new com.brica.client.works.api.WorksApiClient.DocumentInformation(null, null, null, null, null,
                         null, null, null, "IN_PROGRESS", java.util.Map.of());
-                WorkCaptureDialog.show(owner, new com.brica.client.api.WorksApiClient(java.net.URI.create("http://127.0.0.1:9")),
-                        new com.brica.client.api.WorksApiClient.VersionedInformation(new com.brica.client.api.WorksApiClient.CompleteInformation(sample, information), "\"test\""),
+                WorkCaptureDialog.show(owner, new com.brica.client.works.api.WorksApiClient(java.net.URI.create("http://127.0.0.1:9")),
+                        new com.brica.client.works.api.WorksApiClient.VersionedInformation(new com.brica.client.works.api.WorksApiClient.CompleteInformation(sample, information), "\"test\""),
                         List.of(), new Label(), ignored -> { throw new AssertionError("La revisión no guarda automáticamente."); });
                 var wizard = Window.getWindows().stream().filter(w -> w != owner).map(Window::getScene)
                         .filter(java.util.Objects::nonNull).map(Scene::getRoot).filter(DialogPane.class::isInstance).map(DialogPane.class::cast).findFirst().orElseThrow();

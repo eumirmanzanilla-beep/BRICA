@@ -1,12 +1,13 @@
 package com.brica.client.presentation;
 
+import com.brica.client.shared.presentation.NameInputRules;
 import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import com.brica.client.api.DocumentDtos.Field;
-import com.brica.client.api.WorkDto;
-import com.brica.client.api.WorksApiClient.DocumentInformation;
+import com.brica.client.documents.api.DocumentDtos.Field;
+import com.brica.client.works.api.WorkDto;
+import com.brica.client.works.api.WorksApiClient.DocumentInformation;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 

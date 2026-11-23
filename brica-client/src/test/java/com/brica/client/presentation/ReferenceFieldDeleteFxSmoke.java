@@ -6,9 +6,9 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-import com.brica.client.api.DocumentDtos.Field;
-import com.brica.client.api.DocumentsApiClient;
-import com.brica.client.api.ServerSession;
+import com.brica.client.documents.api.DocumentDtos.Field;
+import com.brica.client.documents.api.DocumentsApiClient;
+import com.brica.client.core.http.ServerSession;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;

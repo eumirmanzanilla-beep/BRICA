@@ -1,8 +1,10 @@
 package com.brica.client.presentation;
 
+import com.brica.client.core.ui.AsyncDialogSave;
+import com.brica.client.core.ui.UiPagination;
 import java.util.List;
-import com.brica.client.api.DocumentDtos.*;
-import com.brica.client.api.DocumentsApiClient;
+import com.brica.client.documents.api.DocumentDtos.*;
+import com.brica.client.documents.api.DocumentsApiClient;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;

@@ -2,8 +2,17 @@ package com.brica.client.presentation;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import com.brica.client.api.*;
+import com.brica.client.clients.api.ClientDto;
+import com.brica.client.clients.api.ClientsApiClient;
 import com.brica.client.config.ClientConfig;
+import com.brica.client.core.http.ServerSession;
+import com.brica.client.core.ui.AsyncDialogSave;
+import com.brica.client.core.ui.UiPagination;
+import com.brica.client.documents.api.DocumentDtos;
+import com.brica.client.documents.api.DocumentsApiClient;
+import com.brica.client.shared.presentation.NameInputRules;
+import com.brica.client.works.api.WorkDto;
+import com.brica.client.works.api.WorksApiClient;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;

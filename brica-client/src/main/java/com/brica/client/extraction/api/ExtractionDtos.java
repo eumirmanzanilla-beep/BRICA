@@ -1,4 +1,4 @@
-package com.brica.client.api;
+package com.brica.client.extraction.api;
 import java.math.BigDecimal;
 import java.util.*;
 

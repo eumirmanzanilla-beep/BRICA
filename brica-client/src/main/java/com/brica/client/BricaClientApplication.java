@@ -2,7 +2,7 @@ package com.brica.client;
 
 import java.io.IOException;
 
-import com.brica.client.api.ServerSession;
+import com.brica.client.core.http.ServerSession;
 import com.brica.client.config.ClientConfig;
 import com.brica.client.presentation.LoginController;
 import com.brica.client.presentation.MainController;

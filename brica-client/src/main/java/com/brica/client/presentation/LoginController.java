@@ -1,7 +1,7 @@
 package com.brica.client.presentation;
 
-import com.brica.client.api.ServerSession;
-import com.brica.client.api.LoginException;
+import com.brica.client.core.http.ServerSession;
+import com.brica.client.auth.api.LoginException;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;

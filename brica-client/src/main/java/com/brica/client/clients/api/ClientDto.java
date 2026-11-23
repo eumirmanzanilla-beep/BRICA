@@ -1,4 +1,4 @@
-package com.brica.client.api;
+package com.brica.client.clients.api;
 
 public record ClientDto(
         Long id,

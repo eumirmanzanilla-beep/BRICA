@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 
-import com.brica.client.api.ServerHealthClient;
-import com.brica.client.api.ServerSession;
+import com.brica.client.core.http.ServerHealthClient;
+import com.brica.client.core.http.ServerSession;
 import com.brica.client.config.ClientConfig;
 
 import javafx.application.Platform;
@@ -212,7 +212,7 @@ public class MainController {
         Parent view = loader.load();
         if (section == Section.DOCUMENTS) {
             ReferenceFieldsController controller = loader.getController();
-            controller.configure(new com.brica.client.api.DocumentsApiClient(ClientConfig.serverBaseUri(), session));
+            controller.configure(new com.brica.client.documents.api.DocumentsApiClient(ClientConfig.serverBaseUri(), session));
             documentView = view;
         }
 

@@ -1,6 +1,6 @@
 package com.brica.client.presentation.extraction;
 
-import com.brica.client.api.ExtractionDtos.*;
+import com.brica.client.extraction.api.ExtractionDtos.*;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.scene.control.*;

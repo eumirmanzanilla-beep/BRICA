@@ -1,4 +1,4 @@
-package com.brica.client.api;
+package com.brica.client.auth.api;
 
 import java.net.ConnectException;
 import java.net.UnknownHostException;

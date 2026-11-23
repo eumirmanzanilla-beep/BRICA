@@ -1,4 +1,4 @@
-package com.brica.client.api;
+package com.brica.client.works.api;
 
 public record WorkDto(
         Long id,

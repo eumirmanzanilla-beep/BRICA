@@ -1,5 +1,6 @@
-package com.brica.client.api;
+package com.brica.client.documents.api;
 
+import com.brica.client.core.http.ServerSession;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;

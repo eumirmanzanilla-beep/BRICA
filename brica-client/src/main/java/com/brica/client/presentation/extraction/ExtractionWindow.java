@@ -1,7 +1,9 @@
 package com.brica.client.presentation.extraction;
 
-import com.brica.client.api.*;
-import com.brica.client.api.ExtractionDtos.*;
+import com.brica.client.core.http.ServerSession;
+import com.brica.client.extraction.api.ExtractionApiClient;
+import com.brica.client.extraction.api.ExtractionDtos.*;
+import com.brica.client.works.api.WorksApiClient;
 import com.brica.client.config.ClientConfig;
 import javafx.animation.*;
 import javafx.application.Platform;

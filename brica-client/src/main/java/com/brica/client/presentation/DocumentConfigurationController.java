@@ -1,7 +1,7 @@
 package com.brica.client.presentation;
 
-import com.brica.client.api.DocumentsApiClient;
-import com.brica.client.api.ServerSession;
+import com.brica.client.documents.api.DocumentsApiClient;
+import com.brica.client.core.http.ServerSession;
 import com.brica.client.config.ClientConfig;
 import javafx.fxml.FXML;
 import javafx.scene.control.Tab;

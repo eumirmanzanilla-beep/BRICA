@@ -1,7 +1,7 @@
 package com.brica.client.presentation.extraction;
 
-import com.brica.client.api.ExtractionDtos.*;
-import com.brica.client.api.ExtractionApiClient;
+import com.brica.client.extraction.api.ExtractionDtos.*;
+import com.brica.client.extraction.api.ExtractionApiClient;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Window;

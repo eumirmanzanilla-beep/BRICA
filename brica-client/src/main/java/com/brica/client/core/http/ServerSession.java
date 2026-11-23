@@ -1,4 +1,4 @@
-package com.brica.client.api;
+package com.brica.client.core.http;
 
 import java.net.CookieManager;
 import java.net.CookiePolicy;
@@ -16,6 +16,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.brica.client.auth.api.LoginException;
 import com.brica.client.config.ClientConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 

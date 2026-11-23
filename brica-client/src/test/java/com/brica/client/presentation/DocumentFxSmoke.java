@@ -6,9 +6,9 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-import com.brica.client.api.ClientDto;
-import com.brica.client.api.WorkDto;
-import com.brica.client.api.WorksApiClient;
+import com.brica.client.clients.api.ClientDto;
+import com.brica.client.works.api.WorkDto;
+import com.brica.client.works.api.WorksApiClient;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -70,7 +70,7 @@ public final class DocumentFxSmoke {
         var info = new WorksApiClient.DocumentInformation(null, null, null, null, null, "2005-07-16", null, null,
                 "IN_PROGRESS", Map.of("RETENIDO", "Texto histórico"));
         WorkDocumentInformationDialog.show(owner, 1, null, new WorksApiClient.VersionedDocumentInformation(info, "\"1\""),
-                List.of(new com.brica.client.api.DocumentDtos.Field(1L, "FECHA", "Fecha adicional", "DATE", "ADDITIONAL", "FECHA")),
+                List.of(new com.brica.client.documents.api.DocumentDtos.Field(1L, "FECHA", "Fecha adicional", "DATE", "ADDITIONAL", "FECHA")),
                 false, ignored -> { throw new AssertionError("Una consulta no puede guardar."); });
         check(Window.getWindows().size() >= 2, "Datos documentales carga en JavaFX");
     }

@@ -1,4 +1,4 @@
-package com.brica.client.presentation;
+package com.brica.client.shared.presentation;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;

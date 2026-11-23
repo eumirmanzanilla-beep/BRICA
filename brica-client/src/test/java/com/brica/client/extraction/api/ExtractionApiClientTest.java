@@ -1,5 +1,6 @@
-package com.brica.client.api;
+package com.brica.client.extraction.api;
 
+import com.brica.client.core.http.ServerSession;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpServer;
 import java.net.InetSocketAddress;

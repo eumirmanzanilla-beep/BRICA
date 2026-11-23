@@ -1,6 +1,8 @@
-package com.brica.client.api;
+package com.brica.client.extraction.api;
 
-import com.brica.client.api.ExtractionDtos.*;
+import com.brica.client.clients.api.ClientsApiClient;
+import com.brica.client.core.http.ServerSession;
+import com.brica.client.extraction.api.ExtractionDtos.*;
 import com.fasterxml.jackson.databind.*;
 import java.net.URI;
 import java.net.http.*;

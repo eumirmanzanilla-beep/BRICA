@@ -1,4 +1,4 @@
-package com.brica.client.api;
+package com.brica.client.core.http;
 
 import java.net.URI;
 import java.net.http.HttpClient;

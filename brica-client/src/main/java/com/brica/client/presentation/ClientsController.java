@@ -1,14 +1,16 @@
 
 package com.brica.client.presentation;
 
+import com.brica.client.core.ui.UiPagination;
+import com.brica.client.shared.presentation.NameInputRules;
 import java.net.ConnectException;
 import java.net.URL;
 import java.net.http.HttpTimeoutException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
-import com.brica.client.api.ClientDto;
-import com.brica.client.api.ClientsApiClient;
+import com.brica.client.clients.api.ClientDto;
+import com.brica.client.clients.api.ClientsApiClient;
 import com.brica.client.config.ClientConfig;
 
 import javafx.application.Platform;
@@ -473,7 +475,7 @@ public final class ClientsController {
 
     private void updateButtons() {
 
-        var user = com.brica.client.api.ServerSession.shared(ClientConfig.serverBaseUri()).user();
+        var user = com.brica.client.core.http.ServerSession.shared(ClientConfig.serverBaseUri()).user();
         boolean canWrite = user != null && user.can("CLIENTS_WRITE");
 
         boolean selected = clientsTable

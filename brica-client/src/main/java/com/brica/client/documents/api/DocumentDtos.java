@@ -1,4 +1,4 @@
-package com.brica.client.api;
+package com.brica.client.documents.api;
 
 import java.util.List;
 

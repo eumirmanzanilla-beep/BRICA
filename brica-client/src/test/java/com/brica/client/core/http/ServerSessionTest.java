@@ -1,5 +1,6 @@
-package com.brica.client.api;
+package com.brica.client.core.http;
 
+import com.brica.client.auth.api.LoginException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpRequest;

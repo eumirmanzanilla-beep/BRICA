@@ -1,9 +1,10 @@
 package com.brica.client.presentation;
 
+import com.brica.client.shared.presentation.NameInputRules;
 import java.nio.file.Path;
 import java.util.*;
-import com.brica.client.api.DocumentDtos.*;
-import com.brica.client.api.DocumentsApiClient;
+import com.brica.client.documents.api.DocumentDtos.*;
+import com.brica.client.documents.api.DocumentsApiClient;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;

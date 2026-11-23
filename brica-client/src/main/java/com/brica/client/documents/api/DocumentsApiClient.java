@@ -1,4 +1,4 @@
-package com.brica.client.api;
+package com.brica.client.documents.api;
 
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
@@ -9,11 +9,12 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import com.brica.client.core.http.ServerSession;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import static com.brica.client.api.DocumentDtos.*;
-import com.brica.client.api.DocumentDtos.Package;
+import static com.brica.client.documents.api.DocumentDtos.*;
+import com.brica.client.documents.api.DocumentDtos.Package;
 
 public final class DocumentsApiClient {
     private final ServerSession session;

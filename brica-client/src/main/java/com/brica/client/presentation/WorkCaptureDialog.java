@@ -1,9 +1,11 @@
 package com.brica.client.presentation;
 
+import com.brica.client.core.ui.AsyncDialogSave;
+import com.brica.client.core.ui.UiPagination;
 import java.util.List;
 import java.util.function.Consumer;
-import com.brica.client.api.DocumentDtos.Field;
-import com.brica.client.api.WorksApiClient;
+import com.brica.client.documents.api.DocumentDtos.Field;
+import com.brica.client.works.api.WorksApiClient;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.FileChooser;

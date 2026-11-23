@@ -1,6 +1,6 @@
 package com.brica.client.presentation;
 
-import com.brica.client.api.WorksApiClient;
+import com.brica.client.works.api.WorksApiClient;
 import javafx.scene.control.*;
 import javafx.stage.Window;
 

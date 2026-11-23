@@ -1,13 +1,14 @@
 package com.brica.client.presentation;
 
+import com.brica.client.shared.presentation.NameInputRules;
 import java.util.*;
-import com.brica.client.api.DocumentDtos.*;
-import com.brica.client.api.DocumentDtos.Package;
-import com.brica.client.api.DocumentsApiClient;
-import com.brica.client.api.ClientDto;
-import com.brica.client.api.WorkDto;
-import com.brica.client.api.ClientsApiClient;
-import com.brica.client.api.WorksApiClient;
+import com.brica.client.documents.api.DocumentDtos.*;
+import com.brica.client.documents.api.DocumentDtos.Package;
+import com.brica.client.documents.api.DocumentsApiClient;
+import com.brica.client.clients.api.ClientDto;
+import com.brica.client.works.api.WorkDto;
+import com.brica.client.clients.api.ClientsApiClient;
+import com.brica.client.works.api.WorksApiClient;
 import com.brica.client.config.ClientConfig;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
