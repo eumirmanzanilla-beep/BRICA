@@ -11,7 +11,8 @@ import java.util.concurrent.CompletableFuture;
 public final class ExtractionApiClient {
     private final URI base; private final ServerSession session;
     private final ObjectMapper json=new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,false);
-    public ExtractionApiClient(URI base) { this.base=base; session=ServerSession.shared(base); }
+    public ExtractionApiClient(URI base) { this(base,ServerSession.shared(base)); }
+    ExtractionApiClient(URI base,ServerSession session) { this.base=base; this.session=session; }
     private <T> CompletableFuture<T> request(String method,String path,Object body,String revision,Class<T> type) {
         try {
             var request=HttpRequest.newBuilder(base.resolve("/api/v1"+path)).timeout(Duration.ofSeconds(20));
@@ -32,6 +33,16 @@ public final class ExtractionApiClient {
     public CompletableFuture<Context> context(long work) { return request("GET","/works/"+work+"/extraction-context",null,null,Context.class); }
     public CompletableFuture<View> create(long work,UUID operation,List<Long> sources) { return request("POST","/works/"+work+"/extractions",Map.of("operationKey",operation,"attachmentIds",sources),null,View.class); }
     public CompletableFuture<View> get(UUID id) { return request("GET","/extractions/"+id,null,null,View.class); }
+    public CompletableFuture<View> reanalyze(UUID id,UUID operation) { return request("POST","/extractions/"+id+"/attempts",Map.of("operationKey",operation),null,View.class); }
+    public CompletableFuture<List<Attempt>> attempts(UUID id) { return request("GET","/extractions/"+id+"/attempts?size=50",null,null,Attempt[].class).thenApply(List::of); }
+    public CompletableFuture<List<Suggestion>> suggestions(UUID id) { return suggestions(id,0,new ArrayList<>()); }
+    private CompletableFuture<List<Suggestion>> suggestions(UUID id,int page,List<Suggestion> values) {
+        if(page>2000) { return CompletableFuture.failedFuture(new IllegalStateException("El resultado excede el límite de sugerencias.")); }
+        return request("GET","/extractions/"+id+"/suggestions?page="+page+"&size=100",null,null,Suggestion[].class).thenCompose(rows->{
+            values.addAll(List.of(rows));
+            return rows.length<100?CompletableFuture.completedFuture(List.copyOf(values)):suggestions(id,page+1,values);
+        });
+    }
     public CompletableFuture<List<Fragment>> candidates(UUID id,int page) { return request("GET","/extractions/"+id+"/candidates?page="+page+"&size=100",null,null,Fragment[].class).thenApply(List::of); }
     public CompletableFuture<List<Fragment>> allCandidates(UUID id) { return candidates(id,0,new ArrayList<>()); }
     private CompletableFuture<List<Fragment>> candidates(UUID id,int page,List<Fragment> values) {

@@ -12,7 +12,7 @@ El alcance funcional continúa evolucionando. Antes de implementar una función,
 Consulta las fuentes según su propósito:
 
 1. Para el comportamiento ya implementado y la configuración efectiva: código de la rama actual, `pom.xml` de cada módulo, `compose.yml`, `.env.example`, `brica-server/src/main/resources/application.yml` y migraciones Flyway.
-2. Para principios de arquitectura y flujo de contribución: `docs/constitution.md` y este archivo.
+2. Para principios de arquitectura y flujo de contribución: `docs/constitution.md`, [`CONTRIBUTING.md`](CONTRIBUTING.md) y este archivo.
 3. Para requisitos y significado del negocio: `docs/informative/ERS_BRICA.docx` (ERS), `docs/informative/DAS_BRICA.docx` (DAS) y `docs/informative/DiccionarioDatos_BRICA.docx`.
 4. Para estado funcional, puesta en marcha y verificaciones: `README.md`, `docs/installation-guide.md`, `specs/` y los README de módulo.
 
@@ -68,6 +68,13 @@ El ERS, el DAS y el Diccionario son documentos iniciales: expresan intención y 
 - Si los requisitos, el ERS, el DAS, el Diccionario y la implementación dejan una regla ambigua, pregunta antes de decidir una regla de negocio. Explica brevemente las decisiones nuevas y por qué.
 - Ejecuta pruebas y comprobaciones proporcionales al cambio. Informa los comandos ejecutados, resultados y verificaciones pendientes; no afirmes que una comprobación pasó si no se ejecutó.
 - No hagas commit, push, abras PR ni ejecutes operaciones destructivas salvo solicitud expresa. Para tareas que correspondan, consulta `.opencode/commands/feature.md` y `.opencode/commands/review.md`.
+
+### Contribuciones y flujos asistidos
+
+- Consulta [`CONTRIBUTING.md`](CONTRIBUTING.md) antes de preparar issues, ramas, commits o PR: contiene sus formatos, trazabilidad, verificaciones y requisitos de autorización. No crees ni cambies de rama sin revisar el estado local y preservar el trabajo existente; la guía no autoriza por sí sola commits, push, PR, integración ni despliegue.
+- Al elaborar una nueva especificación, usa [`specs/templates/spec-template.md`](specs/templates/spec-template.md) como base para `spec.md`; cuando correspondan un plan y seguimiento, usa también [`plan-template.md`](specs/templates/plan-template.md) y [`review-template.md`](specs/templates/review-template.md) para `plan.md` y `review.md`. Adapta su contenido al alcance, conserva las decisiones pendientes y registra evidencias y verificaciones reales sin presentar propuestas como aprobadas.
+- En trabajo asociado a una spec existente, consulta sus documentos y actualiza el seguimiento cuando corresponda y esté dentro del alcance autorizado, preservando su historial y los cambios locales ajenos. No crees una spec para cada cambio menor ni sobrescribas plantillas o documentos existentes.
+- Estas instrucciones son pasos del agente, no procesos de CI/CD que se ejecuten por sí solos. Comprueba la configuración de la rama y consulta `CONTRIBUTING.md` antes de afirmar que existe alguna automatización; informa las verificaciones manuales y pendientes.
 
 ## Seguridad y cuidado de datos
 

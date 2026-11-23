@@ -7,14 +7,28 @@ import javafx.scene.layout.*;
 import javafx.stage.Window;
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.regex.Pattern;
 
 final class TableMappingDialog {
+    private static final Pattern DECIMAL_POINT=Pattern.compile("[+-]?(?:[0-9]+|[0-9]{1,3}(?:,[0-9]{3})+)(?:\\.[0-9]+)?");
+    private static final Pattern DECIMAL_COMMA=Pattern.compile("[+-]?(?:[0-9]+|[0-9]{1,3}(?:\\.[0-9]{3})+)(?:,[0-9]+)?");
     private TableMappingDialog() { }
     record Table(long source,String sheet) { @Override public String toString() { return "Archivo #"+source+" · "+sheet; } }
     static List<Budget> show(Window owner,List<Fragment> fragments,ExtractionApiClient api,long work) {
         var dialog=new Dialog<List<Budget>>(); dialog.initOwner(owner); dialog.setTitle("Mapear tablas y agrupar partes"); dialog.setResizable(true);
         var groups=new ListView<Table>(); groups.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        groups.getItems().setAll(fragments.stream().filter(f->f.location().sheet()!=null && f.location().row()!=null).map(f->new Table(f.attachmentId(),f.location().sheet())).distinct().toList());
+        groups.getItems().setAll(fragments.stream().filter(f->f.location().sheet()!=null).map(f->new Table(f.attachmentId(),f.location().sheet())).distinct().toList());
+        var summaries=new HashSet<Table>();
+        groups.setCellFactory(list->new ListCell<>() {
+            @Override protected void updateItem(Table table,boolean empty) {
+                super.updateItem(table,empty);
+                setText(empty||table==null?null:table+(summaries.contains(table)?" · Resumen (no importar conceptos)":""));
+            }
+        });
+        var markSummary=new Button("Marcar selección como resumen");
+        markSummary.setOnAction(e->{ summaries.addAll(groups.getSelectionModel().getSelectedItems()); groups.refresh(); });
+        var unmarkSummary=new Button("Quitar marca de resumen");
+        unmarkSummary.setOnAction(e->{ summaries.removeAll(groups.getSelectionModel().getSelectedItems()); groups.refresh(); });
         var role=new ComboBox<String>(); role.getItems().setAll("Partes del mismo presupuesto","Alternativas (presupuestos separados)"); role.setValue(role.getItems().getFirst());
         var first=new Spinner<Integer>(1,20000,2); var last=new Spinner<Integer>(1,20000,20000); first.setEditable(true); last.setEditable(true);
         String[] labels={"Clave","Descripción","Unidad","Cantidad","Precio","Importe declarado"};
@@ -22,7 +36,7 @@ final class TableMappingDialog {
         for(int i=0;i<labels.length;i++) { var spinner=new Spinner<Integer>(0,256,i+1); spinner.setEditable(true); columns.add(spinner); grid.addRow(i,new Label(labels[i]+" (0 = ausente)"),spinner); }
         var numeric=new ComboBox<String>(); numeric.getItems().setAll("Punto decimal; coma de miles","Coma decimal; punto de miles"); numeric.setPromptText("Elige la convención del texto numérico");
         var hidden=new CheckBox("Incluir filas/columnas ocultas (selección explícita)");
-        var message=new Label("Selecciona las partes en orden de aparición. Un resumen o total repetido no debe seleccionarse como otra parte. Se conservarán códigos repetidos y ausencias; revisa y reclasifica las filas después de importar."); message.setWrapText(true);
+        var message=new Label("Marca las hojas de resumen: sus filas no se importarán como conceptos y seguirán en la evidencia. Selecciona las partes o alternativas que deseas mapear."); message.setWrapText(true);
         var error=new Label(); error.setWrapText(true);
         var profiles=new ComboBox<Profile>(); profiles.setPromptText("Perfil opcional de esta obra (solo sugiere)");
         String[] keys={"code","description","unit","quantity","price","amount"};
@@ -41,13 +55,15 @@ final class TableMappingDialog {
                     .whenComplete((saved,failure)->javafx.application.Platform.runLater(()->{ if(dialog.isShowing()) { saveProfile.setDisable(false); if(failure==null) { profiles.getItems().add(0,saved); profiles.setValue(saved); error.setText("Perfil versionado guardado; importa solo después de revisar el mapeo."); } else { error.setText("No se guardó el perfil: "+failure.getMessage()); } } }));
             });
         });
-        var content=new VBox(10,message,groups,role,new HBox(10,new Label("Primera fila"),first,new Label("Última fila"),last),grid,numeric,hidden,profiles,saveProfile,error);
+        var content=new VBox(10,message,groups,new HBox(8,markSummary,unmarkSummary),role,new HBox(10,new Label("Primera fila"),first,new Label("Última fila"),last),grid,numeric,hidden,profiles,saveProfile,error);
         dialog.getDialogPane().setContent(content); dialog.getDialogPane().setPrefSize(720,730);
         var apply=new ButtonType("Importar al borrador",ButtonBar.ButtonData.OK_DONE); dialog.getDialogPane().getButtonTypes().addAll(apply,ButtonType.CANCEL);
         List<Budget>[] result=new List[]{List.of()};
         dialog.getDialogPane().lookupButton(apply).addEventFilter(javafx.event.ActionEvent.ACTION,e->{ try {
             if(groups.getSelectionModel().isEmpty() || columns.get(1).getValue()==0 || numeric.getValue()==null || first.getValue()>last.getValue()) { throw new IllegalArgumentException("Selecciona tablas, descripción, rango y convención numérica."); }
-            var selected=List.copyOf(groups.getSelectionModel().getSelectedItems()); var output=new ArrayList<Budget>(); var together=new ArrayList<Item>();
+            var selected=groups.getSelectionModel().getSelectedItems().stream().filter(t->!summaries.contains(t)).toList();
+            if(selected.isEmpty()) { throw new IllegalArgumentException("Selecciona al menos una tabla de conceptos; los resúmenes no se importan como conceptos."); }
+            var output=new ArrayList<Budget>(); var together=new ArrayList<Item>();
             for(var table:selected) {
                 var rows=new TreeMap<Integer,Map<Integer,Fragment>>();
                 fragments.stream().filter(f->f.attachmentId()==table.source() && table.sheet().equals(f.location().sheet()) && f.location().row()!=null && f.location().column()!=null
@@ -78,6 +94,11 @@ final class TableMappingDialog {
         if(f==null || f.storedValue()==null && f.formula()!=null) { return null; }
         if(f.storedValue()!=null && (f.kind().equals("NUMERIC") || f.kind().equals("FORMULA"))) { return BudgetEditor.number(f.storedValue()); }
         String text=value(f); if(text==null || text.isBlank()) { return null; }
+        text=text.strip();
+        var pattern=convention==0?DECIMAL_POINT:DECIMAL_COMMA;
+        if(!pattern.matcher(text).matches()) {
+            throw new IllegalArgumentException("El valor en "+f.location()+" no coincide con la convención numérica seleccionada.");
+        }
         return BudgetEditor.number(convention==0?text.replace(",",""):text.replace(".","").replace(',','.'));
     }
 }

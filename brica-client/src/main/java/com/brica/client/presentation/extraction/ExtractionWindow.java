@@ -29,10 +29,11 @@ public final class ExtractionWindow {
     private final TableView<Decision> decisionsTable=new TableView<>(decisions);
     private final ListView<Budget> draftList=new ListView<>(drafts);
     private final TableView<Fragment> candidateTable=new TableView<>();
+    private final Map<UUID,List<Suggestion>> suggestionsByFragment=new HashMap<>();
     private final TextArea original=new TextArea(),confirmationLog=new TextArea();
     private final List<Fragment> candidates=new ArrayList<>(); private List<BudgetView> existing=List.of();
     private final Map<String,UUID> operations=new HashMap<>();
-    private Context context; private View current; private boolean busy,dirty; private long generation,requestGeneration;
+    private Context context,rebaseContext; private View current; private boolean busy,dirty; private long generation,requestGeneration;
     private final Timeline polling=new Timeline(new KeyFrame(Duration.seconds(2),e->poll()));
     private final Button save=new Button("Guardar borrador"),confirmWork=new Button("Confirmar obra"),confirmClient=new Button("Confirmar cliente"),confirmBudget=new Button("Confirmar presupuesto seleccionado");
     private final ComboBox<BudgetView> savedBudgets=new ComboBox<>(); private final ComboBox<BudgetRevision> revisions=new ComboBox<>();
@@ -56,7 +57,7 @@ public final class ExtractionWindow {
         stage.setOnCloseRequest(e->{ if(dirty&&!ask("Hay cambios locales sin guardar. ¿Cerrar sin guardar esos cambios? El trabajo del servidor no se cancela.")) { e.consume(); } });
         stage.setOnHidden(e->{ polling.stop(); generation++; }); polling.setCycleCount(Animation.INDEFINITE); polling.play(); buttons();
         run(api.context(workId),value->{ context=value; loadJobs(); });
-        works.allAttachments(workId).whenComplete((values,error)->Platform.runLater(()->{ if(error!=null) { failure(error); } else { sources.getItems().setAll(values); if(attachmentId!=null) { values.stream().filter(a->a.id()==attachmentId).findFirst().ifPresent(a->sources.getSelectionModel().select(a)); } } }));
+        works.allAttachments(workId).whenComplete((values,error)->Platform.runLater(()->{ if(error!=null) { failure(error); } else { sources.getItems().setAll(values); if(attachmentId!=null) { values.stream().filter(a->attachmentId.equals(a.id())).findFirst().ifPresent(a->sources.getSelectionModel().select(a)); } } }));
         refreshBudgets();
     }
     private boolean can(String permission) { var user=ServerSession.shared(ClientConfig.serverBaseUri()).user(); return user!=null&&user.can(permission); }
@@ -75,41 +76,105 @@ public final class ExtractionWindow {
         upload.setOnAction(e->{ var chooser=new FileChooser(); chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Fuentes PDF, Excel y Word","*.pdf","*.xls","*.xlsx","*.docx")); var file=chooser.showOpenDialog(stage); if(file!=null) { run(works.upload(workId,kind.getValue(),file.toPath()),a->{ sources.getItems().add(a); sources.getSelectionModel().select(a); }); } });
         var reopen=new Button("Retomar seleccionado"); reopen.setOnAction(e->{ var j=jobs.getSelectionModel().getSelectedItem(); if(j!=null && (!dirty||ask("¿Descartar cambios locales y cargar el borrador guardado?"))) { run(api.get(j.id()),v->adopt(v,true)); } });
         var refresh=new Button("Actualizar lista"); refresh.setOnAction(e->loadJobs());
+        var reanalyze=new Button("Reanalizar seleccionado"); reanalyze.setDisable(!can("WORKS_WRITE"));
+        reanalyze.setOnAction(e->{
+            var j=jobs.getSelectionModel().getSelectedItem();
+            if(j==null || dirty&&!ask("¿Abrir otro trabajo sin guardar los cambios locales?")) { return; }
+            String key="reanalyze:"+j.id();
+            var operation=operations.computeIfAbsent(key,ignored->UUID.randomUUID());
+            run(api.reanalyze(j.id(),operation),v->{ operations.remove(key); adopt(v,true); loadJobs(); tabs.getSelectionModel().select(1); });
+        });
+        var attempts=new Button("Consultar intentos"); attempts.setOnAction(e->{
+            var j=jobs.getSelectionModel().getSelectedItem();
+            if(j!=null) { run(api.attempts(j.id()),values->{
+                var dialog=new Alert(Alert.AlertType.INFORMATION);
+                dialog.initOwner(stage); dialog.setHeaderText("Historial de lectura");
+                var text=new TextArea(values.isEmpty()?"No hay intentos registrados.":String.join("\n\n",values.stream().map(Attempt::toString).toList()));
+                text.setEditable(false); dialog.getDialogPane().setContent(text); dialog.showAndWait();
+            }); }
+        });
         var cancel=new Button("Cancelar lo pendiente"); cancel.setDisable(!can("WORKS_WRITE")); cancel.setOnAction(e->{ if(current!=null&&ask("Cancelar impide nuevas confirmaciones. Los bloques ya confirmados NO se revierten. ¿Continuar?")) { run(api.cancel(current),v->adopt(v,true)); } });
         var complete=new Button("Finalizar revisión"); complete.setDisable(!can("WORKS_WRITE")); complete.setOnAction(e->{ if(current!=null&&!dirty) { run(api.complete(current),v->adopt(v,true)); } else { status.setText("Guarda antes de finalizar."); } });
         var left=new VBox(10,new Label("Archivos originales de esta obra"),new HBox(8,kind,upload),sources,create);
-        var right=new VBox(10,new Label("Trabajos y borradores guardados"),jobs,new HBox(8,reopen,refresh),new HBox(8,cancel,complete));
+        var right=new VBox(10,new Label("Trabajos y borradores guardados"),jobs,new HBox(8,reopen,refresh),new HBox(8,reanalyze,attempts),new HBox(8,cancel,complete));
         VBox.setVgrow(sources,Priority.ALWAYS); VBox.setVgrow(jobs,Priority.ALWAYS); var split=new SplitPane(left,right); split.setDividerPositions(0.5); return split;
     }
     private javafx.scene.Node reviewPane() {
         candidateTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        candidateTable.setPlaceholder(new Label("Selecciona fuentes y solicita su análisis."));
         BudgetEditor.column(candidateTable,"Archivo / ubicación",f->"#"+f.attachmentId()+" · "+f.location());
         BudgetEditor.column(candidateTable,"Texto / valor original",Fragment::original);
+        BudgetEditor.column(candidateTable,"Dato sugerido",f->suggestionsByFragment.getOrDefault(f.id(),List.of()).stream()
+                .map(s->targetLabel(s.target())+": "+s.proposedValue()).collect(java.util.stream.Collectors.joining(" · ")));
         BudgetEditor.column(candidateTable,"Advertencias",f->(f.hidden()?"Oculto; ":"")+Objects.toString(f.warning(),""));
         original.setEditable(false); original.setWrapText(true); original.setPrefRowCount(5);
         candidateTable.getSelectionModel().selectedItemProperty().addListener((o,a,f)->{ if(f!=null) { original.setText("Origen: archivo #"+f.attachmentId()+" · "+f.location()+"\n\n"+Objects.toString(f.original(),"")+"\nFórmula (no ejecutada): "+Objects.toString(f.formula(),"—")+"\nResultado guardado: "+Objects.toString(f.storedValue(),"Sin registrar")); } });
-        var use=new Button("Proponer campo desde fragmento"); use.setOnAction(e->decision(null,candidateTable.getSelectionModel().getSelectedItem()));
+        var use=new Button("Proponer campo desde fragmento"); use.setOnAction(e->{
+            var fragment=candidateTable.getSelectionModel().getSelectedItem();
+            if(fragment==null) { status.setText("Selecciona un fragmento de evidencia."); return; }
+            var options=suggestionsByFragment.getOrDefault(fragment.id(),List.of());
+            decision(null,fragment,options.size()==1?options.getFirst():null);
+        });
         var manual=new Button("Capturar campo manualmente"); manual.setOnAction(e->decision(null,null));
         var edit=new Button("Editar propuesta"); edit.setOnAction(e->{ var d=decisionsTable.getSelectionModel().getSelectedItem(); if(d!=null) { decision(d,null); } });
         var remove=new Button("Excluir propuesta"); remove.setOnAction(e->{ var d=decisionsTable.getSelectionModel().getSelectedItem(); if(d!=null) { decisions.remove(d); changed(); } });
-        var contextRefresh=new Button("Consultar valores vigentes"); contextRefresh.setOnAction(e->run(api.context(workId),v->{ context=v; decisionsTable.refresh(); status.setText("Valores consultados. Revisa las diferencias y guarda de nuevo; no se aplicó ningún cambio."); changed(); }));
+        var contextRefresh=new Button("Consultar valores vigentes"); contextRefresh.setOnAction(e->run(api.context(workId),v->{
+            context=v; decisionsTable.refresh();
+            if(current!=null && current.job().reviewState().equals("DRAFT") && can("WORKS_WRITE")
+                    && ask("¿Usar estas revisiones como base al guardar? Compara los valores vigentes con tus propuestas antes de confirmar.")) {
+                rebaseContext=v; changed();
+            }
+            status.setText("Valores consultados. No se aplicó ningún cambio.");
+        }));
         decisionsTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         BudgetEditor.column(decisionsTable,"Destino",d->context==null?d.target():context.targets().stream().filter(t->t.target().equals(d.target())).map(Target::label).findFirst().orElse(d.target()));
         BudgetEditor.column(decisionsTable,"Valor vigente",d->context==null?null:context.targets().stream().filter(t->t.target().equals(d.target())).map(t->Objects.toString(t.currentValue(),"Sin registrar")).findFirst().orElse(""));
         BudgetEditor.column(decisionsTable,"Valor propuesto",Decision::value); BudgetEditor.column(decisionsTable,"Justificación",Decision::justification);
-        var top=new VBox(8,candidateTable,original,new HBox(8,use,manual)); VBox.setVgrow(candidateTable,Priority.ALWAYS);
+        var suggestions=new Button("Consultar sugerencias"); suggestions.setOnAction(e->showSuggestions());
+        var top=new VBox(8,candidateTable,original,new HBox(8,use,manual,suggestions)); VBox.setVgrow(candidateTable,Priority.ALWAYS);
         var bottom=new VBox(8,decisionsTable,new HBox(8,edit,remove,contextRefresh)); VBox.setVgrow(decisionsTable,Priority.ALWAYS);
         var split=new SplitPane(top,bottom); split.setOrientation(javafx.geometry.Orientation.VERTICAL); split.setDividerPositions(0.58); return split;
     }
     private void decision(Decision previous,Fragment fragment) {
+        decision(previous,fragment,null);
+    }
+    private String targetLabel(String key) {
+        return context==null?key:context.targets().stream().filter(t->t.target().equals(key)).map(Target::label).findFirst().orElse(key);
+    }
+    private void showSuggestions() {
+        if(current==null || context==null) { return; }
+        run(api.suggestions(current.job().id()),values->{
+            if(values.isEmpty()) { status.setText("No hay sugerencias automáticas; puedes revisar los fragmentos y mapearlos manualmente."); return; }
+            var byId=new HashMap<UUID,Fragment>(); candidates.forEach(f->byId.put(f.id(),f));
+            var labels=new HashMap<String,String>(); context.targets().forEach(t->labels.put(t.target(),t.label()));
+            var dialog=new Dialog<Suggestion>(); dialog.initOwner(stage); dialog.setTitle("Sugerencias y alternativas");
+            var table=new TableView<Suggestion>(FXCollections.observableArrayList(values));
+            BudgetEditor.column(table,"Destino",s->labels.getOrDefault(s.target(),s.target()));
+            BudgetEditor.column(table,"Valor sugerido",Suggestion::proposedValue);
+            BudgetEditor.column(table,"Evidencia",s->{ var f=byId.get(s.fragmentId()); return "#"+s.attachmentId()+(f==null?"":" · "+f.location()+" · "+Objects.toString(f.original(),"")); });
+            BudgetEditor.column(table,"Precedencia",Suggestion::reason);
+            table.setPrefSize(850,360); dialog.getDialogPane().setContent(table);
+            var review=new ButtonType("Revisar selección",ButtonBar.ButtonData.OK_DONE);
+            dialog.getDialogPane().getButtonTypes().addAll(review,ButtonType.CANCEL);
+            dialog.getDialogPane().lookupButton(review).disableProperty().bind(table.getSelectionModel().selectedItemProperty().isNull());
+            dialog.setResultConverter(button->button==review?table.getSelectionModel().getSelectedItem():null);
+            dialog.showAndWait().ifPresent(s->{
+                var fragment=byId.get(s.fragmentId());
+                if(fragment==null) { status.setText("La evidencia todavía no está disponible. Vuelve a consultar el trabajo."); return; }
+                decision(null,fragment,s);
+            });
+        });
+    }
+    private void decision(Decision previous,Fragment fragment,Suggestion suggestion) {
         if(current==null || context==null || !can("WORKS_WRITE")) { status.setText("Selecciona un borrador editable."); return; }
         var dialog=new Dialog<Decision>(); dialog.initOwner(stage); dialog.setTitle("Revisar campo antes de confirmar");
         var target=new ComboBox<Target>(FXCollections.observableArrayList(context.targets())); target.setMaxWidth(Double.MAX_VALUE);
         if(previous!=null) { context.targets().stream().filter(t->t.target().equals(previous.target())).findFirst().ifPresent(target::setValue); }
-        var value=new TextArea(previous!=null?previous.value():fragment==null?"":Objects.toString(fragment.storedValue(),fragment.original())); value.setPrefRowCount(5); value.setWrapText(true);
+        var value=new TextArea(previous!=null?previous.value():suggestion!=null?suggestion.proposedValue():fragment==null?"":Objects.toString(fragment.storedValue(),fragment.original())); value.setPrefRowCount(5); value.setWrapText(true);
         var reason=new TextArea(previous==null?null:previous.justification()); reason.setPrefRowCount(3);
         var correction=new CheckBox("Es corrección de captura, NO convenio ni cambio de condiciones contractuales"); correction.setSelected(previous!=null&&previous.correctionOfCapture());
         var hint=new Label(); hint.setWrapText(true); target.valueProperty().addListener((o,a,t)->{ if(t!=null) { hint.setText("Vigente: "+Objects.toString(t.currentValue(),"Sin registrar")+"\nTipo: "+t.type()+". Fechas AAAA-MM-DD; importes decimales con punto. Fuente sugerida: "+Objects.toString(t.preferredSource(),"sin preferencia automática")+". El cliente es compartido entre obras."); } });
+        if(suggestion!=null) { context.targets().stream().filter(t->t.target().equals(suggestion.target())).findFirst().ifPresent(target::setValue); }
         var error=new Label(); dialog.getDialogPane().setContent(new VBox(10,target,hint,new Label("Valor propuesto (editar no confirma)"),value,correction,new Label("Justificación; obligatoria en captura manual y correcciones"),reason,error));
         dialog.getDialogPane().setPrefWidth(680); var accept=new ButtonType("Aplicar al borrador",ButtonBar.ButtonData.OK_DONE); dialog.getDialogPane().getButtonTypes().addAll(accept,ButtonType.CANCEL);
         Decision[] result={null}; dialog.getDialogPane().lookupButton(accept).addEventFilter(javafx.event.ActionEvent.ACTION,e->{ if(target.getValue()==null) { e.consume(); error.setText("Selecciona un destino."); } else { result[0]=new Decision(target.getValue().target(),BudgetEditor.blank(value.getText()),previous!=null?previous.evidenceId():fragment==null?null:fragment.id(),reason.getText(),correction.isSelected()); } });
@@ -146,7 +211,9 @@ public final class ExtractionWindow {
     private void changed() { dirty=true; status.setText("Cambios locales. Guarda el borrador antes de confirmar."); buttons(); }
     private void save() {
         if(current==null || context==null) { return; }
-        var review=new Review(confirmed("WORK")?current.review().workRevision():context.workRevision(),confirmed("CLIENT")?current.review().clientRevision():context.clientRevision(),List.copyOf(decisions),List.copyOf(drafts));
+        var base=current.review();
+        var review=new Review(rebaseContext!=null&&!confirmed("WORK")?rebaseContext.workRevision():base.workRevision(),
+                rebaseContext!=null&&!confirmed("CLIENT")?rebaseContext.clientRevision():base.clientRevision(),List.copyOf(decisions),List.copyOf(drafts));
         run(api.save(current,review),v->{ adopt(v,true); status.setText("Borrador guardado en el servidor."); });
     }
     private void confirm(String target,UUID budget) {
@@ -156,16 +223,44 @@ public final class ExtractionWindow {
         run(api.confirm(current,target,budget,operation),confirmed->{ status.setText(confirmed.result()); run(api.get(current.job().id()),v->{ adopt(v,true); refreshBudgets(); }); });
     }
     private void adopt(View view,boolean replace) {
+        if(current==null || !current.job().id().equals(view.job().id())) {
+            candidates.clear(); candidateTable.getItems().clear(); suggestionsByFragment.clear(); original.clear();
+        }
         current=view; state.setText(view.job().state()+" · Revisión "+view.job().reviewState()+" · "+view.job().confirmedBlocks()+" bloque(s) confirmados"+(view.job().diagnostic()==null?"":"\n"+view.job().diagnostic()));
+        var emptyMessage=switch(view.job().state()) {
+            case "QUEUED" -> "El análisis está en cola. Aún no hay evidencia.";
+            case "RUNNING" -> "El lector está procesando las fuentes. Aún no hay evidencia.";
+            case "FAILED" -> "No se produjo evidencia. Consulta el diagnóstico del trabajo arriba.";
+            case "CANCELLED" -> "El análisis se canceló. No hay evidencia para mostrar.";
+            default -> "El trabajo no tiene fragmentos de evidencia para mostrar.";
+        };
+        var placeholder=new Label(emptyMessage); placeholder.setWrapText(true); candidateTable.setPlaceholder(placeholder);
         confirmationLog.setText(String.join("\n",view.confirmations().stream().map(c->c.block()+": "+c.result()).toList()));
-        if(replace) { decisions.setAll(view.review().decisions()); drafts.setAll(view.review().budgets()); dirty=false; }
+        if(replace) { decisions.setAll(view.review().decisions()); drafts.setAll(view.review().budgets()); dirty=false; rebaseContext=null; }
         buttons(); long epoch=++generation; UUID id=view.job().id();
-        api.allCandidates(id).whenComplete((values,error)->Platform.runLater(()->{ if(epoch!=generation || !stage.isShowing() || current==null || !current.job().id().equals(id)) { return; } if(error!=null) { failure(error); } else { candidates.clear(); candidates.addAll(values); candidateTable.getItems().setAll(values); evidence.setText(values.size()+" fragmentos de evidencia"); } }));
+        api.allCandidates(id).whenComplete((values,error)->Platform.runLater(()->{
+            if(!isCurrentEvidenceRequest(epoch,id)) { return; }
+            if(error!=null) { failure(error); return; }
+            candidates.clear(); candidates.addAll(values); candidateTable.getItems().setAll(values);
+            evidence.setText(values.size()+" fragmentos de evidencia");
+            if(!values.isEmpty() && (view.job().state().equals("COMPLETED") || view.job().state().equals("PARTIAL"))) {
+                api.suggestions(id).whenComplete((suggestions,suggestionError)->Platform.runLater(()->{
+                    if(!isCurrentEvidenceRequest(epoch,id) || suggestionError!=null) { return; }
+                    suggestionsByFragment.clear();
+                    suggestions.forEach(s->suggestionsByFragment.computeIfAbsent(s.fragmentId(),ignored->new ArrayList<>()).add(s));
+                    candidateTable.refresh();
+                }));
+            }
+        }));
+    }
+    private boolean isCurrentEvidenceRequest(long epoch,UUID id) {
+        return epoch==generation && stage.isShowing() && current!=null && current.job().id().equals(id);
     }
     private void loadJobs() { run(api.jobs(workId),values->jobs.getItems().setAll(values)); }
     private void poll() {
         if(current==null || busy || !(current.job().state().equals("QUEUED")||current.job().state().equals("RUNNING"))) { return; }
-        UUID id=current.job().id(); api.get(id).whenComplete((value,error)->Platform.runLater(()->{ if(!stage.isShowing() || current==null || !current.job().id().equals(id)) { return; } if(error!=null) { failure(error); } else { adopt(value,false); } }));
+        View snapshot=current;
+        api.get(snapshot.job().id()).whenComplete((value,error)->Platform.runLater(()->{ if(!stage.isShowing() || busy || current!=snapshot) { return; } if(error!=null) { failure(error); } else { adopt(value,false); } }));
     }
     private void buttons() {
         tabs.setDisable(busy);

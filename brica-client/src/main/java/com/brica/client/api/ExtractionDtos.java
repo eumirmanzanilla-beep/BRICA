@@ -20,6 +20,12 @@ public final class ExtractionDtos {
         }
     }
     public record Fragment(UUID id,long attachmentId,Location location,String original,String formula,String storedValue,String kind,boolean hidden,String warning) { }
+    public record Suggestion(UUID fragmentId,long attachmentId,String target,String proposedValue,boolean recommended,String reason) { }
+    public record Attempt(UUID id,int number,String outcome,String startedAt,String heartbeatAt,String finishedAt,String diagnostic) {
+        @Override public String toString() {
+            return "Intento "+number+" · "+outcome+" · "+startedAt+(diagnostic==null?"":"\n"+diagnostic);
+        }
+    }
     public record Section(UUID id,int position,String title) { @Override public String toString() { return title; } }
     public record Item(UUID id,int position,UUID sectionId,String code,String description,String unit,BigDecimal quantity,BigDecimal price,BigDecimal amount,UUID evidenceId,String originalMeasurement) { }
     public record Budget(UUID blockId,Long budgetId,String expectedRevision,String name,String currency,List<Section> sections,List<Item> items,List<String> notes,BigDecimal subtotal,BigDecimal tax,BigDecimal total,String justification) {

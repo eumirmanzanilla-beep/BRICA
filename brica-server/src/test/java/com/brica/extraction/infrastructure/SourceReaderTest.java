@@ -1,5 +1,6 @@
 package com.brica.extraction.infrastructure;
 import com.brica.extraction.infrastructure.reader.SourceReader;
+import com.brica.works.application.AttachmentFormat;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
@@ -36,7 +37,10 @@ class SourceReaderTest {
             var table=doc.createTable(1,3); table.getRow(0).getCell(0).setText("0012"); table.getRow(0).getCell(1).setText(description); table.getRow(0).getCell(2).setText("");
             try(var out=Files.newOutputStream(path)) { doc.write(out); }
         }
-        var result=new SourceReader(9).read(path,"source.docx",hash(path));
+         var result=new SourceReader(9).read(path,"source.docx",hash(path));
+         assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                 AttachmentFormat.mime("source.docx",Files.readAllBytes(path)));
+         assertTrue(result.fragments().stream().anyMatch(f->"Denominación de obra: Prueba Ñ".equals(f.original())));
         assertTrue(result.fragments().stream().anyMatch(f->f.original().equals(description)));
         assertTrue(result.fragments().stream().anyMatch(f->f.location().sheet()!=null && f.location().column()==3 && f.original().isEmpty()));
         assertTrue(result.fragments().stream().allMatch(f->f.location().page()==null));
@@ -70,7 +74,9 @@ class SourceReaderTest {
             var zero=row.createCell(2); zero.setCellFormula("1+1"); zero.getCTCell().setV("0");
             try(var out=Files.newOutputStream(path)) { book.write(out); }
         }
-        byte[] before=Files.readAllBytes(path);
+         byte[] before=Files.readAllBytes(path);
+         assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                 AttachmentFormat.mime("source.xlsx",before));
         var result=new SourceReader(7L).read(path,"source.xlsx",com.brica.documents.application.DocumentHashes.sha256(before));
         var cells=result.fragments().stream().filter(f->f.location().row()!=null).toList();
         assertEquals("0012",cells.get(0).original());

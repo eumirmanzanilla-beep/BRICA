@@ -28,16 +28,21 @@ public final class RecognizeSourceLabels {
         }
         for(var fragment:result.fragments()) {
             if(fragment.original()==null || fragment.hidden()) { continue; }
+            var location=fragment.location();
+            var labelCell=new Cell(location.sheet(),location.row(),location.column());
+            if(ambiguous.contains(labelCell)) { continue; }
             String[] parts=fragment.original().split(":",2);
             String target=LABELS.get(normalize(parts[0]));
             if(target==null) { continue; }
-            if(parts.length==2) {
+            if(parts.length==2 && !parts[1].isBlank()) {
                 String value=parts[1].strip();
-                if(!value.isBlank() && !value.contains(":")) { candidates.add(new SourcePrecedencePolicy.Candidate(fragment.id(),result.attachmentId(),target,value,source)); }
-            } else if(fragment.location().sheet()!=null && fragment.location().row()!=null && fragment.location().column()!=null) {
-                var next=new Cell(fragment.location().sheet(),fragment.location().row(),fragment.location().column()+1);
+                if(!value.contains(":")) { candidates.add(new SourcePrecedencePolicy.Candidate(fragment.id(),result.attachmentId(),target,value,source)); }
+            } else if(location.sheet()!=null && location.row()!=null && location.column()!=null) {
+                var next=new Cell(location.sheet(),location.row(),location.column()+1);
                 var f=ambiguous.contains(next)?null:cells.get(next);
                 if(f!=null && f.original()!=null && !f.original().isBlank()) {
+                    // A second recognized label can begin another field, not supply this value.
+                    if(LABELS.containsKey(normalize(f.original().split(":",2)[0]))) { continue; }
                     String value=AMOUNTS.contains(target) && f.storedValue()!=null && (f.kind().equals("NUMERIC") || f.kind().equals("FORMULA"))?f.storedValue():f.original();
                     candidates.add(new SourcePrecedencePolicy.Candidate(f.id(),result.attachmentId(),target,value,source));
                 }

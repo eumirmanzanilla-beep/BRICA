@@ -4,11 +4,19 @@ import com.brica.budgets.application.BudgetService;
 import com.brica.budgets.domain.BudgetDraft;
 import com.brica.clients.application.*;
 import com.brica.extraction.application.ExtractionService;
+import com.brica.extraction.application.port.SourceProcessor;
 import com.brica.extraction.domain.*;
+import com.brica.extraction.infrastructure.worker.ExtractionDispatcher;
 import com.brica.server.security.application.*;
 import com.brica.works.application.*;
 import com.brica.works.domain.WorkAttachment;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -27,11 +35,10 @@ import static org.mockito.Mockito.when;
 @SpringBootTest(properties="brica.extraction.worker-enabled=false") @Testcontainers
 class ExtractionFlowIntegrationTest {
     @Container static final PostgreSQLContainer<?> postgres=new PostgreSQLContainer<>("postgres:18-alpine");
-    static final Path files=temporaryFiles();
-    private static Path temporaryFiles() { try { return Files.createTempDirectory(Path.of("/tmp/opencode"),"brica-real-extraction-"); } catch(Exception e) { throw new ExceptionInInitializerError(e); } }
+    @TempDir static Path files;
     @DynamicPropertySource static void properties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url",postgres::getJdbcUrl); registry.add("spring.datasource.username",postgres::getUsername);
-        registry.add("spring.datasource.password",postgres::getPassword); registry.add("brica.documents.storage-root",files::toString);
+        registry.add("spring.datasource.password",postgres::getPassword); registry.add("brica.documents.storage-root",()->files.toString());
     }
     @MockitoBean AccessPolicy access;
     @MockitoBean com.brica.server.security.application.port.AccountStore accounts;
@@ -45,6 +52,7 @@ class ExtractionFlowIntegrationTest {
     @Autowired ConsultClientService consultClient;
     @Autowired JdbcTemplate jdbc;
     @Autowired com.brica.extraction.application.ExtractionExecutionService execution;
+    @Autowired SourceProcessor processor;
     private Fixture activeFixture;
     @BeforeEach void permissions() {
         when(access.hasPermission(anyString())).thenReturn(true);
@@ -61,13 +69,91 @@ class ExtractionFlowIntegrationTest {
     }
     private record Fixture(Long work,Long client,ExtractionService.View job) { }
     private Fixture fixture() {
+        return fixture("%PDF-1.7\nSynthetic manual evidence".getBytes(java.nio.charset.StandardCharsets.US_ASCII),"manual.pdf",WorkAttachment.Kind.CONTRACT);
+    }
+    private Fixture fixture(byte[] bytes,String name,WorkAttachment.Kind kind) {
         var c=clients.registerClient("Cliente_"+UUID.randomUUID().toString().substring(0,8),"Representante original");
         var w=works.registerWork(c.getId(),"Obra_"+UUID.randomUUID().toString().substring(0,8),null,null,null,null);
-        var a=attachments.upload(w.getId(),WorkAttachment.Kind.CONTRACT,"manual.pdf","%PDF-1.7\nSynthetic manual evidence".getBytes(java.nio.charset.StandardCharsets.US_ASCII));
+        var a=attachments.upload(w.getId(),kind,name,bytes);
         UUID key=UUID.randomUUID(); var request=new ExtractionService.Create(key,List.of(a.id()));
         var job=extraction.create(w.getId(),request);
         assertEquals(job.job().id(),extraction.create(w.getId(),request).job().id());
         activeFixture=new Fixture(w.getId(),c.getId(),job); return activeFixture;
+    }
+    @Test void publishesWordParagraphsAndTablesForReview() throws Exception {
+        var bytes=new java.io.ByteArrayOutputStream();
+        try(var doc=new org.apache.poi.xwpf.usermodel.XWPFDocument()) {
+            doc.createParagraph().createRun().setText("Número de contrato: SINTETICO-01");
+            doc.createTable(1,1).getRow(0).getCell(0).setText("Concepto sintético");
+            doc.write(bytes);
+        }
+        var fragments=readAndPublish(fixture(bytes.toByteArray(),"contrato.docx",WorkAttachment.Kind.CONTRACT));
+        assertTrue(fragments.stream().anyMatch(f->f.original().contains("SINTETICO-01") && f.location().part().contains("/paragraph:")));
+        assertTrue(fragments.stream().anyMatch(f->f.original().equals("Concepto sintético") && f.location().row()==1 && f.location().page()==null));
+    }
+    @Test @EnabledOnOs(OS.WINDOWS)
+    @EnabledIfSystemProperty(named="brica.test.windows.packaged",matches="true")
+    @ResourceLock(Resources.SYSTEM_PROPERTIES)
+    @Timeout(value=45,threadMode=Timeout.ThreadMode.SEPARATE_THREAD)
+    void windowsDispatcherPublishesContractEvidenceAndSuggestionsWithoutApplyingThem() throws Exception {
+        var bytes=new java.io.ByteArrayOutputStream();
+        try(var doc=new org.apache.poi.xwpf.usermodel.XWPFDocument()) {
+            doc.createParagraph().createRun().setText("Número de contrato: 0012");
+            var row=doc.createTable(1,2).getRow(0);
+            row.getCell(0).setText("Contratista:");
+            row.getCell(1).setText("Empresa de prueba");
+            doc.write(bytes);
+        }
+        var f=fixture(bytes.toByteArray(),"contrato.docx",WorkAttachment.Kind.CONTRACT);
+        var id=f.job().job().id();
+        var jar=Path.of("target/brica-server-0.1.0-SNAPSHOT.jar").toAbsolutePath();
+        assertTrue(Files.isRegularFile(jar));
+        String previous=System.getProperty("java.class.path");
+        try {
+            System.setProperty("java.class.path",jar.toString());
+            new ExtractionDispatcher(execution,processor,true).dispatch();
+        } finally { System.setProperty("java.class.path",previous); }
+        var completed=extraction.get(id);
+        assertEquals("COMPLETED",completed.job().state(),completed.job().diagnostic());
+        assertEquals("DRAFT",completed.job().reviewState());
+        assertTrue(completed.review().decisions().isEmpty());
+        var fragments=extraction.fragments(id,0,10);
+        var suggestions=extraction.suggestions(id,0,10);
+        assertTrue(suggestions.stream().anyMatch(s->s.target().equals("WORK_CONTRACT_NUMBER") && s.proposedValue().equals("0012")));
+        var contractor=suggestions.stream().filter(s->s.target().equals("WORK_CONTRACTOR")).findFirst().orElseThrow();
+        assertEquals("Empresa de prueba",contractor.proposedValue());
+        assertTrue(fragments.stream().anyMatch(frag->frag.id().equals(contractor.fragmentId()) && frag.location().column()==2));
+        assertNull(consultWork.get(f.work()).getContractNumber());
+        assertNull(consultWork.get(f.work()).getContractor());
+    }
+    @Test void publishesExcelSheetCellsAndIdentifiesEvidence() throws Exception {
+        var bytes=new java.io.ByteArrayOutputStream();
+        try(var workbook=new org.apache.poi.xssf.usermodel.XSSFWorkbook()) {
+            workbook.createSheet("Parte A").createRow(0).createCell(0).setCellValue("0012");
+            workbook.write(bytes);
+        }
+        var fragments=readAndPublish(fixture(bytes.toByteArray(),"presupuesto.xlsx",WorkAttachment.Kind.BASE_BUDGET));
+        assertTrue(fragments.stream().anyMatch(f->f.kind().equals("SHEET") && f.original().equals("Parte A")));
+        assertTrue(fragments.stream().anyMatch(f->f.original().equals("0012") && f.location().row()==1 && f.location().column()==1));
+    }
+    private List<SourceResult.Fragment> readAndPublish(Fixture fixture) throws Exception {
+        var claim=execution.claim();
+        assertNotNull(claim);
+        assertEquals(fixture.job().job().id(),claim.jobId());
+        var source=claim.sources().getFirst();
+        // Synthetic inputs only: exercise the adapter and durable flow, not OS isolation.
+        var path=Files.createTempFile(files,"synthetic-source-",".bin");
+        try {
+            Files.write(path,source.bytes());
+            var result=new com.brica.extraction.infrastructure.reader.SourceReader(source.id()).read(path,source.name(),source.sha256());
+            execution.publish(claim,new com.brica.extraction.application.port.SourceProcessor.Result(List.of(result),null));
+        } finally { Files.deleteIfExists(path); }
+        var current=extraction.get(claim.jobId());
+        assertEquals("COMPLETED",current.job().state());
+        assertEquals("DRAFT",current.job().reviewState());
+        assertEquals(0,current.job().confirmedBlocks());
+        assertNull(consultWork.get(fixture.work()).getDocumentName());
+        return extraction.fragments(claim.jobId(),0,10);
     }
     @Test void savesResumesAndConfirmsWorkWithoutOverwritingTechnicalNameOrClient() {
         var f=fixture(); String originalName=consultWork.get(f.work()).getName();

@@ -16,7 +16,14 @@ public class ExtractionDispatcher {
         var claim=execution.claim(); if(claim==null) { return; }
         SourceProcessor.Result result;
         try { result=processor.process(claim.sources(),()->execution.active(claim)); }
-        catch(Exception failure) { result=new SourceProcessor.Result(List.of(),"No se pudo ejecutar el lector aislado. Revisa cgroup, Bubblewrap, OCR y la configuración del servidor; puedes conservar el borrador y capturar manualmente."); }
+        catch(Exception failure) {
+            String message=System.getProperty("os.name").startsWith("Windows")
+                    ? ("WINDOWS_WORKER_REQUIRES_PACKAGED_SERVER".equals(failure.getMessage())
+                        ? "Para extraer en Windows, ejecuta el servidor desde su JAR empaquetado."
+                        : "Windows no pudo iniciar o completar el lector aislado. El borrador se conserva.")
+                    : "No se pudo ejecutar el lector aislado. Revisa cgroup, Bubblewrap, OCR y la configuración del servidor; puedes conservar el borrador y capturar manualmente.";
+            result=new SourceProcessor.Result(List.of(),message);
+        }
         execution.publish(claim,result);
     }
 }
