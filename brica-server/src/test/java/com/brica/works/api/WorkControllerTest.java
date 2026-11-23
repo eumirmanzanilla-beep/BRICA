@@ -186,6 +186,56 @@ class WorkControllerTest {
     }
 
     @Test
+    void shouldAcceptReadableWorkNameAndRejectNameLongerThan255Characters() throws Exception {
+        Client client = mock(Client.class);
+        when(client.getId()).thenReturn(1L);
+        Work work = mock(Work.class);
+        when(work.getClient()).thenReturn(client);
+        when(work.getName()).thenReturn("Edificio 2: Ampliación, Mérida");
+        when(work.getLocation()).thenReturn("Mérida");
+        when(registerWorkService.registerWork(
+                1L,
+                "Edificio 2: Ampliación, Mérida",
+                "Mérida",
+                null,
+                null,
+                null
+        )).thenReturn(work);
+
+        mockMvc.perform(
+                post("/api/v1/works")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "clientId": 1,
+                                  "name": "Edificio 2: Ampliación, Mérida",
+                                  "location": "Mérida"
+                                }
+                                """)
+        ).andExpect(status().isCreated());
+
+        verify(registerWorkService).registerWork(
+                1L,
+                "Edificio 2: Ampliación, Mérida",
+                "Mérida",
+                null,
+                null,
+                null
+        );
+
+        mockMvc.perform(
+                post("/api/v1/works")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "clientId": 1,
+                                  "name": "%s"
+                                }
+                                """.formatted("a".repeat(256)))
+        ).andExpect(status().isBadRequest());
+    }
+
+    @Test
     void shouldDeleteWork() throws Exception {
 
         mockMvc.perform(
