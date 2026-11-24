@@ -33,7 +33,9 @@ class DocumentsApiClientTest {
                 calls.incrementAndGet(); requestBody.set(new String(e.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
                 ifMatch.set(e.getRequestHeaders().getFirst("If-Match"));
                 if (!e.getRequestMethod().equals("GET")) { assertEquals("token", e.getRequestHeaders().getFirst("X-CSRF-TOKEN")); }
-                response = "{\"id\":7,\"clientId\":2,\"name\":\" Exact Name \",\"state\":\"DRAFT\",\"revision\":4,\"templates\":[]}";
+                response = path.endsWith("/document-templates")
+                        ? "{\"id\":7,\"name\":\"Plantilla\",\"documentType\":\"Documental\",\"state\":\"DRAFT\",\"deleted\":false}"
+                        : "{\"id\":7,\"clientId\":2,\"name\":\" Exact Name \",\"state\":\"DRAFT\",\"revision\":4,\"templates\":[]}";
             }
             byte[] bytes = response.getBytes(StandardCharsets.UTF_8); e.sendResponseHeaders(200, bytes.length); e.getResponseBody().write(bytes); e.close();
         });
@@ -55,6 +57,14 @@ class DocumentsApiClientTest {
         assertEquals(12, body.path("workId").asLong());
         assertTrue(body.path("clientId").isNull());
         assertNull(ifMatch.get());
+    }
+    @Test void shouldKeepTheDocumentaryTypeInsideTheClientFlow() throws Exception {
+        api.createDocumentalTemplate("Acta_inicio", DocumentDtos.TemplateState.DRAFT).join();
+
+        var body = new ObjectMapper().readTree(requestBody.get());
+
+        assertEquals("Acta_inicio", body.path("name").asText());
+        assertEquals(DocumentsApiClient.DOCUMENTAL_TYPE, body.path("documentType").asText());
     }
     @Test void shouldReturnUpdatedAnalysisWithoutAutomaticallyConfirmingOrRetrying() {
         server.createContext("/api/v1/document-templates/1/versions", e -> {

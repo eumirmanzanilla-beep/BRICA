@@ -17,6 +17,7 @@ import static com.brica.client.documents.api.DocumentDtos.*;
 import com.brica.client.documents.api.DocumentDtos.Package;
 
 public final class DocumentsApiClient {
+    public static final String DOCUMENTAL_TYPE = "Documental";
     private final ServerSession session;
     private final URI base;
     private final ObjectMapper json = new ObjectMapper();
@@ -45,6 +46,10 @@ public final class DocumentsApiClient {
         return request(id == null ? "POST" : "PUT", "/document-templates" + (id == null ? "" : "/" + id),
                 Map.of("name", name, "documentType", type, "state", state.name()), null, new TypeReference<>() { });
     }
+    /** Creates a template for the documentary catalogue without exposing its fixed type in the UI. */
+    public CompletableFuture<Template> createDocumentalTemplate(String name, TemplateState state) {
+        return saveTemplate(null, name, DOCUMENTAL_TYPE, state);
+    }
     public CompletableFuture<List<Package>> packages(int page, Long clientId, Long workId) {
         return request("GET", "/document-packages?page=" + page + "&size=50" + context(clientId, workId), null, null, new TypeReference<>() { });
     }
@@ -57,6 +62,10 @@ public final class DocumentsApiClient {
     public CompletableFuture<CreatedPackageTemplate> createTemplate(Package value, String name, String type) {
         return request("POST", "/document-packages/" + value.id() + "/templates", Map.of("name", name, "documentType", type),
                 "\"" + value.revision() + "\"", new TypeReference<>() { });
+    }
+    /** Creates a template inside a package using the documentary type required by this flow. */
+    public CompletableFuture<CreatedPackageTemplate> createDocumentalTemplate(Package value, String name) {
+        return createTemplate(value, name, DOCUMENTAL_TYPE);
     }
     public CompletableFuture<Void> deleteTemplate(long id) { return request("DELETE", "/document-templates/" + id, null, null, new TypeReference<>() { }); }
     public CompletableFuture<Template> template(long id) { return request("GET", "/document-templates/" + id, null, null, new TypeReference<>() { }); }

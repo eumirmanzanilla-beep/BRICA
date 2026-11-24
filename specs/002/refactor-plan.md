@@ -2,7 +2,7 @@
 
 **Funcionalidad:** reorganización funcional del cliente y flujo guiado de creación de obra  
 **Fecha:** 2026-11-23  
-**Estado:** R0–R2 ejecutadas; R3–R7 sin iniciar.
+**Estado:** R0–R7 ejecutadas; aceptación técnica y visual final pendiente.
 
 **Spec relacionada:** [spec.md](spec.md) · [Plan de extracción](plan.md) · [Seguimiento](review.md)  
 **Autorización y límites:** el responsable autorizó verificar R0, actualizar este plan y retirar los artefactos F0. Esta revisión no inicia cambios de aplicación, migraciones, acceso a datos reales, despliegues ni commits. El flujo de obra y la configuración documental por permisos se mantienen como alcance de las fases siguientes.
@@ -255,11 +255,11 @@ Cada fase se revisará, compilará y verificará antes de iniciar la siguiente. 
 | R0 | Línea base y Experimentos F0 (ejecutada) | Estado Git, banco F0, `WindowsSourceLaunch`, pruebas de Extracción | F0 retirado por autorización y resultados registrados en §6 como evidencia histórica | Autorizada |
 | R1 | Nombre de obra legible (ejecutada) | `Work.java`, pruebas de validación/API de Obras | Espacios, acentos, números y puntuación aceptados; vacío y >255 rechazados; sin migración | R0 |
 | R2 | Núcleo, autenticación y API por módulo (ejecutada) | Movimientos de `core/http`, `core/ui`, `auth`, `clients`, `works`, `documents`, `extraction`; imports de todos los consumidores | Compilación y pruebas API; una única `ServerSession.shared` usada por todos los clientes | R1 |
-| R3 | Recursos y controladores funcionales | Movimientos de shell, clientes, obras, documentos, extracción, FXML y CSS | FXML carga con nuevos controladores/rutas; no quedan referencias a los recursos migrados bajo `presentation/` | R2 |
-| R4 | Asistente de nueva obra | `WorkCreationDraft`, `WorkCreationWizard`, `WorksController`, formulario y CSS | Datos iniciales, adjuntos opcionales, captura, revisión, volver y guardado con ETag | R3 |
-| R5 | Configuración documental contextual | `ContextDocumentsWindow`, controladores documentales, `DocumentsApiClient`, FXML de documentos | Paquete ligado a obra, tipo interno `Documental`, versión desde DOCX y clasificación de campos | R4 |
-| R6 | Experiencia por permisos | Puntos de entrada de Obras y Documentos, pruebas de interfaz posibles | Usuario de obra no abre documentos; usuario documental opera sobre obra existente; usuario integral continúa el flujo | R5 |
-| R7 | Regresión y aceptación técnica | Cliente, servidor, F0 que permanezca aplicable, revisión visual Windows | Suites aplicables, `git diff --check`, búsqueda de rutas/imports obsoletos y recorrido manual | R6 |
+| R3 | Recursos y controladores funcionales (ejecutada) | Movimientos de shell, clientes, obras, documentos, extracción, FXML y CSS | Contrato FXML y pruebas del cliente aprobados; no quedan referencias a los recursos migrados bajo `presentation/` | R2 |
+| R4 | Asistente de nueva obra (ejecutada) | `WorkCreationDraft`, `WorkCreationWizard`, `WorksController`, formulario y CSS | Datos iniciales, adjuntos opcionales, captura, revisión, volver y guardado con ETag | R3 |
+| R5 | Configuración documental contextual (ejecutada) | `ContextDocumentsWindow`, controladores documentales, `DocumentsApiClient`, FXML de documentos | Paquete ligado a obra, tipo interno `Documental`, versión desde DOCX y clasificación de campos | R4 |
+| R6 | Experiencia por permisos (ejecutada) | Puntos de entrada de Obras y Documentos, pruebas de interfaz posibles | Usuario de obra no abre documentos; usuario documental opera sobre obra existente; usuario integral continúa el flujo | R5 |
+| R7 | Regresión y aceptación técnica (ejecutada; aceptación pendiente) | Cliente, servidor, F0 que permanezca aplicable, revisión visual Windows | Suites aplicables, `git diff --check`, búsqueda de rutas/imports obsoletos y recorrido manual | R6 |
 
 ### Cobertura funcional por fase
 
@@ -312,6 +312,42 @@ Cada fase se revisará, compilará y verificará antes de iniciar la siguiente. 
 - `ClientsApiClient`, `WorksApiClient`, `DocumentsApiClient` y `ExtractionApiClient` obtienen la misma instancia por `ServerSession.shared(base)`. Las sobrecargas que reciben una sesión se mantienen para pruebas.
 - `.\mvnw.cmd -pl brica-client test`: 23 pruebas aprobadas, incluidas sesión, autenticación, API de documentos y extracción, contrato FXML y reglas de nombre. Las smoke JavaFX no se ejecutan automáticamente en esta suite.
 
+### Evidencia de R3 — 2026-11-23
+
+- Se movieron controladores, diálogos y utilidades de presentación a `shell`, `auth`, `clients`, `works`, `documents` y `extraction`; los recursos FXML se ubicaron con cada módulo y la hoja CSS quedó en `resources/com/brica/client/styles/app.css`.
+- Se actualizaron `BricaClientApplication`, `MainController`, los controladores FXML, los cargadores relativos de diálogos y las pruebas para las nuevas rutas. La prueba de contrato resuelve controladores, handlers e inclusiones a partir de la URL del FXML, no de su paquete de prueba.
+- `.\mvnw.cmd -pl brica-client test`: 23 pruebas aprobadas. La búsqueda no encontró rutas, paquetes ni recursos migrados bajo `com.brica.client.presentation`.
+- Pendiente: recorrido manual en Windows de las pantallas movidas y de las smoke JavaFX optativas; la compilación y el contrato FXML no sustituyen esa comprobación.
+
+### Evidencia de R4 — 2026-11-23
+
+- `WorkCreationWizard` mantiene el progreso solo dentro de su instancia: crea la obra con la API existente, permite elegir contrato y presupuesto base opcionales, carga únicamente los archivos elegidos y no inicia Extracción.
+- El asistente conserva la ruta de archivo y los valores locales en `WorkCreationDraft`, no bytes ni credenciales. Volver conserva la captura; cerrar descarta selecciones que aún no se enviaron al servidor.
+- La revisión renderiza texto no editable; el guardado reutiliza `WorksApiClient.updateInformation` con el ETag recibido después de crear o consultar la obra. Los nombres de obra se validan como texto de presentación, no con la regla técnica documental.
+- `.\mvnw.cmd -pl brica-client test`: 24 pruebas aprobadas, incluida `WorkCreationDraftTest`. No se añadió una prueba automatizada del asistente JavaFX porque la infraestructura actual solo ofrece smoke gráfico optativo.
+
+### Evidencia de R5 — 2026-11-23
+
+- La acción documental desde una obra usa `ContextDocumentsWindow.showForWork`: el cliente no proporciona el identificador de cliente al consultar o crear paquetes de ese contexto; el servidor recibe el `workId` y resuelve el cliente vigente.
+- Las creaciones de plantilla de la interfaz usan `DocumentsApiClient.DOCUMENTAL_TYPE` internamente. La captura y edición del tipo ya no son visibles; al editar una plantilla histórica se conserva su tipo previamente registrado.
+- Al seleccionar un DOCX para una versión, el diálogo precarga su nombre base sin la extensión. La revisión sigue exigiendo clasificar cada campo detectado y conserva el diagnóstico de marcadores no registrados; no crea campos ni genera, previsualiza o exporta documentos.
+- `.\mvnw.cmd -pl brica-client test`: 26 pruebas aprobadas, incluidas la verificación del tipo interno y el nombre sugerido de versión. Sigue pendiente el recorrido visual en Windows con DOCX sintéticos.
+
+### Evidencia de R6 — 2026-11-23
+
+- `DocumentContextAccess` expresa la condición de interfaz para configurar documentos en una obra existente: `WORKS_READ` y `DOCUMENT_CONFIG_ADMIN`. La autorización efectiva de la API permanece en el servidor.
+- La entrada documental desde Clientes se retiró; `ContextDocumentsWindow` ya solo admite un contexto de obra fijo. Obras deshabilita su acción documental y explica el permiso faltante cuando no se cumplen ambos permisos.
+- La navegación de Catálogo de campos exige la misma combinación y su handler evita abrirla si la acción se invoca fuera de un botón habilitado. Así, un usuario de Obras no obtiene una entrada documental y un usuario documental con lectura de Obras trabaja desde la obra existente.
+- `.\mvnw.cmd -pl brica-client test`: 27 pruebas aprobadas, incluida la matriz de permisos de `DocumentContextAccessTest`. Sigue pendiente la comprobación manual de cuentas de prueba en Windows.
+
+### Evidencia de R7 — 2026-11-23
+
+- `.\mvnw.cmd -pl brica-client verify`: **27 pruebas aprobadas** y JAR del cliente generado. Incluye contrato FXML, sesión/CSRF, API documental, nombres, estado temporal del asistente y matriz de acceso documental.
+- `git diff --check` pasó. Las búsquedas no encontraron paquetes o recursos migrados bajo `com.brica.client.presentation`, `com.brica.client.api`, `presentation/`, `WorkCaptureDialog` ni el acceso documental desde Clientes.
+- `.\mvnw.cmd test`: el reactor no pasó: servidor ejecutó 227 pruebas, con 3 fallos y 20 errores; el módulo cliente se omitió al abortar el reactor. La causa dominante fue la ausencia del ejecutable Python configurado para el analizador DOCX (`DOCX_ANALYZER_UNAVAILABLE`), que produjo errores documentales en cascada. También falló `ServerDocumentFileStoreTest` con `AccessDenied` sobre un directorio temporal de pruebas.
+- La tercera falla del reactor era una expectativa obsoleta: `DocumentConfigurationIntegrationTest` esperaba que Obras rechazara nombres técnicos. Se alineó con R1 para que Obras acepte texto legible y se verificó de forma aislada con Testcontainers: `.\mvnw.cmd -pl brica-server '-Dtest=DocumentConfigurationIntegrationTest#shouldKeepTechnicalNamesForDocumentsAcceptReadableWorkNamesAndRejectReversedDatesThroughHttp' test` aprobó 1 prueba.
+- No se repitió el reactor completo después de esa corrección: seguirá bloqueado hasta preparar el entorno Python documental y resolver el acceso temporal. No se ejecutaron F0 (retirados en R0), recorrido JavaFX gráfico, cuentas de prueba autorizadas ni DOCX sintéticos; siguen siendo comprobaciones manuales pendientes.
+
 ## 7. Riesgos, bloqueos y próximos pasos
 
 - **Refactor transversal:** mover API compartida y FXML puede romper imports, módulos, controladores o rutas. Mitigación: mover por fase, actualizar consumidores en el mismo cambio y ejecutar pruebas FXML/JavaFX.
@@ -321,4 +357,4 @@ Cada fase se revisará, compilará y verificará antes de iniciar la siguiente. 
 - **Permisos:** ocultar acciones no autoriza. Mitigación: conservar las anotaciones y controles de servidor; probar usuario sin permisos.
 - **Experimentos F0:** el banco fue retirado. No usar sus resultados históricos como cobertura actual de la implementación Windows ni del despliegue.
 - **Datos y almacenamiento:** no consultar DB real ni modificar volúmenes. Los adjuntos de pruebas se crearán únicamente mediante la UI/API sobre entorno de prueba autorizado.
-- **Siguiente paso sujeto a aprobación:** iniciar solo R3. Mantener las comprobaciones de integración y aceptación de Windows en R7; los resultados de R0–R2 no sustituyen esas comprobaciones.
+- **Cierre pendiente:** preparar el entorno Python documental según `README.md`, investigar el `AccessDenied` de almacenamiento temporal y volver a ejecutar el reactor. Después, recorrer JavaFX en Windows con cuentas y DOCX sintéticos autorizados; ninguna de estas tareas queda aceptada por las pruebas actuales.

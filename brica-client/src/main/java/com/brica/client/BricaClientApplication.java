@@ -4,8 +4,8 @@ import java.io.IOException;
 
 import com.brica.client.core.http.ServerSession;
 import com.brica.client.config.ClientConfig;
-import com.brica.client.presentation.LoginController;
-import com.brica.client.presentation.MainController;
+import com.brica.client.auth.presentation.LoginController;
+import com.brica.client.shell.presentation.MainController;
 import javafx.application.Platform;
 
 import javafx.application.Application;
@@ -32,7 +32,7 @@ public class BricaClientApplication extends Application {
     private void showLogin() {
         stage.setOnCloseRequest(null);
         try {
-            var loader = loader("login-view.fxml");
+            var loader = loader("/com/brica/client/auth/login-view.fxml");
             var scene = new Scene(loader.load());
             ((LoginController) loader.getController()).configure(session, this::showMain);
             stage.setScene(scene);
@@ -41,7 +41,7 @@ public class BricaClientApplication extends Application {
 
     private void showMain() {
         try {
-            var loader = loader("main-view.fxml");
+            var loader = loader("/com/brica/client/shell/main-view.fxml");
             var scene = new Scene(loader.load());
             ((MainController) loader.getController()).configureSession(session,
                     () -> session.logout().whenComplete((ignored, error) -> Platform.runLater(this::showLogin)));
@@ -54,8 +54,8 @@ public class BricaClientApplication extends Application {
         } catch (IOException failure) { throw new IllegalStateException("No se pudo abrir el escritorio.", failure); }
     }
 
-    private FXMLLoader loader(String name) {
-        return new FXMLLoader(BricaClientApplication.class.getResource("/com/brica/client/presentation/" + name));
+    private FXMLLoader loader(String resource) {
+        return new FXMLLoader(BricaClientApplication.class.getResource(resource));
     }
 
     @Override

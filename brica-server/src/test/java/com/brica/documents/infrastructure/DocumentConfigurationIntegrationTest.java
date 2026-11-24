@@ -209,11 +209,11 @@ class DocumentConfigurationIntegrationTest {
         assertThrows(DocumentRuleException.class, () -> as(() -> { updateFields.delete(linkedField); return null; }));
         assertEquals(4, register(id).versionNumber());
     }
-    @Test void shouldRejectInvalidNamesAndBothReversedEndDatesThroughHttp() throws Exception {
+    @Test void shouldKeepTechnicalNamesForDocumentsAcceptReadableWorkNamesAndRejectReversedDatesThroughHttp() throws Exception {
         var admin = new Session(); admin.login("IntegrationAdmin"); long clientId = client();
         for (String name : List.of("123", "123_456", "_Nombre", "Con espacio", "Conácento", "A.B")) {
             assertEquals(400, admin.send("POST", "/clients", JSON.writeValueAsString(Map.of("name", name, "legalRepresentative", "Representante")), true).statusCode());
-            assertEquals(400, admin.send("POST", "/works", JSON.writeValueAsString(Map.of("name", name, "clientId", clientId)), true).statusCode());
+            assertEquals(201, admin.send("POST", "/works", JSON.writeValueAsString(Map.of("name", name, "clientId", clientId)), true).statusCode());
             assertEquals(400, admin.send("POST", "/document-templates", JSON.writeValueAsString(Map.of("name", name, "documentType", "X", "state", "CURRENT")), true).statusCode());
             assertEquals(400, admin.send("POST", "/document-packages", JSON.writeValueAsString(Map.of("name", name, "clientId", clientId, "templateIds", List.of(), "confirm", false)), true).statusCode());
         }
