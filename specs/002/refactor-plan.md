@@ -1,10 +1,10 @@
 # Plan de refactor y flujo de creación de obra
 
-**Funcionalidad:** reorganización funcional del cliente y flujo guiado de creación de obra  
-**Fecha:** 2026-11-23  
+**Funcionalidad:** reorganización funcional del cliente y flujo guiado de creación de obra
+**Fecha:** 2026-11-23
 **Estado:** R0–R7 ejecutadas; aceptación técnica y visual final pendiente.
 
-**Spec relacionada:** [spec.md](spec.md) · [Plan de extracción](plan.md) · [Seguimiento](review.md)  
+**Spec relacionada:** [spec.md](spec.md) · [Plan de extracción](plan.md) · [Seguimiento](review.md)
 **Autorización y límites:** el responsable autorizó verificar R0, actualizar este plan y retirar los artefactos F0. Esta revisión no inicia cambios de aplicación, migraciones, acceso a datos reales, despliegues ni commits. El flujo de obra y la configuración documental por permisos se mantienen como alcance de las fases siguientes.
 
 > Este documento complementa la Spec 002 por solicitud expresa. No redefine su alcance de extracción ni declara aceptados sus criterios. La creación de obra y el refactor de paquetes son un cambio distinto; la integración con Extracción se limita a conservar su acceso desde Obras y sus garantías ya implementadas.
