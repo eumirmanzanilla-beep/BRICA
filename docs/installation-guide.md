@@ -203,7 +203,7 @@ Una instalación nueva no trae clientes, obras ni plantillas demostrativas.
 
 Las plantillas DOCX tienen un límite de análisis de **1 MiB**, distinto del límite de adjuntos. Los paquetes creados desde una obra son exclusivos de ella; los creados desde un cliente quedan asociados a ese cliente. Conserva la ventana mientras indique Guardando; el cierre local del formulario no significa que el servidor haya confirmado la persistencia.
 
-**Generar documentos está deshabilitado:** extracción y generación/exportación definitiva siguen fuera de esta versión. La sección Contratos del escritorio todavía es provisional.
+**Generar documentos está deshabilitado:** el código de extracción y revisión existe, pero requiere aislamiento operativo y aceptación pendientes; consulta [lectura y revisión de fuentes](source-extraction.md). La generación/exportación definitiva sigue fuera de esta versión. La sección Contratos del escritorio todavía es provisional.
 
 ## 9. Detener y volver a iniciar
 

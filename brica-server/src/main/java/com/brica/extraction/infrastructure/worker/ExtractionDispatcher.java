@@ -17,13 +17,19 @@ public class ExtractionDispatcher {
         SourceProcessor.Result result;
         try { result=processor.process(claim.sources(),()->execution.active(claim)); }
         catch(Exception failure) {
-            String message=System.getProperty("os.name").startsWith("Windows")
-                    ? ("WINDOWS_WORKER_REQUIRES_PACKAGED_SERVER".equals(failure.getMessage())
-                        ? "Para extraer en Windows, ejecuta el servidor desde su JAR empaquetado."
-                        : "Windows no pudo iniciar o completar el lector aislado. El borrador se conserva.")
-                    : "No se pudo ejecutar el lector aislado. Revisa cgroup, Bubblewrap, OCR y la configuración del servidor; puedes conservar el borrador y capturar manualmente.";
-            result=new SourceProcessor.Result(List.of(),message);
+            result=new SourceProcessor.Result(List.of(),diagnostic(System.getProperty("os.name"),failure));
         }
         execution.publish(claim,result);
+    }
+    static String diagnostic(String os,Exception failure) {
+        if ("ISOLATION_NOT_CONFIGURED".equals(failure.getMessage())) {
+            return "No se configuró el aislamiento obligatorio del lector. En Linux se requiere un cgroup v2 delegado; el análisis no se ejecutó. Conserva el borrador y consulta la guía de extracción.";
+        }
+        if (os.startsWith("Windows")) {
+            return "WINDOWS_WORKER_REQUIRES_PACKAGED_SERVER".equals(failure.getMessage())
+                    ? "Para extraer en Windows, ejecuta el servidor desde su JAR empaquetado. El análisis no se ejecutó y el borrador se conserva."
+                    : "Windows no pudo iniciar o completar el lector aislado. El borrador se conserva; consulta la guía de extracción.";
+        }
+        return "No se pudo ejecutar el lector aislado. Revisa cgroup, Bubblewrap, OCR y la configuración del servidor; puedes conservar el borrador y capturar manualmente.";
     }
 }

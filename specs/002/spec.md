@@ -3,7 +3,7 @@
 > **Contexto de integración:** el estado técnico descrito procede de la rama de trabajo `actualization`; parte del código, rutas y experimentos aún no están integrados en `main`. Contrasta con la rama que estés utilizando.
 **Estado:** Implementado parcialmente; verificación integral y aceptación pendientes
 **Actualización:** 2026-11-20
-**Issue:** pendiente de referencia
+**Issue:** [#28](https://github.com/eumirmanzanilla-beep/BRICA/issues/28)
 **Plan:** [plan.md](plan.md) · **Seguimiento:** [review.md](review.md)
 
 ## Resultado esperado

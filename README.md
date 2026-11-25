@@ -110,7 +110,7 @@ Variables principales:
 | `BRICA_ALLOW_HTTP` | Servidor y cliente | Habilita HTTP solo en desarrollo local; el valor seguro por defecto lo mantiene desactivado. |
 | `BRICA_DOCUMENT_PYTHON`, `BRICA_DOCUMENT_SCRIPT`, `BRICA_DOCUMENT_STORAGE` | Servidor | Python analizador y ruta de almacenamiento documental. En Docker se configuran dentro de la imagen. |
 
-El procesamiento de extracción tiene además configuración `BRICA_EXTRACTION_*` en `application.yml`; en particular, revisa el requisito de aislamiento (`BRICA_EXTRACTION_CGROUP_ROOT`) antes de habilitarlo en un entorno distinto al local. No copies valores o secretos de una instalación personal.
+El procesamiento de extracción tiene además configuración `BRICA_EXTRACTION_*` en `application.yml`; el lector Linux requiere aislamiento configurado también en desarrollo local. El Compose predeterminado no configura el cgroup delegado necesario. Consulta la [guía de lectura y revisión de fuentes](docs/source-extraction.md). No copies valores o secretos de una instalación personal.
 
 ## Archivos relevantes
 

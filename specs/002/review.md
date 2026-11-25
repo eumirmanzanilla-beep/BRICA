@@ -33,9 +33,25 @@ La bitácora anterior indicaba F1–F11 no iniciadas: era cierta para el bloque 
 
 No se registró autorización para leer muestras reales por su mera presencia en el repositorio. No se infieren aprobadores o fechas individuales para decisiones que no los identifican.
 
-La [bitácora histórica completa de F0](review-history-f0.md) se conserva sin cambios de contenido.
+La bitácora histórica F0 se consolidó en este seguimiento; `review-history-f0.md` no está presente en esta rama.
 
 ## 3. Bitácora cronológica
+
+### 2026-11-25 — Seguimiento de #28 en rama de trabajo
+
+- Se ejecutaron las pruebas sintéticas de lectores y dos escenarios de
+  persistencia DOCX/XLSX con PostgreSQL desechable; estos últimos llaman al
+  lector directamente y no demuestran aislamiento.
+- Se empaquetó el servidor y se ejecutaron por separado las pruebas del lector
+  Windows aislado con DOCX y XLSX sintéticos; en XLSX se comprobó la fórmula y
+  una caché cero sin evaluación. No se examinó una fuente real.
+- Se explicó el fallo cerrado por cgroup no configurado y el requisito del JAR
+  en Windows. El Compose predeterminado no configura aislamiento Linux. No se
+  ha demostrado un entorno Linux delegado ni se ha realizado el recorrido
+  visual de JavaFX; el issue sigue sin aceptación integral.
+- El intento de ejecutar Maven en WSL desde este worktree no localizó el
+  wrapper; las pruebas registradas se ejecutaron en Windows con Java 27,
+  compilando para la versión 25 configurada por el proyecto.
 
 ### 2026-11-17 — Alcance y evaluación inicial F0
 
