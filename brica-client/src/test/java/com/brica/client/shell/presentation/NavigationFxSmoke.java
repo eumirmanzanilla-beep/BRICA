@@ -55,7 +55,7 @@ public final class NavigationFxSmoke {
                 var controls = (javafx.scene.layout.HBox) body.getChildren().getLast();
                 ((Button) controls.getChildren().get(1)).fire(); check(heading.getText().startsWith("3."), "Adjuntos opcionales llevan a información");
                 ((Button) controls.getChildren().get(1)).fire(); check(heading.getText().startsWith("4."), "Obra sin fechas admite revisión");
-                ((Button) wizard.lookupButton(ButtonType.CLOSE)).fire();
+                ((Button) wizard.lookupButton(ButtonType.CANCEL)).fire();
                 var dialog = new Dialog<ButtonType>(); dialog.initOwner(owner); dialog.setTitle("Prueba de captura");
                 var input = new TextField("Captura conservada"); var error = new Label(); var progress = new Label();
                 dialog.getDialogPane().setContent(new VBox(input, error)); dialog.getDialogPane().getButtonTypes().setAll(ButtonType.OK, ButtonType.CANCEL); dialog.show();

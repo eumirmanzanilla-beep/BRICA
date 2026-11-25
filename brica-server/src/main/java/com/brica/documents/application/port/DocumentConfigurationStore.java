@@ -21,6 +21,7 @@ public interface DocumentConfigurationStore {
     DocumentPackage documentPackage(Long id, boolean lock);
     List<DocumentPackage> packages(int page, int size, Long clientId, boolean confirmedOnly);
     List<DocumentPackage> scopedPackages(int page, int size, Long clientId, Long workId);
+    List<Long> packageIdsContaining(Long templateId);
     void discard(DocumentPackage documentPackage);
     boolean activeClient(Long id);
     Optional<Long> workClient(Long workId);

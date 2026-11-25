@@ -28,12 +28,8 @@
             spacing="12.0"
             styleClass="sidebar">
 
-            <padding>
-                <Insets top="20" right="14" bottom="16" left="14"/>
-            </padding>
-
             <!-- IDENTIDAD -->
-            <HBox alignment="CENTER_LEFT" spacing="10">
+            <HBox alignment="CENTER_LEFT" spacing="10" styleClass="sidebar-brand">
 
                 <Label
                     text="B"
@@ -53,12 +49,8 @@
 
             </HBox>
 
-            <Separator/>
-
             <!-- NAVEGACIÓN -->
-            <Label
-                text="NAVEGACIÓN"
-                styleClass="sidebar-heading"/>
+            <Label text="NAVEGACIÓN" styleClass="sidebar-heading"/>
 
             <Button
                 fx:id="homeNavButton"
@@ -84,14 +76,6 @@
                 alignment="CENTER_LEFT"
                 styleClass="nav-button"/>
 
-            <Button
-                fx:id="contractsNavButton"
-                text="Contratos"
-                onAction="#onNavigateContracts"
-                maxWidth="Infinity"
-                alignment="CENTER_LEFT"
-                styleClass="nav-button"/>
-
             <Button fx:id="documentsNavButton" text="Catálogo de campos" onAction="#onNavigateDocuments"
                     maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="nav-button"/>
 
@@ -99,26 +83,14 @@
 
             <Button text="Cerrar sesión" onAction="#onLogout" maxWidth="Infinity" styleClass="nav-button"/>
 
-            <Separator/>
-
             <!-- ESTADO DEL SISTEMA -->
-            <Label
-                text="ESTADO DEL SISTEMA"
-                styleClass="sidebar-heading"/>
-
-            <Label
-                fx:id="serverStatusLabel"
-                text="Servidor no verificado"
-                wrapText="true"
-                maxWidth="Infinity"
-                styleClass="server-status"/>
-
-            <Button
-                fx:id="checkServerButton"
-                text="Comprobar servidor"
-                onAction="#onCheckServer"
-                maxWidth="Infinity"
-                styleClass="server-check-button"/>
+            <VBox spacing="8" styleClass="sidebar-status">
+                <Label text="ESTADO DEL SISTEMA" styleClass="sidebar-heading"/>
+                <Label fx:id="serverStatusLabel" text="Servidor no verificado" wrapText="true"
+                       maxWidth="Infinity" styleClass="server-status"/>
+                <Button fx:id="checkServerButton" text="Comprobar servidor" onAction="#onCheckServer"
+                        maxWidth="Infinity" styleClass="server-check-button"/>
+            </VBox>
 
         </VBox>
     </left>
@@ -156,7 +128,7 @@
                     <Region HBox.hgrow="ALWAYS"/>
 
                     <Label
-                        text="BRICA · Bloque 1"
+                        text="OPERACIÓN Y EXPEDIENTES"
                         styleClass="header-meta"/>
 
                 </HBox>

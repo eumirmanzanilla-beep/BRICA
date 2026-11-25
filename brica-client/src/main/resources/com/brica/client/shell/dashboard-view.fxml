@@ -22,20 +22,20 @@
     styleClass="dashboard-scroll">
 
     <content>
-        <VBox
-            spacing="20.0"
-            fillWidth="true"
-            styleClass="dashboard-root">
+            <VBox
+                spacing="20.0"
+                fillWidth="true"
+                styleClass="dashboard-root">
 
             <!-- PRESENTACIÓN -->
-            <VBox spacing="6.0">
+            <VBox spacing="6.0" styleClass="dashboard-intro">
 
                 <Label
-                    text="Bienvenido a BRICA"
+                    text="Centro de operación"
                     styleClass="content-title"/>
 
                 <Label
-                    text="Accede a las principales funciones de gestión administrativa y documental."
+                    text="Consulta expedientes, atiende pendientes y continúa el trabajo en el contexto correcto."
                     wrapText="true"
                     styleClass="content-description"/>
 
@@ -65,11 +65,11 @@
                     spacing="10.0"
                     maxWidth="Infinity"
                     minHeight="142.0"
-                    styleClass="dashboard-card">
+                    styleClass="dashboard-module">
 
                     <Label
                         text="Clientes"
-                        styleClass="dashboard-card-title"/>
+                        styleClass="dashboard-module-title"/>
 
                     <Label
                         text="Consulta, registra y administra la información de tus clientes."
@@ -92,11 +92,11 @@
                     spacing="10.0"
                     maxWidth="Infinity"
                     minHeight="142.0"
-                    styleClass="dashboard-card">
+                    styleClass="dashboard-module">
 
                     <Label
                         text="Obras"
-                        styleClass="dashboard-card-title"/>
+                        styleClass="dashboard-module-title"/>
 
                     <Label
                         text="Consulta las obras registradas y administra su información."
@@ -112,59 +112,6 @@
 
                 </VBox>
 
-                <!-- CONTRATOS -->
-                <VBox
-                    GridPane.columnIndex="0"
-                    GridPane.rowIndex="1"
-                    spacing="10.0"
-                    maxWidth="Infinity"
-                    minHeight="142.0"
-                    styleClass="dashboard-card">
-
-                    <Label
-                        text="Contratos"
-                        styleClass="dashboard-card-title"/>
-
-                    <Label
-                        text="Registra contratos vinculados a obras existentes."
-                        wrapText="true"
-                        styleClass="content-description"/>
-
-                    <Region VBox.vgrow="ALWAYS"/>
-
-                    <Button
-                        text="Abrir Contratos"
-                        onAction="#onOpenContracts"
-                        styleClass="dashboard-link-button"/>
-
-                </VBox>
-
-                <!-- DOCUMENTACIÓN FUTURA -->
-                <VBox
-                    GridPane.columnIndex="1"
-                    GridPane.rowIndex="1"
-                    spacing="10.0"
-                    maxWidth="Infinity"
-                    minHeight="142.0"
-                    styleClass="dashboard-card">
-
-                    <Label
-                        text="Documentación"
-                        styleClass="dashboard-card-title"/>
-
-                    <Label
-                        text="Gestión de plantillas y generación documental en próximas etapas."
-                        wrapText="true"
-                        styleClass="content-description"/>
-
-                    <Region VBox.vgrow="ALWAYS"/>
-
-                    <Label
-                        text="Próximamente"
-                        styleClass="dashboard-pending"/>
-
-                </VBox>
-
             </GridPane>
 
             <!-- OBRAS REGISTRADAS -->
@@ -174,18 +121,18 @@
 
                     <VBox spacing="5.0">
                         <Label
-                            text="Obras registradas"
+                        text="Expedientes de obra"
                             styleClass="dashboard-section-title"/>
 
                         <Label
-                            text="Acceso a la información general de las obras."
+                        text="Consulta el estado vigente y entra al expediente para continuar la operación."
                             styleClass="content-description"/>
                     </VBox>
 
                     <Region HBox.hgrow="ALWAYS"/>
 
                     <Button
-                        text="Ver obras"
+                        text="Abrir obras"
                         onAction="#onOpenWorks"
                         styleClass="secondary-button"/>
 
@@ -199,30 +146,35 @@
 
                     <columns>
                         <TableColumn
+                            fx:id="workIdColumn"
                             text="ID"
                             prefWidth="70.0"/>
 
                         <TableColumn
+                            fx:id="workNameColumn"
                             text="Obra"
                             prefWidth="245.0"/>
 
                         <TableColumn
+                            fx:id="workLocationColumn"
                             text="Ubicación"
                             prefWidth="190.0"/>
 
                         <TableColumn
+                            fx:id="workStartDateColumn"
                             text="Fecha de inicio"
                             prefWidth="145.0"/>
                     </columns>
 
                     <placeholder>
                         <Label
-                            text="El listado se conectará a la API en la etapa de integración."
+                            text="No hay obras registradas."
                             wrapText="true"
                             styleClass="dashboard-table-placeholder"/>
                     </placeholder>
 
                 </TableView>
+                <Label fx:id="dashboardWorksStatusLabel" wrapText="true" styleClass="status-strip"/>
 
             </VBox>
 

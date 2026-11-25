@@ -15,13 +15,15 @@ public class DocumentSelectionService {
     private final DocumentConfigurationStore store;
     private final DocumentFileStore files;
     private final ResolveReferenceValuesService values;
-    public DocumentSelectionService(DocumentConfigurationStore store, DocumentFileStore files, ResolveReferenceValuesService values) {
-        this.store = store; this.files = files; this.values = values;
+    private final PackageReadiness readiness;
+    public DocumentSelectionService(DocumentConfigurationStore store, DocumentFileStore files, ResolveReferenceValuesService values, PackageReadiness readiness) {
+        this.store = store; this.files = files; this.values = values; this.readiness = readiness;
     }
     public List<PackageOption> options(Long workId, int page, int size) {
         TemplateManagementService.pagination(page, size);
         Long client = store.workClient(workId).orElseThrow(() -> new WorkNotFoundException(workId));
         return store.packages(page, size, client, true).stream()
+                .filter(p -> p.isReady() && readiness.problem(p, false) == null)
                 .filter(p -> p.getWorkId() == null || p.getWorkId().equals(workId)).map(p -> {
             var templates = p.getTemplateIds().stream().map(id -> store.template(id, false))
                     .filter(t -> t.isEligible() && t.appliesTo(client, workId))
@@ -35,7 +37,7 @@ public class DocumentSelectionService {
     public List<ResolvedDocument> resolve(Long workId, Long packageId, Long packageRevision, List<Selection> selections) {
         Long client = store.workClient(workId).orElseThrow(() -> new WorkNotFoundException(workId));
         var p = store.documentPackage(packageId, false);
-        if (p.getState() != DocumentPackage.State.CONFIRMED || !Objects.equals(p.getClientId(), client)
+        if (!p.isReady() || readiness.problem(p, false) != null || p.getState() != DocumentPackage.State.CONFIRMED || !Objects.equals(p.getClientId(), client)
                 || p.getWorkId() != null && !p.getWorkId().equals(workId)
                 || !Objects.equals(p.getRevision(), packageRevision)) { throw stale(); }
         if (selections == null || selections.isEmpty() || selections.stream().anyMatch(Objects::isNull)) {

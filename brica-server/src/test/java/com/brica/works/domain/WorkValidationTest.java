@@ -15,26 +15,30 @@ class WorkValidationTest {
         assertThrows(InvalidDataException.class, () -> new Work(client, " ", "Ubicación", null, start, null));
         assertThrows(InvalidDataException.class, () -> new Work(client, "a".repeat(256), "Ubicación", null, start, null));
         assertThrows(InvalidDataException.class, () -> new Work(client, "Obra", "Ubicación", null, start, start.minusDays(1)));
-        var work = new Work(client, "Edificio 2: Ampliación, Mérida", "Ubicación", "Texto", start, start);
+        var work = new Work(client, "Edificio 2 - Ampliación Mérida", "Ubicación", "Texto", start, start);
         assertThrows(InvalidDataException.class, () -> work.correctGeneralInformation("", "Otra", "Otro"));
-        assertEquals("Edificio 2: Ampliación, Mérida", work.getName());
+        assertEquals("Edificio 2 - Ampliación Mérida", work.getName());
         assertEquals("Ubicación", work.getLocation());
         assertEquals("Texto", work.getDescription());
     }
 
     @Test
-    void shouldAcceptPresentationNamesWithSpacesAccentsNumbersAndPunctuation() {
+    void shouldAcceptNamesWithSpacesAndHyphensAndRejectSymbolsOrInvalidStarts() {
         var work = new Work(
                 new Client("Cliente", "Representante"),
-                "Torre 3 - Etapa 2 (Niños)",
+                "Torre_3_Etapa_2_Ñ",
                 null,
                 null,
                 null,
                 null
         );
 
-        work.correctGeneralInformation("Ampliación área común #2", null, null);
+        work.correctGeneralInformation("Ampliacion área-comun_2", null, null);
 
-        assertEquals("Ampliación área común #2", work.getName());
+        assertEquals("Ampliacion área-comun_2", work.getName());
+        for (String invalid : new String[]{"123", "_Obra", "-Obra", " Obra", "Obra.1", "Obra,1"}) {
+            assertThrows(InvalidDataException.class, () -> new Work(
+                    new Client("Cliente", "Representante"), invalid, null, null, null, null), invalid);
+        }
     }
 }

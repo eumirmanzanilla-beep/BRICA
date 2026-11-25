@@ -2,18 +2,29 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<StackPane xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1"
-           fx:controller="com.brica.client.auth.presentation.LoginController"
-           styleClass="app-root" stylesheets="@../styles/app.css" prefWidth="900" prefHeight="600">
-    <VBox spacing="16" maxWidth="440" maxHeight="420" styleClass="content-card">
-        <padding><Insets top="30" right="30" bottom="30" left="30"/></padding>
-        <Label text="BRICA" styleClass="content-title"/>
-        <Label text="Acceso a gestión de obras" styleClass="content-description"/>
-        <Label fx:id="usernameLabel" text="Usuario"/>
-        <TextField fx:id="usernameField" promptText="Identificador exacto" onAction="#onLogin"/>
-        <Label fx:id="passwordLabel" text="Contraseña"/>
-        <PasswordField fx:id="passwordField" onAction="#onLogin"/>
-        <Button fx:id="loginButton" text="Iniciar sesión" defaultButton="true" onAction="#onLogin" maxWidth="Infinity"/>
-        <Label fx:id="statusLabel" text="Utiliza la cuenta proporcionada por el administrador." wrapText="true"/>
-    </VBox>
-</StackPane>
+<BorderPane xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.brica.client.auth.presentation.LoginController"
+            styleClass="app-root login-root" stylesheets="@../styles/app.css" prefWidth="900" prefHeight="600">
+    <left>
+        <VBox prefWidth="360" spacing="16" styleClass="login-identity">
+            <Label text="BRICA" styleClass="login-brand"/>
+            <Label text="Gestión de obras, expedientes y configuración documental en un mismo contexto."
+                   wrapText="true" styleClass="login-message"/>
+        </VBox>
+    </left>
+    <center>
+        <StackPane>
+            <VBox spacing="14" maxWidth="390" styleClass="login-panel">
+                <Label text="Acceder al sistema" styleClass="content-title"/>
+                <Label text="Usa las credenciales proporcionadas por el administrador." styleClass="content-description" wrapText="true"/>
+                <Label fx:id="usernameLabel" text="Usuario" styleClass="form-label"/>
+                <TextField fx:id="usernameField" promptText="Identificador exacto" onAction="#onLogin"/>
+                <Label fx:id="passwordLabel" text="Contraseña" styleClass="form-label"/>
+                <PasswordField fx:id="passwordField" onAction="#onLogin"/>
+                <Button fx:id="loginButton" text="Iniciar sesión" defaultButton="true" onAction="#onLogin"
+                        maxWidth="Infinity" styleClass="primary-button"/>
+                <Label fx:id="statusLabel" text="La sesión se abrirá según tus permisos asignados." wrapText="true" styleClass="content-note"/>
+            </VBox>
+        </StackPane>
+    </center>
+</BorderPane>

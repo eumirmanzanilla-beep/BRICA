@@ -38,7 +38,8 @@ public class TemplateAnalysisService {
         var definitions = fields.findAllByKey(keys).stream().sorted(Comparator.comparing(ReferenceField::getKey)).toList();
         var known = definitions.stream().map(ReferenceField::getKey).collect(Collectors.toSet());
         analysis.occurrences().stream().filter(o -> !known.contains(o.key())).forEach(o ->
-                diagnostics.add(new DocxAnalysis.Diagnostic("UNKNOWN_MARKER", o.location(), "Clave no registrada: " + o.key())));
+                diagnostics.add(new DocxAnalysis.Diagnostic("UNKNOWN_MARKER", o.location(), o.marker(),
+                        "Clave no registrada: " + o.key())));
         Map<Long, Boolean> previous = documents.latest(templateId).map(v -> documents.versionFields(v.getId())
                 .stream().collect(Collectors.toMap(TemplateVersionField::getFieldId, TemplateVersionField::isRequired)))
                 .orElseGet(Map::of);

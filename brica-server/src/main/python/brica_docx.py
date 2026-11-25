@@ -13,6 +13,7 @@ from lxml import etree
 W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
 KEY = re.compile(r"\{\{([A-Z0-9_]{1,50})\}\}")
 PART = re.compile(r"word/(document|header[0-9]+|footer[0-9]+)\.xml\Z")
+MARKER = re.compile(r"\{\{[^{}\r\n]{0,100}\}\}|\{%[^{}\r\n]{0,100}%\}|\{#[^{}\r\n]{0,100}#\}")
 
 
 def xml(content):
@@ -29,8 +30,54 @@ def prepare(content, max_entries=512, max_expanded=20 * 1024 * 1024):
     """
     occurrences, diagnostics, aliases, modified = [], [], {}, {}
 
-    def error(code, location, message):
-        diagnostics.append(dict(code=code, location=location, message=message))
+    def marker_in(text):
+        match = MARKER.search(text or "")
+        return match.group() if match else None
+
+    def invalid_markers_in(text):
+        """Return every noncanonical marker and every unmatched brace sequence."""
+        masked = list(text)
+        invalid = []
+        for match in MARKER.finditer(text):
+            marker = match.group()
+            masked[match.start():match.end()] = " " * len(marker)
+            if not KEY.fullmatch(marker):
+                invalid.append(marker)
+        remainder = "".join(masked)
+        invalid.extend(match.group() for match in re.finditer(r"\{\{|\}\}|[{}]", remainder))
+        return invalid
+
+    def invalid_marker_message(marker):
+        if marker == "{":
+            return "El carácter '{' no inicia un marcador válido."
+        if marker == "}":
+            return "El carácter '}' no tiene una llave de apertura '{' correspondiente."
+        if marker == "{{":
+            return "Faltan las llaves de cierre '}}' del marcador."
+        if marker == "}}":
+            return "Las llaves de cierre '}}' no tienen un marcador de apertura '{{' correspondiente."
+        if marker.startswith("{{") and marker.endswith("}}"):
+            key = marker[2:-2]
+            if not key:
+                return "La clave está vacía."
+            if len(key) > 50:
+                return f"La clave tiene {len(key)} caracteres; el máximo permitido es 50."
+            invalid = []
+            for character in key:
+                if character not in invalid and not ("A" <= character <= "Z" or character.isdigit() or character == "_"):
+                    invalid.append(character)
+            if len(invalid) == 1:
+                return f"El carácter {invalid[0]!r} no se reconoce en la clave."
+            if invalid:
+                return "Los caracteres " + ", ".join(repr(character) for character in invalid) + " no se reconocen en la clave."
+            return "La clave no cumple el formato permitido."
+        return f"La instrucción {marker} no se reconoce como marcador."
+
+    def error(code, location, message, marker=None):
+        diagnostic = dict(code=code, location=location, message=message)
+        if marker is not None:
+            diagnostic["marker"] = marker
+        diagnostics.append(diagnostic)
 
     with zipfile.ZipFile(io.BytesIO(content)) as archive:
         entries = archive.infolist()
@@ -55,7 +102,8 @@ def prepare(content, max_entries=512, max_expanded=20 * 1024 * 1024):
             root = xml(data)
             if any(any(token in value for token in ("{{", "}}", "{%", "{#"))
                    for node in root.iter() for value in node.attrib.values()):
-                error("UNSUPPORTED_REGION", e.filename, "Marcador en un atributo XML no admitido.")
+                error("UNSUPPORTED_REGION", e.filename, "Marcador en un atributo XML no admitido.",
+                      next((marker_in(value) for value in node.attrib.values() if marker_in(value)), None))
             if e.filename == "[Content_Types].xml" and b"macroEnabled" in data:
                 raise ValueError("No se admiten documentos con macros.")
             if e.filename.endswith(".rels"):
@@ -68,12 +116,13 @@ def prepare(content, max_entries=512, max_expanded=20 * 1024 * 1024):
             if not PART.fullmatch(e.filename):
                 text = "".join(root.itertext())
                 if any(token in text for token in ("{{", "}}", "{%", "{#")):
-                    error("UNSUPPORTED_REGION", e.filename, "Hay marcadores en una parte no admitida.")
+                    error("UNSUPPORTED_REGION", e.filename, "Hay marcadores en una parte no admitida.", marker_in(text))
                 continue
             for node in root.iter():
                 if (node.tag != W + "t" or next(node.iterancestors(W + "p"), None) is None) and any(
                         token in (node.text or "") for token in ("{{", "}}", "{%", "{#")):
-                    error("UNSUPPORTED_REGION", e.filename, "Marcador en texto o instrucción fuera del soporte.")
+                    error("UNSUPPORTED_REGION", e.filename, "Marcador en texto o instrucción fuera del soporte.",
+                          marker_in(node.text))
             for number, paragraph in enumerate(root.iter(W + "p"), 1):
                 location = f"{e.filename}:p{number}"
                 nodes = [n for n in paragraph.iter(W + "t")
@@ -85,12 +134,11 @@ def prepare(content, max_entries=512, max_expanded=20 * 1024 * 1024):
                 forbidden = {W + "txbxContent", W + "del", W + "ins", W + "sdt"}
                 if any(a.tag in forbidden for a in paragraph.iterancestors()) or any(
                         a.tag in forbidden for node in nodes for a in node.iterancestors() if a is not paragraph):
-                    error("UNSUPPORTED_REGION", location, "Marcador en una región no admitida.")
+                    error("UNSUPPORTED_REGION", location, "Marcador en una región no admitida.", marker_in(text))
                     continue
                 matches = list(KEY.finditer(text))
-                remainder = KEY.sub("", text)
-                if any(t in remainder for t in ("{{", "}}", "{%", "%}", "{#", "#}")):
-                    error("INVALID_MARKER", location, "Marcador mal formado o dividido entre párrafos.")
+                for invalid in invalid_markers_in(text):
+                    error("INVALID_MARKER", location, invalid_marker_message(invalid), invalid)
                 spans, offset = [], 0
                 for node in nodes:
                     size = len(node.text or "")
@@ -113,7 +161,8 @@ def prepare(content, max_entries=512, max_expanded=20 * 1024 * 1024):
                 for node in paragraph.iter():
                     if node.tag in (W + "instrText", W + "delText") and any(
                             t in (node.text or "") for t in ("{{", "}}", "{%", "{#")):
-                        error("UNSUPPORTED_REGION", location, "Marcador en instrucción o texto eliminado.")
+                        error("UNSUPPORTED_REGION", location, "Marcador en instrucción o texto eliminado.",
+                              marker_in(node.text))
             modified[e.filename] = etree.tostring(root, xml_declaration=True, encoding="UTF-8", standalone=True)
         normalized = io.BytesIO()
         with zipfile.ZipFile(normalized, "w", zipfile.ZIP_DEFLATED) as output:

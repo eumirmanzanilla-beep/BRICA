@@ -4,9 +4,9 @@
 <VBox xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.brica.client.works.presentation.WorksController" spacing="16" styleClass="clients-root">
     <Label text="Obras" styleClass="content-title"/>
-    <Label text="Datos generales, documentos base y paquetes de cada obra." styleClass="content-description"/>
-    <FlowPane hgap="8" vgap="8">
-        <Button fx:id="newWorkButton" text="Nueva obra" onAction="#onNewWork" styleClass="primary-button"/>
+    <Label text="Consulta cada expediente de obra, sus datos generales y su configuración documental." styleClass="content-description"/>
+    <FlowPane hgap="8" vgap="8" styleClass="section-actions">
+        <Button fx:id="newWorkButton" text="Registrar obra" onAction="#onNewWork" styleClass="primary-button"/>
         <Button fx:id="refreshButton" text="Actualizar" onAction="#onRefresh" styleClass="secondary-button"/>
         <Button fx:id="deleteWorkButton" text="Eliminar" onAction="#onDeleteWork" styleClass="danger-button"/>
         <Button text="Generar documentos" disable="true" styleClass="secondary-button"><tooltip><Tooltip text="Disponible en una próxima iteración."/></tooltip></Button>

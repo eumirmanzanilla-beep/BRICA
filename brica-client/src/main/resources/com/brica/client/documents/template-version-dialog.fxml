@@ -6,16 +6,19 @@
       fx:controller="com.brica.client.documents.presentation.TemplateVersionDialogController" fx:id="pane" spacing="10" stylesheets="@../styles/app.css" styleClass="content-card">
     <padding><Insets top="18" right="18" bottom="18" left="18"/></padding>
     <Label text="Revisar y registrar una versión" styleClass="content-title"/>
-    <Label text="Nombre de la versión (se sugiere desde el DOCX, sin extensión; puedes ajustarlo antes de confirmar)"/>
+    <Label text="Nombre de la versión" styleClass="form-label"/>
+    <Label text="Se sugiere desde el DOCX, sin extensión; puedes ajustarlo antes de confirmar." styleClass="content-description"/>
     <TextField fx:id="versionName"/>
-    <HBox spacing="10"><Button text="Seleccionar DOCX y analizar" onAction="#choose"/><Label fx:id="filename" wrapText="true"/></HBox>
-    <TextArea fx:id="diagnostics" editable="false" wrapText="true" prefHeight="140"/>
-    <Label text="Clasifica cada campo detectado para esta versión. Los marcadores desconocidos se informan en el diagnóstico y no crean campos." wrapText="true"/>
+    <HBox spacing="10" styleClass="document-actions"><Button text="Seleccionar DOCX y analizar" onAction="#choose" styleClass="primary-button"/><Label fx:id="filename" wrapText="true"/></HBox>
+    <ScrollPane fitToWidth="true" prefHeight="150" styleClass="diagnostics-scroll">
+        <content><VBox fx:id="diagnostics" spacing="8"/></content>
+    </ScrollPane>
+    <Label text="Clasifica cada campo detectado. Los marcadores desconocidos se informan en el diagnóstico y no crean campos." wrapText="true" styleClass="dialog-note"/>
     <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"><content><VBox fx:id="classifications" spacing="14"/></content></ScrollPane>
     <CheckBox fx:id="staticAccepted" text="Confirmo que es un documento estático, sin sustituciones" visible="false" managed="false"/>
     <Label text="Identificación de la confirmación: consérvala para consultar o recuperar un registro interrumpido." wrapText="true"/>
     <TextField fx:id="confirmation" editable="false"/>
-    <HBox spacing="8"><Button fx:id="confirmButton" text="Confirmar versión" onAction="#confirm"/>
+    <HBox spacing="8" styleClass="document-actions"><Button fx:id="confirmButton" text="Confirmar versión" onAction="#confirm" styleClass="primary-button"/>
         <Button text="Consultar estado" onAction="#status"/><Button text="Recuperar" onAction="#recover"/>
         <Button text="Nueva confirmación" onAction="#newConfirmation"/></HBox>
     <Label fx:id="message" wrapText="true"/>

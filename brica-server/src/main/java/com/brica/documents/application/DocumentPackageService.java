@@ -14,7 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class DocumentPackageService {
     private final DocumentConfigurationStore store;
     private final DocumentContextService context;
-    public DocumentPackageService(DocumentConfigurationStore store, DocumentContextService context) { this.store = store; this.context = context; }
+    private final PackageReadiness readiness;
+    public DocumentPackageService(DocumentConfigurationStore store, DocumentContextService context, PackageReadiness readiness) { this.store = store; this.context = context; this.readiness = readiness; }
 
     @PreAuthorize("@accessPolicy.hasPermission('DOCUMENT_CONFIG_ADMIN') and @accessPolicy.hasPermission('WORKS_READ')")
     public PackageView createFromWork(Long workId, String name, List<Long> templates, boolean confirm) {
@@ -51,10 +52,14 @@ public class DocumentPackageService {
     public void discard(Long id, String expected) {
         var value = store.documentPackage(id, true);
         precondition(value, expected);
-        if (value.getState() != DocumentPackage.State.DRAFT) {
-            throw new DocumentException(409, "PACKAGE_NOT_DRAFT", "Solo se pueden descartar borradores.");
-        }
         store.discard(value);
+    }
+    public PackageView confirmReady(Long id, String expected) {
+        var value = store.documentPackage(id, true);
+        precondition(value, expected);
+        String problem = readiness.problem(value, true);
+        if (problem != null) { throw new DocumentException(409, "PACKAGE_NOT_READY", problem); }
+        value.markReady(); store.flush(); return view(value);
     }
     public CreatedTemplate createTemplate(Long id, String expected, String name, String type) {
         var value = store.documentPackage(id, true); precondition(value, expected);
@@ -63,10 +68,7 @@ public class DocumentPackageService {
         var template = new DocumentTemplate(name, type, TemplateState.CURRENT, value.getClientId(), value.getWorkId());
         store.add(template); store.flush();
         var ids = new java.util.ArrayList<>(value.getTemplateIds()); ids.add(template.getId());
-        // Do not invalidate a confirmed package while its new template is still unversioned.
-        if (value.getState() == DocumentPackage.State.DRAFT) {
-            edit(value, value.getClientId(), value.getName(), ids, false); store.flush();
-        }
+        edit(value, value.getClientId(), value.getName(), ids, false); store.flush();
         return new CreatedTemplate(view(value), new TemplateManagementService.TemplateView(template.getId(), template.getName(),
                 template.getDocumentType(), template.getState(), false, null, template.getClientId(), template.getWorkId()));
     }
@@ -102,11 +104,12 @@ public class DocumentPackageService {
             if (!t.appliesTo(client, value.getWorkId())) {
                 throw new DocumentException(409, "TEMPLATE_SCOPE_MISMATCH", "La plantilla pertenece a otra obra o cliente.");
             }
-            if (t.getDeletedAt() != null || value.getState() == DocumentPackage.State.CONFIRMED
-                    && (!t.isEligible() || store.latest(id).isEmpty())) {
-                throw new DocumentException(409, "TEMPLATE_NOT_ELIGIBLE", "El paquete confirmado requiere plantillas vigentes con una versión completa.");
+            if (t.getDeletedAt() != null) {
+                throw new DocumentException(409, "TEMPLATE_NOT_ELIGIBLE",
+                        "La plantilla «" + t.getName() + "» está eliminada y no se puede incluir en el paquete.");
             }
         }
+        readiness.invalidateIfNecessary(value);
     }
     private void precondition(DocumentPackage value, String expected) {
         if (expected == null) { throw new DocumentException(428, "PRECONDITION_REQUIRED", "Consulta el paquete y envía su ETag en If-Match."); }
@@ -116,11 +119,12 @@ public class DocumentPackageService {
     }
     private PackageView view(DocumentPackage value) {
         var templates = value.getTemplateIds().stream().map(id -> store.template(id, false))
+                .filter(t -> t.getDeletedAt() == null)
                 .sorted(Comparator.comparing(DocumentTemplate::getName).thenComparing(DocumentTemplate::getId))
                 .map(t -> new PackageTemplate(t.getId(), t.getName(), t.getState(), t.getDeletedAt() != null)).toList();
-        return new PackageView(value.getId(), value.getClientId(), value.getName(), value.getState(), value.getRevision(), templates, value.getWorkId());
+        return new PackageView(value.getId(), value.getClientId(), value.getName(), value.getState(), value.getRevision(), templates, value.getWorkId(), value.isReady());
     }
     public static String etag(Long revision) { return "\"" + revision + "\""; }
     public record PackageTemplate(Long id, String name, TemplateState state, boolean deleted) { }
-    public record PackageView(Long id, Long clientId, String name, DocumentPackage.State state, Long revision, List<PackageTemplate> templates, Long workId) { }
+    public record PackageView(Long id, Long clientId, String name, DocumentPackage.State state, Long revision, List<PackageTemplate> templates, Long workId, boolean ready) { }
 }

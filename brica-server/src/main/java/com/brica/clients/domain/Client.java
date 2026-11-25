@@ -52,7 +52,7 @@ public class Client {
 
         var errors = new LinkedHashMap<String, String>();
 
-        InputRules.validName(errors, "name", name, 255);
+        InputRules.validClientName(errors, "name", name, 255);
         InputRules.requiredText(
                 errors,
                 "legalRepresentative",

@@ -89,6 +89,70 @@ class DocumentConfigurationIntegrationTest {
         SecurityContextHolder.setContext(context);
         try { return action.get(); } finally { SecurityContextHolder.clearContext(); }
     }
+    @Test void packageAvailabilityAndVersionFallbackPreserveHistory() throws Exception {
+        long clientId = client(), workId = work(clientId), templateId = template("ACTA");
+        var empty = as(() -> packages.create(clientId, uniqueName("Vacio_"), List.of(), false));
+        assertEquals(DocumentPackage.State.CONFIRMED, empty.state());
+        assertThrows(DocumentException.class, () -> as(() -> packages.confirmReady(empty.id(), DocumentPackageService.etag(empty.revision()))));
+        assertTrue(as(() -> selection.options(workId, 0, 100)).stream().noneMatch(p -> p.id().equals(empty.id())));
+        byte[] content = fixture("acta-inicio-prototipo");
+        String hash = java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(content));
+        for (int number = 1; number <= 2; number++) {
+            UUID fileKey = UUID.randomUUID();
+            files.put(fileKey, content);
+            Long fileId = jdbc.queryForObject("insert into document_files(original_name, relative_path, mime_type, size_bytes, sha256, registered_at) values (?, ?, ?, ?, ?, now()) returning id_file",
+                    Long.class, "acta.docx", files.relativePath(fileKey), "application/vnd.openxmlformats-officedocument.wordprocessingml.document", content.length, hash);
+            jdbc.update("insert into template_versions(template_id, version_number, file_id, static_document, analysis_json, name) values (?, ?, ?, true, cast('{}' as jsonb), ?)",
+                    templateId, number, fileId, "Acta_" + number);
+        }
+        var p = as(() -> packages.update(empty.id(), DocumentPackageService.etag(empty.revision()), clientId,
+                empty.name(), List.of(templateId), false));
+        long missing = template("SIN_VERSION");
+        var mixed = as(() -> packages.create(clientId, uniqueName("Mixto_"), List.of(templateId, missing), false));
+        assertThrows(DocumentException.class, () -> as(() -> packages.confirmReady(mixed.id(), DocumentPackageService.etag(mixed.revision()))));
+        as(() -> templates.update(missing, uniqueName("Inactiva_"), "SIN_VERSION", TemplateState.UNAVAILABLE));
+        assertTrue(as(() -> packages.confirmReady(mixed.id(), DocumentPackageService.etag(mixed.revision()))).ready());
+        as(() -> templates.update(missing, uniqueName("Activa_"), "SIN_VERSION", TemplateState.CURRENT));
+        assertFalse(as(() -> packages.get(mixed.id())).ready());
+        var confirmed = as(() -> packages.confirmReady(p.id(), DocumentPackageService.etag(p.revision())));
+        assertTrue(confirmed.ready());
+        assertEquals(2, as(() -> selection.options(workId, 0, 100)).stream().filter(o -> o.id().equals(p.id())).findFirst().orElseThrow().templates().getFirst().version());
+        as(() -> templates.changeVersionAvailability(templateId, 2, false));
+        assertTrue(as(() -> packages.get(p.id())).ready());
+        assertEquals(1, as(() -> selection.options(workId, 0, 100)).stream().filter(o -> o.id().equals(p.id())).findFirst().orElseThrow().templates().getFirst().version());
+        as(() -> templates.changeVersionAvailability(templateId, 1, false));
+        assertFalse(as(() -> packages.get(p.id())).ready());
+        as(() -> templates.changeVersionAvailability(templateId, 1, true));
+        assertFalse(as(() -> packages.get(p.id())).ready());
+        as(() -> { templates.delete(templateId); return null; });
+        assertTrue(as(() -> packages.get(p.id())).templates().isEmpty());
+        var current = as(() -> packages.get(p.id()));
+        var renamed = as(() -> packages.update(p.id(), DocumentPackageService.etag(current.revision()), clientId,
+                uniqueName("Renombrado_"), List.of(), false));
+        as(() -> { packages.discard(renamed.id(), DocumentPackageService.etag(renamed.revision())); return null; });
+        assertThrows(DocumentException.class, () -> as(() -> packages.get(renamed.id())));
+        assertNotNull(as(() -> templates.version(templateId, 2)));
+    }
+    @Test void versionAvailabilityRequiresPermissionAndCsrf() throws Exception {
+        long id = template("HTTP_AVAILABILITY");
+        byte[] content = fixture("acta-inicio-prototipo");
+        String hash = java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(content));
+        UUID key = UUID.randomUUID(); files.put(key, content);
+        Long fileId = jdbc.queryForObject("insert into document_files(original_name, relative_path, mime_type, size_bytes, sha256, registered_at) values (?, ?, ?, ?, ?, now()) returning id_file",
+                Long.class, "acta.docx", files.relativePath(key), "application/vnd.openxmlformats-officedocument.wordprocessingml.document", content.length, hash);
+        jdbc.update("insert into template_versions(template_id, version_number, file_id, static_document, analysis_json, name) values (?, 1, ?, true, cast('{}' as jsonb), 'Acta')", id, fileId);
+        String path = "/document-templates/" + id + "/versions/1/availability";
+        var admin = new Session(); admin.login("IntegrationAdmin");
+        assertEquals(403, admin.send("PUT", path, "{\"current\":false}", false).statusCode());
+        var off = admin.send("PUT", path, "{\"current\":false}", true);
+        assertEquals(200, off.statusCode(), off.body());
+        var on = admin.send("PUT", path, "{\"current\":true}", true);
+        assertEquals(200, on.statusCode(), on.body());
+        String user = "Read" + UUID.randomUUID().toString().replace("-", "");
+        SecurityTestData.install(jdbc, passwords, user, "DOCUMENT_VALUES_READ");
+        var reader = new Session(); reader.login(user);
+        assertEquals(403, reader.send("PUT", path, "{\"current\":false}", true).statusCode());
+    }
     @Test void shouldAnalyzeAllRegionsRejectUnknownAndDemandCompleteClassification() {
         long id = template("ACTA");
         var r = review(id);
@@ -96,6 +160,7 @@ class DocumentConfigurationIntegrationTest {
         assertTrue(r.fields().stream().allMatch(f -> f.proposedRequired() == null));
         var unknown = as(() -> analyses.analyze(id, fixture("marcador-desconocido")));
         assertEquals("UNKNOWN_MARKER", unknown.diagnostics().getFirst().code());
+        assertEquals("{{CAMPO_NO_REGISTRADO}}", unknown.diagnostics().getFirst().marker());
         assertThrows(com.brica.server.shared.validation.domain.InvalidDataException.class, () -> as(() -> versions.confirm(id,
                 UUID.randomUUID(), "a.docx", fixture("acta-inicio-prototipo"), r.fingerprint(), Map.of(), false)));
         assertTrue(as(() -> templates.versions(id)).isEmpty());
@@ -132,6 +197,27 @@ class DocumentConfigurationIntegrationTest {
         var saved = as(() -> packages.updateFromWork(draft.id(), DocumentPackageService.etag(result.documentPackage().revision()),
                 workId, draft.name(), List.of(result.template().id()), true));
         assertEquals(DocumentPackage.State.CONFIRMED, saved.state());
+    }
+    @Test void shouldActivateDraftTemplateAfterItsFirstCompletedVersion() {
+        long clientId = client();
+        long templateId = as(() -> templates.create(uniqueName("Activar_"), "ACTA", TemplateState.DRAFT)).id();
+
+        register(templateId);
+
+        assertEquals(TemplateState.CURRENT, as(() -> templates.get(templateId)).state());
+        assertEquals(DocumentPackage.State.CONFIRMED,
+                as(() -> packages.create(clientId, "Paquete_activado", List.of(templateId), true)).state());
+    }
+    @Test void shouldActivateAnExistingVersionedDraftWhenConfirmingItsPackage() {
+        long clientId = client();
+        long templateId = as(() -> templates.create(uniqueName("Recuperar_"), "ACTA", TemplateState.DRAFT)).id();
+        register(templateId);
+        as(() -> templates.update(templateId, "Recuperar", "ACTA", TemplateState.DRAFT));
+
+        var confirmed = as(() -> packages.create(clientId, "Paquete_recuperado", List.of(templateId), true));
+
+        assertEquals(DocumentPackage.State.CONFIRMED, confirmed.state());
+        assertEquals(TemplateState.CURRENT, as(() -> templates.get(templateId)).state());
     }
     @Test void shouldCreateMinimalWorkAndAtomicallyEditItsCompleteInformation() throws Exception {
         var admin = new Session(); admin.login("IntegrationAdmin");

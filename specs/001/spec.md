@@ -1,5 +1,7 @@
 # Spec 001 — Plantillas, paquetes y campos de referencia de BRICA
 
+> **Actualización funcional 2026-11-25:** los paquetes se crean vigentes, pueden estar vacíos y permiten cambio de nombre y eliminación lógica. La confirmación registra que el paquete está listo: requiere al menos una plantilla vigente y una versión vigente por cada plantilla vigente; las plantillas no vigentes pueden estar vacías. Si una modificación incumple la regla, el paquete deja de estar listo y debe confirmarse de nuevo. Las plantillas y sus versiones tienen vigencia independiente. Para nuevas selecciones se usa la versión vigente más reciente registrada correctamente; si se desactiva, se usa la anterior vigente. Las plantillas y versiones eliminadas se conservan como historial y se ocultan de las vistas principales. Esta actualización sustituye las referencias posteriores a borradores de paquetes y a la selección exclusiva de la última versión sin considerar su vigencia.
+
 > **Contexto de integración:** el estado técnico descrito procede de la rama de trabajo `actualization`; parte del código, rutas y experimentos aún no están integrados en `main`. Contrasta con la rama que estés utilizando.
 **Estado:** Implementado; aceptación manual pendiente
 **Fecha / actualización:** 2026-11-20

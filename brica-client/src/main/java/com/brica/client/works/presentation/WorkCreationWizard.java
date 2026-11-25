@@ -8,7 +8,6 @@ import com.brica.client.works.api.WorkDto;
 import com.brica.client.works.api.WorksApiClient;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import javafx.application.Platform;
 import javafx.scene.control.Button;
@@ -145,13 +144,17 @@ public final class WorkCreationWizard {
             @Override public ClientDto fromString(String value) { return null; }
         });
         var name = new TextField(draft.name());
-        name.setPromptText("Ej. Torre 3: ampliación de áreas comunes");
+        name.setPromptText("Ej. Torre_3_Ampliacion");
+        var nameError = new Label();
+        nameError.getStyleClass().add("work-wizard-message");
+        name.textProperty().addListener((observable, previous, value) -> nameError.setText(WorkNameInputRules.error(value)));
+        nameError.setText(WorkNameInputRules.error(name.getText()));
         var description = new TextArea(draft.description());
         description.setWrapText(true);
         description.setPrefRowCount(4);
         var pane = new VBox(9,
                 new Label("Cliente"), client,
-                new Label("Nombre de la obra"), name,
+                new Label("Nombre de la obra"), name, nameError,
                 new Label("Descripción (opcional)"), description);
         pane.getStyleClass().add("work-wizard-step");
         next.setUserData(new InitialInput(client, name, description));
@@ -161,33 +164,24 @@ public final class WorkCreationWizard {
     private VBox attachmentsPane() {
         var contract = attachmentRow(
                 "Contrato (opcional)", "Puedes continuar sin archivo.",
-                draft.contractAttachment(), path -> draft.contractAttachment(path));
+                "CONTRACT", draft.contractAttachment(), path -> draft.contractAttachment(path));
         var budget = attachmentRow(
                 "Presupuesto base (opcional)", "No inicia extracción automática.",
-                draft.baseBudgetAttachment(), path -> draft.baseBudgetAttachment(path));
+                "BASE_BUDGET", draft.baseBudgetAttachment(), path -> draft.baseBudgetAttachment(path));
         var uploaded = new ListView<WorksApiClient.Attachment>();
         uploaded.setPrefHeight(150);
-        var download = new Button("Guardar copia del seleccionado");
-        download.setOnAction(event -> {
-            var value = uploaded.getSelectionModel().getSelectedItem();
-            if (value == null || draft.work() == null) { return; }
-            var chooser = new FileChooser();
-            chooser.setInitialFileName(value.originalName());
-            var destination = chooser.showSaveDialog(owner);
-            if (destination != null) {
-                DocumentUi.run(uploaded, message, () -> api.download(draft.work().id(), value.id(), destination.toPath()),
-                        ignored -> message.setText("Copia guardada."));
-            }
-        });
+        var delete = new Button("Eliminar seleccionado");
+        delete.disableProperty().bind(uploaded.getSelectionModel().selectedItemProperty().isNull());
+        delete.setOnAction(event -> deleteAttachment(uploaded));
         if (draft.uploadedContract() != null) { uploaded.getItems().add(draft.uploadedContract()); }
         if (draft.uploadedBaseBudget() != null) { uploaded.getItems().add(draft.uploadedBaseBudget()); }
-        var pane = new VBox(12, contract, budget, new Label("Adjuntos cargados en esta sesión"), uploaded, download);
+        var pane = new VBox(12, contract, budget, new Label("Adjuntos cargados en esta sesión"), uploaded, delete);
         pane.getStyleClass().add("work-wizard-step");
         next.setUserData(uploaded);
         return pane;
     }
 
-    private VBox attachmentRow(String title, String note, Path current, Consumer<Path> selected) {
+    private VBox attachmentRow(String title, String note, String kind, Path current, Consumer<Path> selected) {
         var value = new Label(fileName(current));
         value.setWrapText(true);
         var choose = new Button("Elegir archivo");
@@ -197,8 +191,7 @@ public final class WorkCreationWizard {
                     "Documentos de obra", "*.docx", "*.pdf", "*.xls", "*.xlsx"));
             var file = chooser.showOpenDialog(owner);
             if (file != null) {
-                selected.accept(file.toPath());
-                value.setText(fileName(file.toPath()));
+                uploadAttachment(kind, file.toPath(), selected, choose, value);
             }
         });
         return new VBox(4, new Label(title), new Label(note), new HBox(10, choose, value));
@@ -208,6 +201,9 @@ public final class WorkCreationWizard {
         if (form == null) {
             var information = draft.information();
             form = new WorkInformationForm(information.information().work(), information.information().documentInformation(), fields, true);
+            if (draft.client() != null) {
+                form.description.setText(draft.description());
+            }
         }
         var scroll = new ScrollPane(form.node);
         scroll.setFitToWidth(true);
@@ -231,7 +227,9 @@ public final class WorkCreationWizard {
                 return;
             }
             if (step == 1) {
-                uploadAttachments((ListView<WorksApiClient.Attachment>) next.getUserData());
+                step++;
+                message.setText("");
+                render();
                 return;
             }
             if (step == 2) { form.information(); }
@@ -247,8 +245,12 @@ public final class WorkCreationWizard {
         var selected = input.client().getValue();
         if (selected == null) { message.setText("Selecciona un cliente vigente."); return; }
         String name = input.name().getText();
-        if (name == null || name.isBlank()) { message.setText("Indica el nombre de la obra."); return; }
-        if (name.length() > 255) { message.setText("El nombre no debe superar 255 caracteres."); return; }
+        try {
+            WorkNameInputRules.require(name);
+        } catch (IllegalArgumentException failure) {
+            message.setText(failure.getMessage());
+            return;
+        }
         draft.client(selected);
         draft.name(name);
         draft.description(input.description().getText());
@@ -270,32 +272,53 @@ public final class WorkCreationWizard {
                 }));
     }
 
-    private void uploadAttachments(ListView<WorksApiClient.Attachment> uploaded) {
-        setBusy(true, "Cargando adjuntos seleccionados…");
-        uploadMissing("CONTRACT", draft.contractAttachment(), draft.uploadedContract())
-                .thenCompose(contract -> {
-                    if (contract != null) { draft.uploadedContract(contract); }
-                    return uploadMissing("BASE_BUDGET", draft.baseBudgetAttachment(), draft.uploadedBaseBudget());
-                })
-                .whenComplete((budget, failure) -> Platform.runLater(() -> {
-                    setBusy(false, "");
-                    if (failure != null) {
-                        message.setText(DocumentUi.cause(failure).getMessage());
-                        return;
+    private void uploadAttachment(
+            String kind, Path file, Consumer<Path> selected, Button choose, Label value) {
+        if (draft.work() == null) {
+            message.setText("Crea la obra antes de adjuntar un archivo.");
+            return;
+        }
+        var previous = "CONTRACT".equals(kind) ? draft.uploadedContract() : draft.uploadedBaseBudget();
+        choose.setDisable(true);
+        value.setText("Validando y cargando " + fileName(file) + "…");
+        message.setText("");
+        api.upload(draft.work().id(), kind, file).whenComplete((attachment, failure) -> Platform.runLater(() -> {
+            choose.setDisable(false);
+            if (failure != null) {
+                value.setText(fileName("CONTRACT".equals(kind) ? draft.contractAttachment() : draft.baseBudgetAttachment()));
+                message.setText(DocumentUi.cause(failure).getMessage());
+                return;
+            }
+            selected.accept(file);
+            if ("CONTRACT".equals(kind)) {
+                draft.uploadedContract(attachment);
+            } else {
+                draft.uploadedBaseBudget(attachment);
+            }
+            value.setText(fileName(file));
+            if (previous != null) {
+                api.deleteAttachment(draft.work().id(), previous.id()).whenComplete((ignored, deletionFailure) -> {
+                    if (deletionFailure != null) {
+                        Platform.runLater(() -> message.setText("El nuevo adjunto se cargó, pero no se pudo retirar el anterior: "
+                                + DocumentUi.cause(deletionFailure).getMessage()));
                     }
-                    if (budget != null) { draft.uploadedBaseBudget(budget); }
-                    uploaded.getItems().setAll(java.util.stream.Stream.of(draft.uploadedContract(), draft.uploadedBaseBudget())
-                            .filter(java.util.Objects::nonNull).toList());
-                    step = 2;
-                    message.setText("");
-                    render();
-                }));
+                });
+            }
+            message.setText("Adjunto cargado.");
+            render();
+        }));
     }
 
-    private CompletableFuture<WorksApiClient.Attachment> uploadMissing(
-            String kind, Path file, WorksApiClient.Attachment uploaded) {
-        if (file == null || uploaded != null) { return CompletableFuture.completedFuture(uploaded); }
-        return api.upload(draft.work().id(), kind, file);
+    private void deleteAttachment(ListView<WorksApiClient.Attachment> uploaded) {
+        var selected = uploaded.getSelectionModel().getSelectedItem();
+        if (selected == null || draft.work() == null) {
+            return;
+        }
+        DocumentUi.run(uploaded, message, () -> api.deleteAttachment(draft.work().id(), selected.id()), ignored -> {
+            draft.clearAttachment(selected);
+            uploaded.getItems().remove(selected);
+            message.setText("Adjunto eliminado.");
+        });
     }
 
     private void save() {

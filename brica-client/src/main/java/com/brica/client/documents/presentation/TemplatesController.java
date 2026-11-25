@@ -20,22 +20,30 @@ public class TemplatesController {
     @FXML private Label message;
     @FXML private Label pageLabel;
     @FXML private CheckBox includeDeleted;
+    @FXML private Button templateAvailability;
+    @FXML private Button versionAvailability;
     private DocumentsApiClient api;
     private Runnable changed = () -> { };
     private int page;
     @FXML private void initialize() {
         templates.getSelectionModel().selectedItemProperty().addListener((o, old, value) -> {
+            templateAvailability.setText(value == null ? "Selecciona plantilla" : value.state() == TemplateState.CURRENT ? "Vigente" : "No vigente");
+            templateAvailability.setDisable(value == null || value.deleted());
             if (value != null) {
-                DocumentUi.run(pane, message, () -> api.versions(value.id()), items -> versions.getItems().setAll(items));
+                DocumentUi.run(pane, message, () -> api.versions(value.id()), items -> versions.getItems().setAll(items.stream().filter(v -> !v.deleted()).toList()));
             } else { versions.getItems().clear(); detail.clear(); }
         });
         versions.getSelectionModel().selectedItemProperty().addListener((o, old, value) -> {
+            versionAvailability.setText(value == null ? "Selecciona versión" : value.current() ? "Vigente" : "No vigente");
+            versionAvailability.setDisable(value == null || value.deleted());
             if (value == null) { detail.clear(); return; }
             var text = new StringBuilder("Solo lectura · " + value.status() + "\nArchivo: " + value.originalName() + "\nSHA-256: " + value.sha256() + "\n");
             if (value.staticDocument()) { text.append("Documento estático: sin campos.\n"); }
             value.fields().forEach(f -> text.append(f.marker()).append(" · ").append(f.visibleName()).append(f.required() ? " · obligatorio\n" : " · opcional\n"));
             text.append("\nAnálisis conservado:\n").append(value.analysisJson()); detail.setText(text.toString());
         });
+        templateAvailability.setDisable(true);
+        versionAvailability.setDisable(true);
     }
     void configure(DocumentsApiClient api, Runnable changed) { this.api = api; this.changed = changed; refresh(); }
     @FXML void refresh() {
@@ -48,6 +56,22 @@ public class TemplatesController {
         });
     }
     @FXML private void changeDeletedFilter() { page = 0; refresh(); }
+    @FXML private void toggleTemplateState() {
+        var value = templates.getSelectionModel().getSelectedItem();
+        if (value == null || value.deleted()) { message.setText("Selecciona una plantilla vigente o no vigente."); return; }
+        var next = value.state() == TemplateState.CURRENT ? TemplateState.UNAVAILABLE : TemplateState.CURRENT;
+        DocumentUi.run(pane, message, () -> api.saveTemplate(value.id(), value.name(), value.documentType(), next),
+                saved -> { refresh(); changed.run(); });
+    }
+    @FXML private void toggleVersionState() {
+        var value = versions.getSelectionModel().getSelectedItem();
+        if (value == null || value.deleted()) { message.setText("Selecciona una versión."); return; }
+        DocumentUi.run(pane, message, () -> api.setVersionCurrent(value.templateId(), value.number(), !value.current()),
+                saved -> { var template = templates.getSelectionModel().getSelectedItem();
+                    if (template != null) { DocumentUi.run(pane, message, () -> api.versions(template.id()),
+                            items -> versions.getItems().setAll(items.stream().filter(v -> !v.deleted()).toList())); }
+                    changed.run(); });
+    }
     @FXML private void previous() { if (page > 0) { page--; refresh(); } }
     @FXML private void next() { if (templates.getItems().size() == 50) { page++; refresh(); } }
     @FXML private void create() {
@@ -93,7 +117,7 @@ public class TemplatesController {
         var selected = templates.getSelectionModel().getSelectedItem();
         if (selected == null || selected.deleted()) { message.setText("Selecciona una plantilla no eliminada."); return; }
         try {
-            var loader = new FXMLLoader(getClass().getResource("template-version-dialog.fxml"));
+            var loader = TemplateVersionDialog.loader();
             var dialog = new Stage(); dialog.initOwner(pane.getScene().getWindow()); dialog.initModality(Modality.WINDOW_MODAL);
             dialog.setTitle("Registrar versión · " + selected.name()); dialog.setScene(new Scene(loader.load(), 760, 620));
             TemplateVersionDialogController controller = loader.getController();

@@ -82,6 +82,10 @@ public class TemplateController {
     @PutMapping("/document-templates/{id}/versions/{number}/name")
     public TemplateManagementService.VersionView renameVersion(@PathVariable("id") Long id, @PathVariable("number") int number,
             @Valid @RequestBody VersionName request) { return templates.renameVersion(id, number, request.name()); }
+    @PutMapping("/document-templates/{id}/versions/{number}/availability")
+    public TemplateManagementService.VersionView versionAvailability(@PathVariable("id") Long id, @PathVariable("number") int number,
+            @RequestBody VersionAvailability request) { return templates.changeVersionAvailability(id, number, request.current()); }
+    public record VersionAvailability(boolean current) { }
     @DeleteMapping("/document-templates/{id}/versions/{number}") @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteVersion(@PathVariable("id") Long id, @PathVariable("number") int number) { templates.deleteVersion(id, number); }
     public record VersionName(@NotBlank @Size(max = 150) String name) { }

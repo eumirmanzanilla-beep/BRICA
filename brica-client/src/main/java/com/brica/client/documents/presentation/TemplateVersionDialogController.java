@@ -16,7 +16,7 @@ public class TemplateVersionDialogController {
     @FXML private VBox pane;
     @FXML private Label filename;
     @FXML private Label message;
-    @FXML private TextArea diagnostics;
+    @FXML private VBox diagnostics;
     @FXML private VBox classifications;
     @FXML private CheckBox staticAccepted;
     @FXML private TextField confirmation;
@@ -53,10 +53,31 @@ public class TemplateVersionDialogController {
     }
     private void showReview(Review value) {
         review = value; confirmationId = null; confirmation.clear(); choices.clear(); classifications.getChildren().clear();
-        var text = new StringBuilder();
-        value.diagnostics().forEach(d -> text.append(d.location()).append(" · ").append(d.message()).append('\n'));
-        value.occurrences().forEach(o -> text.append(o.marker()).append(" · ").append(o.location()).append('\n'));
-        diagnostics.setText(text.toString());
+        diagnostics.getChildren().clear();
+        value.diagnostics().forEach(diagnostic -> {
+            var detail = new Label(diagnosticDetails(diagnostic));
+            detail.setWrapText(true);
+            detail.setMaxWidth(Double.MAX_VALUE);
+            detail.getStyleClass().add("diagnostic-error-card");
+            diagnostics.getChildren().add(detail);
+        });
+        if (!value.occurrences().isEmpty()) {
+            var heading = new Label(value.diagnostics().isEmpty() ? "Marcadores detectados" : "Marcadores detectados sin problemas");
+            heading.getStyleClass().add("diagnostics-heading");
+            diagnostics.getChildren().add(heading);
+            value.occurrences().forEach(occurrence -> {
+                var detail = new Label(occurrence.marker() + " · " + occurrence.location());
+                detail.setWrapText(true);
+                detail.getStyleClass().add("diagnostic-occurrence");
+                diagnostics.getChildren().add(detail);
+            });
+        }
+        if (value.diagnostics().isEmpty() && value.occurrences().isEmpty()) {
+            var detail = new Label("No se detectaron marcadores. Puedes confirmar este archivo como documento estático.");
+            detail.setWrapText(true);
+            detail.getStyleClass().add("diagnostic-success-note");
+            diagnostics.getChildren().add(detail);
+        }
         value.fields().forEach(field -> {
             var group = new ToggleGroup();
             var required = new RadioButton("Obligatorio"); required.setToggleGroup(group); required.setUserData(true);
@@ -85,8 +106,9 @@ public class TemplateVersionDialogController {
             lastName = versionName.getText();
         }
         confirmation.setText(confirmationId.toString());
-        stage.hide();
-        run(() -> api.confirm(templateId, file, confirmationId, review, required, staticAccepted.isSelected(), lastName), this::showOperation);
+        run("Registrando la versión… espera antes de confirmar el paquete.",
+                () -> api.confirm(templateId, file, confirmationId, review, required, staticAccepted.isSelected(), lastName),
+                this::showOperation);
     }
     @FXML private void status() {
         if (confirmationId != null) { run(() -> api.registration(confirmationId.toString(), false), this::showOperation); }
@@ -101,7 +123,11 @@ public class TemplateVersionDialogController {
         else { stage.show(); }
     }
     private <T> void run(java.util.function.Supplier<java.util.concurrent.CompletableFuture<T>> action, java.util.function.Consumer<T> success) {
-        if (busy) { return; } busy = true; pane.setDisable(true); message.setText("Procesando…");
+        run("Procesando…", action, success);
+    }
+    private <T> void run(String pendingMessage, java.util.function.Supplier<java.util.concurrent.CompletableFuture<T>> action,
+            java.util.function.Consumer<T> success) {
+        if (busy) { return; } busy = true; pane.setDisable(true); message.setText(pendingMessage);
         java.util.concurrent.CompletableFuture<T> future;
         try { future = action.get(); } catch (Exception failure) { future = java.util.concurrent.CompletableFuture.failedFuture(failure); }
         future.whenComplete((value, error) -> Platform.runLater(() -> {
@@ -117,6 +143,36 @@ public class TemplateVersionDialogController {
     }
     static String suggestedVersionName(String filename) {
         if (filename == null || filename.isBlank()) { return ""; }
-        return filename.replaceFirst("(?i)\\.docx$", "");
+        String base = filename.replaceFirst("(?i)\\.docx$", "");
+        String normalized = base.replaceAll("[^A-Za-zÑñ0-9]+", "_")
+                .replaceAll("_+", "_")
+                .replaceAll("^_+|_+$", "");
+        if (normalized.isBlank()) {
+            return "Version_Nueva";
+        }
+        return normalized.matches(".*[A-Za-zÑñ].*") ? normalized : "Documento_" + normalized;
+    }
+    static String diagnosticDetails(Diagnostic diagnostic) {
+        String marker = diagnostic.marker() == null || diagnostic.marker().isBlank() ? null : diagnostic.marker();
+        return "Clave: " + keyFrom(marker)
+                + (marker == null ? "" : "\nMarcador: " + marker)
+                + "\nProblema: " + diagnostic.message()
+                + "\nCómo corregirlo: " + solutionFor(diagnostic.code())
+                + "\nUbicación: " + diagnostic.location();
+    }
+    private static String keyFrom(String marker) {
+        if (marker != null && marker.startsWith("{{")) {
+            return marker.substring(2, marker.endsWith("}}") ? marker.length() - 2 : marker.length());
+        }
+        return marker == null || marker.isBlank() ? "No disponible" : "No aplica";
+    }
+    private static String solutionFor(String code) {
+        return switch (code) {
+            case "UNKNOWN_MARKER" -> "Crea el campo con esa clave o sustitúyelo por un marcador ya registrado.";
+            case "INVALID_MARKER" -> "Usa exactamente {{CLAVE}}, con 1 a 50 letras mayúsculas, números o _.";
+            case "UNSUPPORTED_REGION" -> "Mueve el marcador a un párrafo normal del documento, encabezado o pie de página.";
+            case "INVALID_DOCX" -> "Guarda el archivo como DOCX estándar, sin macros ni contenido no compatible, y vuelve a analizarlo.";
+            default -> "Corrige el documento y vuelve a analizarlo.";
+        };
     }
 }

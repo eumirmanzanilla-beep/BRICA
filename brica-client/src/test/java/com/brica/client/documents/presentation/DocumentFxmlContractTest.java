@@ -11,7 +11,7 @@ class DocumentFxmlContractTest {
         var factory = DocumentBuilderFactory.newInstance(); factory.setNamespaceAware(true);
         factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
         for (var name : List.of("document-configuration-view.fxml", "reference-fields-view.fxml", "templates-view.fxml",
-                "template-version-dialog.fxml", "document-packages-view.fxml", "reference-values-view.fxml", "works-view.fxml", "clients-view.fxml", "main-view.fxml")) {
+                "template-version-dialog.fxml", "document-packages-view.fxml", "reference-values-view.fxml", "works-view.fxml", "clients-view.fxml", "main-view.fxml", "dashboard-view.fxml")) {
             var url = getClass().getResource(resourcePath(name)); assertNotNull(url);
             var root = factory.newDocumentBuilder().parse(url.openStream()).getDocumentElement();
             var controller = Class.forName(root.getAttributeNS("http://javafx.com/fxml/1", "controller"));

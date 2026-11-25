@@ -133,6 +133,34 @@ class ClientControllerTest {
     }
 
     @Test
+    void shouldAcceptClientNamesWithAccentsSpacesAndHyphensButRejectPunctuation() throws Exception {
+        Client client = new Client("Constructora Álamo - Norte_2", "Jane Doe");
+        when(registerClientService.registerClient("Constructora Álamo - Norte_2", "Jane Doe")).thenReturn(client);
+
+        mockMvc.perform(
+                post("/api/v1/clients")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "Constructora Álamo - Norte_2",
+                                  "legalRepresentative": "Jane Doe"
+                                }
+                                """)
+        ).andExpect(status().isCreated());
+
+        mockMvc.perform(
+                post("/api/v1/clients")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "Constructora, SA",
+                                  "legalRepresentative": "Jane Doe"
+                                }
+                                """)
+        ).andExpect(status().isBadRequest());
+    }
+
+    @Test
     void shouldConsultClient() throws Exception {
 
         Client client = mock(Client.class);

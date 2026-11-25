@@ -9,5 +9,5 @@ public record DocxAnalysis(List<Occurrence> occurrences, List<Diagnostic> diagno
     }
 
     public record Occurrence(String key, String marker, String location) { }
-    public record Diagnostic(String code, String location, String message) { }
+    public record Diagnostic(String code, String location, String marker, String message) { }
 }

@@ -16,8 +16,9 @@ public class TemplateManagementService {
     private final DocumentFileStore files;
     private final ReferenceFieldStore fields;
     private final DocumentContextService context;
-    public TemplateManagementService(DocumentConfigurationStore store, DocumentFileStore files, ReferenceFieldStore fields, DocumentContextService context) {
-        this.store = store; this.files = files; this.fields = fields; this.context = context;
+    private final PackageReadiness readiness;
+    public TemplateManagementService(DocumentConfigurationStore store, DocumentFileStore files, ReferenceFieldStore fields, DocumentContextService context, PackageReadiness readiness) {
+        this.store = store; this.files = files; this.fields = fields; this.context = context; this.readiness = readiness;
     }
     public TemplateView create(String name, String type, TemplateState state) {
         return create(name, type, state, null, null);
@@ -31,10 +32,10 @@ public class TemplateManagementService {
     public TemplateView update(Long id, String name, String type, TemplateState state) {
         var template = store.template(id, true);
         template.change(name, type, state);
-        store.flush();
+        readiness.templateChanged(id); store.flush();
         return view(template);
     }
-    public void delete(Long id) { store.template(id, true).delete(); }
+    public void delete(Long id) { store.template(id, true).delete(); readiness.templateChanged(id); }
     @Transactional(readOnly = true)
     public TemplateView get(Long id) { InputRules.positiveId("templateId", id); return view(store.template(id, false)); }
     @Transactional(readOnly = true)
@@ -69,9 +70,14 @@ public class TemplateManagementService {
         var version = store.version(new TemplateVersionId(templateId, number));
         version.rename(name); store.flush(); return versionView(version);
     }
+    public VersionView changeVersionAvailability(Long templateId, int number, boolean current) {
+        store.template(templateId, true).requireEditable();
+        var version = store.version(new TemplateVersionId(templateId, number));
+        version.setCurrent(current); readiness.templateChanged(templateId); store.flush(); return versionView(version);
+    }
     public void deleteVersion(Long templateId, int number) {
         store.template(templateId, true).requireEditable();
-        store.version(new TemplateVersionId(templateId, number)).delete();
+        store.version(new TemplateVersionId(templateId, number)).delete(); readiness.templateChanged(templateId);
     }
     @Transactional(readOnly = true)
     public VersionView version(Long templateId, int number) { return versionView(store.version(new TemplateVersionId(templateId, number))); }
@@ -96,7 +102,7 @@ public class TemplateManagementService {
                 byId.get(b.getFieldId()).getVisibleName(), b.getMarker(), b.isRequired())).toList();
         var file = store.file(v.getFileId());
         return new VersionView(v.getId().templateId(), v.getId().number(), "COMPLETED", v.isStaticDocument(),
-                file.getOriginalName(), file.getSha256(), details, v.getAnalysisJson(), v.getName(), v.getDeletedAt() != null);
+                file.getOriginalName(), file.getSha256(), details, v.getAnalysisJson(), v.getName(), v.getDeletedAt() != null, v.isCurrent());
     }
     public static void pagination(int page, int size) {
         if (page < 0 || size < 1 || size > 100 || (long) page * size > Integer.MAX_VALUE) {
@@ -106,5 +112,5 @@ public class TemplateManagementService {
     public record TemplateView(Long id, String name, String documentType, TemplateState state, boolean deleted, Integer latestVersion, Long clientId, Long workId) { }
     public record VersionField(Long id, String key, String visibleName, String marker, boolean required) { }
     public record VersionView(Long templateId, int number, String status, boolean staticDocument, String originalName,
-            String sha256, List<VersionField> fields, String analysisJson, String name, boolean deleted) { }
+            String sha256, List<VersionField> fields, String analysisJson, String name, boolean deleted, boolean current) { }
 }

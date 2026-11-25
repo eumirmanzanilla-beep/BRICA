@@ -69,7 +69,7 @@ class WorkControllerTest {
         Work work = mock(Work.class);
         when(work.getId()).thenReturn(10L);
         when(work.getClient()).thenReturn(client);
-        when(work.getName()).thenReturn("Administrative Building Renovation");
+        when(work.getName()).thenReturn("Administrative_Building_Renovation");
         when(work.getLocation()).thenReturn("Merida, Yucatan");
         when(work.getDescription()).thenReturn("General renovation work");
         when(work.getStartDate()).thenReturn(LocalDate.of(2026, 10, 23));
@@ -81,9 +81,9 @@ class WorkControllerTest {
         mockMvc.perform(get("/api/v1/works"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(10))
-                .andExpect(jsonPath("$[0].clientId").value(1))
+        .andExpect(jsonPath("$[0].clientId").value(1))
                 .andExpect(jsonPath("$[0].name")
-                        .value("Administrative Building Renovation"))
+                        .value("Administrative_Building_Renovation"))
                 .andExpect(jsonPath("$[0].location").value("Merida, Yucatan"))
                 .andExpect(jsonPath("$[0].description").value("General renovation work"))
                 .andExpect(jsonPath("$[0].startDate").value("2026-10-23"))
@@ -101,7 +101,7 @@ class WorkControllerTest {
         Work work = mock(Work.class);
         when(work.getId()).thenReturn(10L);
         when(work.getClient()).thenReturn(client);
-        when(work.getName()).thenReturn("Administrative Building Renovation");
+        when(work.getName()).thenReturn("Administrative_Building_Renovation");
         when(work.getLocation()).thenReturn("Merida, Yucatan");
         when(work.getDescription()).thenReturn("General renovation work");
         when(work.getStartDate()).thenReturn(LocalDate.of(2026, 10, 23));
@@ -109,7 +109,7 @@ class WorkControllerTest {
 
         when(registerWorkService.registerWork(
                 1L,
-                "Administrative Building Renovation",
+                "Administrative_Building_Renovation",
                 "Merida, Yucatan",
                 "General renovation work",
                 LocalDate.of(2026, 10, 23),
@@ -122,7 +122,7 @@ class WorkControllerTest {
                         .content("""
                                 {
                                   "clientId": 1,
-                                  "name": "Administrative Building Renovation",
+                                  "name": "Administrative_Building_Renovation",
                                   "location": "Merida, Yucatan",
                                   "description": "General renovation work",
                                   "startDate": "2026-10-23",
@@ -134,7 +134,7 @@ class WorkControllerTest {
                 .andExpect(jsonPath("$.id").value(10))
                 .andExpect(jsonPath("$.clientId").value(1))
                 .andExpect(jsonPath("$.name")
-                        .value("Administrative Building Renovation"))
+                        .value("Administrative_Building_Renovation"))
                 .andExpect(jsonPath("$.location").value("Merida, Yucatan"));
     }
 
@@ -143,7 +143,7 @@ class WorkControllerTest {
 
         when(registerWorkService.registerWork(
                 999L,
-                "Invalid Work",
+                "Invalid_Work",
                 "Merida, Yucatan",
                 null,
                 LocalDate.of(2026, 10, 23),
@@ -156,7 +156,7 @@ class WorkControllerTest {
                         .content("""
                                 {
                                   "clientId": 999,
-                                  "name": "Invalid Work",
+                                  "name": "Invalid_Work",
                                   "location": "Merida, Yucatan",
                                   "startDate": "2026-10-23"
                                 }
@@ -186,16 +186,16 @@ class WorkControllerTest {
     }
 
     @Test
-    void shouldAcceptReadableWorkNameAndRejectNameLongerThan255Characters() throws Exception {
+    void shouldAcceptAnIdentifierWorkNameAndRejectInvalidNames() throws Exception {
         Client client = mock(Client.class);
         when(client.getId()).thenReturn(1L);
         Work work = mock(Work.class);
         when(work.getClient()).thenReturn(client);
-        when(work.getName()).thenReturn("Edificio 2: Ampliación, Mérida");
+        when(work.getName()).thenReturn("Edificio_2_Ampliacion_Merida");
         when(work.getLocation()).thenReturn("Mérida");
         when(registerWorkService.registerWork(
                 1L,
-                "Edificio 2: Ampliación, Mérida",
+                "Edificio_2_Ampliacion_Merida",
                 "Mérida",
                 null,
                 null,
@@ -208,7 +208,7 @@ class WorkControllerTest {
                         .content("""
                                 {
                                   "clientId": 1,
-                                  "name": "Edificio 2: Ampliación, Mérida",
+                                  "name": "Edificio_2_Ampliacion_Merida",
                                   "location": "Mérida"
                                 }
                                 """)
@@ -216,7 +216,7 @@ class WorkControllerTest {
 
         verify(registerWorkService).registerWork(
                 1L,
-                "Edificio 2: Ampliación, Mérida",
+                "Edificio_2_Ampliacion_Merida",
                 "Mérida",
                 null,
                 null,
@@ -231,7 +231,18 @@ class WorkControllerTest {
                                   "clientId": 1,
                                   "name": "%s"
                                 }
-                                """.formatted("a".repeat(256)))
+                                 """.formatted("a".repeat(256)))
+        ).andExpect(status().isBadRequest());
+
+        mockMvc.perform(
+                post("/api/v1/works")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "clientId": 1,
+                                  "name": "2.Obra"
+                                }
+                                """)
         ).andExpect(status().isBadRequest());
     }
 

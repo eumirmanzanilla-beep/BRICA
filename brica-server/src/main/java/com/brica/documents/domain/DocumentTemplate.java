@@ -54,6 +54,11 @@ public class DocumentTemplate {
     public void requireEditable() {
         if (deletedAt != null) { throw new DocumentRuleException("TEMPLATE_DELETED", "La plantilla eliminada es de solo lectura."); }
     }
+    /** A complete version makes a draft template available to confirmed packages. */
+    public void activateWhenVersionIsAvailable() {
+        requireEditable();
+        if (state == TemplateState.DRAFT) { state = TemplateState.CURRENT; }
+    }
     public void delete() { requireEditable(); deletedAt = OffsetDateTime.now(); }
     public boolean isEligible() { return deletedAt == null && state == TemplateState.CURRENT; }
     public Long getId() { return id; }

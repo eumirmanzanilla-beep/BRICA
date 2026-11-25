@@ -108,6 +108,7 @@ public class RegisterTemplateVersionService {
             store.add(version);
             for (var field : linked) { store.add(new TemplateVersionField(version.getId(), field, required.get(field.getId()))); }
             store.flush();
+            if (number == 1) { template.activateWhenVersionIsAvailable(); }
             op.complete(number);
             return result(op);
             });

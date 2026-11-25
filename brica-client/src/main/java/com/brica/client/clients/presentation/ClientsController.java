@@ -2,7 +2,6 @@
 package com.brica.client.clients.presentation;
 
 import com.brica.client.core.ui.UiPagination;
-import com.brica.client.shared.presentation.NameInputRules;
 import java.net.ConnectException;
 import java.net.URL;
 import java.net.http.HttpTimeoutException;
@@ -350,8 +349,6 @@ public final class ClientsController {
         );
 
         TextField nameField = new TextField();
-        NameInputRules.install(nameField);
-        nameField.setPromptText("Nombre del cliente");
         nameField.setPrefColumnCount(28);
         nameField.getStyleClass().add("form-field");
 
@@ -369,6 +366,7 @@ public final class ClientsController {
                     selected.legalRepresentative()
             );
         }
+        ClientNameInputRules.install(nameField);
 
         Label nameLabel = new Label("Cliente");
         nameLabel.getStyleClass().add("form-label");
@@ -430,7 +428,7 @@ public final class ClientsController {
 
         saveButton.disableProperty().bind(
                 Bindings.createBooleanBinding(
-                        () -> !NameInputRules.valid(nameField.getText(), 255)
+                        () -> !ClientNameInputRules.valid(nameField.getText(), 255)
                                 || !validText(
                                         representativeField.getText()
                                 ),
@@ -446,7 +444,7 @@ public final class ClientsController {
             }
 
             return new ClientInput(
-                    nameField.getText().trim(),
+                    nameField.getText(),
                     representativeField.getText().trim()
             );
         });

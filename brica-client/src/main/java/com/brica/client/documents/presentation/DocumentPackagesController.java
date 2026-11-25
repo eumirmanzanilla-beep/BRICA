@@ -12,6 +12,8 @@ import com.brica.client.works.api.WorksApiClient;
 import com.brica.client.config.ClientConfig;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
 public class DocumentPackagesController {
@@ -51,6 +53,10 @@ public class DocumentPackagesController {
         pane.getChildren().remove(form);
         form.disableProperty().addListener((observable, old, busy) -> pane.setDisable(busy));
         dialogMessage.textProperty().bind(message.textProperty());
+        message.visibleProperty().bind(message.textProperty().isNotEmpty());
+        message.managedProperty().bind(message.visibleProperty());
+        dialogMessage.visibleProperty().bind(message.textProperty().isNotEmpty());
+        dialogMessage.managedProperty().bind(dialogMessage.visibleProperty());
         name.textProperty().addListener((o, old, value) -> { if (!loading) { dirty = true; } });
         clientChoice.setConverter(new javafx.util.StringConverter<>() {
             @Override public String toString(ClientDto value) { return value == null ? "" : value.name() + " · #" + value.id(); }
@@ -137,7 +143,7 @@ public class DocumentPackagesController {
                 known.putIfAbsent(t.id(), new Template(t.id(), t.name(), "", t.state(), t.deleted(), null));
             });
         }
-        state.setText(value == null ? "Borrador nuevo" : value.state() + " · revisión " + value.revision());
+        state.setText(value == null ? "Nuevo paquete" : (value.ready() ? "Listo" : "No listo") + " · revisión " + value.revision());
         renderTemplates(); loading = false; dirty = false;
     }
     void loadTemplates() {
@@ -151,13 +157,48 @@ public class DocumentPackagesController {
         templateChoices.getChildren().clear();
         known.values().stream().sorted(Comparator.comparing(Template::name).thenComparing(Template::id)).forEach(t -> {
             if (t.deleted() && !selected.contains(t.id())) { return; }
-            var box = new CheckBox(t.toString()); box.setWrapText(true); box.setSelected(selected.contains(t.id()));
-            box.selectedProperty().addListener((o, old, checked) -> { if (checked) { selected.add(t.id()); } else { selected.remove(t.id()); } dirty = true; });
-            templateChoices.getChildren().add(box);
+            boolean archivedSelection = t.deleted() && selected.contains(t.id());
+            var box = new CheckBox(archivedSelection ? t.name() + " · archivada: retírala del paquete" : t.name());
+            box.setWrapText(true); box.setSelected(selected.contains(t.id()));
+            box.setDisable(t.deleted() && !archivedSelection);
+            if (archivedSelection) {
+                box.setTooltip(new Tooltip("Esta plantilla ya no está disponible. Desmárcala para retirarla del borrador."));
+            }
+            box.selectedProperty().addListener((o, old, checked) -> {
+                if (checked) { selected.add(t.id()); } else { selected.remove(t.id()); }
+                dirty = true;
+                if (!checked && t.deleted()) { javafx.application.Platform.runLater(this::renderTemplates); }
+            });
+            HBox.setHgrow(box, Priority.ALWAYS);
+            var state = new Label(t.deleted() ? "Eliminada" : t.state().toString());
+            state.getStyleClass().add(t.deleted() ? "template-state-deleted" : "template-state");
+            var available = new ToggleButton(t.state() == TemplateState.CURRENT ? "Vigente" : "No vigente");
+            available.setSelected(t.state() == TemplateState.CURRENT);
+            available.setDisable(t.deleted());
+            available.getStyleClass().add("availability-switch");
+            available.setTooltip(new Tooltip("Activa o desactiva la disponibilidad de esta plantilla."));
+            available.setOnAction(event -> {
+                TemplateState next = available.isSelected() ? TemplateState.CURRENT : TemplateState.UNAVAILABLE;
+                available.setSelected(t.state() == TemplateState.CURRENT);
+                changeAvailability(t, next);
+            });
+            var row = new HBox(12, box, state, available);
+            row.getStyleClass().addAll("package-template-row", t.deleted() ? "package-template-archived" : "package-template-active");
+            templateChoices.getChildren().add(row);
+        });
+    }
+    private void changeAvailability(Template template, TemplateState next) {
+        DocumentUi.run(form, message, () -> api.saveTemplate(template.id(), template.name(), template.documentType(), next), saved -> {
+            known.put(saved.id(), saved);
+            renderTemplates();
         });
     }
     @FXML private void saveDraft() { save(false, () -> { }); }
-    @FXML private void confirm() { save(true, () -> { }); }
+    @FXML private void confirm() {
+        save(false, () -> DocumentUi.run(form, message, () -> api.confirmPackage(editing), value -> {
+            display(value); message.setText("Paquete confirmado y listo."); refresh();
+        }));
+    }
     private void save(boolean confirm, Runnable after) {
         try { NameInputRules.require(name.getText(), 150); }
         catch (IllegalArgumentException failure) { message.setText(failure.getMessage()); return; }
@@ -171,8 +212,7 @@ public class DocumentPackagesController {
     }
     @FXML private void discard() {
         if (editing == null) { display(null); return; }
-        if (!"DRAFT".equals(editing.state())) { message.setText("Un paquete confirmado no se descarta como borrador."); return; }
-        var alert = new Alert(Alert.AlertType.CONFIRMATION, "¿Descartar el borrador guardado? No se eliminarán plantillas ni versiones.", ButtonType.OK, ButtonType.CANCEL);
+        var alert = new Alert(Alert.AlertType.CONFIRMATION, "¿Eliminar el paquete? No se eliminarán plantillas ni versiones.", ButtonType.OK, ButtonType.CANCEL);
         if (alert.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) { return; }
         DocumentUi.run(form, message, () -> api.discard(editing), value -> { display(null); refresh(); });
     }
@@ -182,7 +222,7 @@ public class DocumentPackagesController {
         if (!dirty) { continuation.run(); return; }
         var save = new ButtonType("Guardar cambios"); var discard = new ButtonType("Salir sin guardar");
         var alert = new Alert(Alert.AlertType.CONFIRMATION,
-                "Hay cambios del paquete sin guardar. Un paquete nuevo se conservará como borrador.", save, discard, ButtonType.CANCEL);
+                "Hay cambios del paquete sin guardar.", save, discard, ButtonType.CANCEL);
         var choice = alert.showAndWait().orElse(ButtonType.CANCEL);
         if (choice == save) { save(false, continuation); }
         else if (choice == discard) { display(editing); continuation.run(); }

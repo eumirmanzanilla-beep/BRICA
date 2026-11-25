@@ -12,4 +12,13 @@ class ClientValidationTest {
         assertTrue(exception.getErrors().containsKey("legalRepresentative"));
         assertThrows(InvalidDataException.class, () -> new Client("a".repeat(256), "Representante"));
     }
+
+    @Test
+    void shouldAcceptLegibleClientNamesAndRejectOtherPunctuationOrInvalidStarts() {
+        assertDoesNotThrow(() -> new Client("Constructora Álamo - Norte_2", "Representante"));
+        for (String invalid : new String[]{"2 Constructora", "_Constructora", "-Constructora",
+                "Constructora.SA", "Constructora, SA", "Constructora; SA"}) {
+            assertThrows(InvalidDataException.class, () -> new Client(invalid, "Representante"), invalid);
+        }
+    }
 }

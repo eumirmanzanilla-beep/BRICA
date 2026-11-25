@@ -37,16 +37,16 @@ public final class DocumentFxSmoke {
 
     private static void run() throws Exception {
         for (String name : List.of("reference-fields-view.fxml", "templates-view.fxml", "template-version-dialog.fxml", "document-configuration-view.fxml")) {
-            new FXMLLoader(DocumentFxSmoke.class.getResource(name)).load();
+            new FXMLLoader(DocumentFxSmoke.class.getResource(documentResource(name))).load();
         }
-        var loader = new FXMLLoader(DocumentFxSmoke.class.getResource("document-packages-view.fxml"));
+        var loader = new FXMLLoader(DocumentFxSmoke.class.getResource(documentResource("document-packages-view.fxml")));
         Parent root = loader.load(); var owner = new Stage(); owner.setScene(new Scene(root, 900, 650)); owner.show();
         Object packages = loader.getController(); invoke(packages, "newPackage");
         ((DocumentPackagesController) packages).selectorPermissions(false, false);
         check(((javafx.scene.Node) field(packages, "clientSelector")).isDisable()
                 && ((javafx.scene.Node) field(packages, "workSelector")).isDisable(), "Permisos de selectores");
         ((DocumentPackagesController) packages).selectorPermissions(true, true);
-        var name = (TextField) field(packages, "name"); name.setText("Captura conservada");
+        var name = (TextField) field(packages, "name"); name.setText("Captura_conservada");
         @SuppressWarnings("unchecked") var client = (ComboBox<ClientDto>) field(packages, "clientChoice");
         @SuppressWarnings("unchecked") var work = (ComboBox<WorkDto>) field(packages, "workChoice");
         client.setValue(new ClientDto(11L, "Cliente A", "Representante"));
@@ -55,7 +55,7 @@ public final class DocumentFxSmoke {
         work.setValue(null);
         check(field(packages, "selectedWorkId").equals(5L), "Paginación no pierde el contexto de obra");
         invoke(packages, "registerTemplate");
-        check(name.getText().equals("Captura conservada"), "No perder captura al registrar plantilla");
+        check(name.getText().equals("Captura_conservada"), "No perder captura al registrar plantilla");
         invoke(packages, "resume");
         var dialog = (Dialog<?>) field(packages, "dialog");
         check(dialog.isShowing(), "Reanudar diálogo");
@@ -63,7 +63,7 @@ public final class DocumentFxSmoke {
         check(dialog.isShowing() && root.isDisable(), "No cerrar ni editar durante petición");
         form.setDisable(false); set(packages, "dirty", false); dialog.close();
         check(!dialog.isShowing(), "Cerrar captura limpia");
-        loader = new FXMLLoader(DocumentFxSmoke.class.getResource("reference-values-view.fxml"));
+        loader = new FXMLLoader(DocumentFxSmoke.class.getResource(documentResource("reference-values-view.fxml")));
         owner.getScene().setRoot(loader.load()); Object values = loader.getController(); invoke(values, "openDialog");
         dialog = (Dialog<?>) field(values, "dialog"); form = (VBox) field(values, "form");
         form.setDisable(true); dialog.close(); check(dialog.isShowing(), "Valores no se cierra durante petición");
@@ -76,6 +76,7 @@ public final class DocumentFxSmoke {
         check(Window.getWindows().size() >= 2, "Datos documentales carga en JavaFX");
     }
     private static void check(boolean condition, String message) { if (!condition) { throw new AssertionError(message); } }
+    private static String documentResource(String name) { return "/com/brica/client/documents/" + name; }
     private static Field member(Object target, String name) throws Exception {
         var field = target.getClass().getDeclaredField(name); field.setAccessible(true); return field;
     }

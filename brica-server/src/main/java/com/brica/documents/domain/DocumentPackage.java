@@ -22,6 +22,10 @@ public class DocumentPackage {
     private State state = State.DRAFT;
     @Version @Column(nullable = false)
     private Long revision;
+    @Column(name = "deleted_at")
+    private java.time.OffsetDateTime deletedAt;
+    @Column(nullable = false)
+    private boolean ready;
     @ElementCollection
     @org.hibernate.annotations.BatchSize(size = 50)
     @CollectionTable(name = "document_package_templates", joinColumns = @JoinColumn(name = "package_id"))
@@ -47,9 +51,9 @@ public class DocumentPackage {
         var errors = new java.util.LinkedHashMap<String, String>();
         com.brica.server.shared.validation.domain.InputRules.validName(errors, "name", name, 150);
         com.brica.server.shared.validation.domain.InputRules.rejectErrors(errors);
-        if (confirm || state == State.CONFIRMED) {
-            if (clientId == null || name == null || name.isBlank() || templates.isEmpty()) {
-                throw new InvalidDataException(java.util.Map.of("package", "Indica cliente, nombre y al menos una plantilla elegible."));
+        {
+            if (clientId == null || name == null || name.isBlank()) {
+                throw new InvalidDataException(java.util.Map.of("package", "Indica cliente y nombre del paquete."));
             }
             state = State.CONFIRMED;
         }
@@ -59,6 +63,11 @@ public class DocumentPackage {
         templateIds.addAll(templates);
     }
     public Long getId() { return id; }
+    public void delete() { deletedAt = java.time.OffsetDateTime.now(); }
+    public java.time.OffsetDateTime getDeletedAt() { return deletedAt; }
+    public boolean isReady() { return ready; }
+    public void markReady() { ready = true; }
+    public void invalidateReadiness() { ready = false; }
     public Long getClientId() { return clientId; }
     public String getName() { return name; }
     public State getState() { return state; }

@@ -81,6 +81,9 @@ public final class DocumentsApiClient {
     public CompletableFuture<Version> renameVersion(long id, int number, String name) {
         return request("PUT", "/document-templates/" + id + "/versions/" + number + "/name", Map.of("name", name), null, new TypeReference<>() { });
     }
+    public CompletableFuture<Version> setVersionCurrent(long id, int number, boolean current) {
+        return request("PUT", "/document-templates/" + id + "/versions/" + number + "/availability", Map.of("current", current), null, new TypeReference<>() { });
+    }
     public CompletableFuture<Void> deleteVersion(long id, int number) {
         return request("DELETE", "/document-templates/" + id + "/versions/" + number, null, null, new TypeReference<>() { });
     }
@@ -90,6 +93,9 @@ public final class DocumentsApiClient {
     }
     public CompletableFuture<List<Package>> packages(int page) { return request("GET", "/document-packages?page=" + page + "&size=50", null, null, new TypeReference<>() { }); }
     public CompletableFuture<Package> documentPackage(long id) { return request("GET", "/document-packages/" + id, null, null, new TypeReference<>() { }); }
+    public CompletableFuture<Package> confirmPackage(Package value) {
+        return request("POST", "/document-packages/" + value.id() + "/confirmation", null, "\"" + value.revision() + "\"", new TypeReference<>() { });
+    }
     public CompletableFuture<Package> savePackage(Package previous, Long client, String name, List<Long> ids, boolean confirm) {
         return savePackage(previous, client, null, name, ids, confirm);
     }
@@ -101,7 +107,7 @@ public final class DocumentsApiClient {
                 body, previous == null ? null : "\"" + previous.revision() + "\"", new TypeReference<>() { });
     }
     public CompletableFuture<Void> discard(Package previous) {
-        return request("DELETE", "/document-packages/" + previous.id() + "/draft", null, "\"" + previous.revision() + "\"", new TypeReference<>() { });
+        return request("DELETE", "/document-packages/" + previous.id(), null, "\"" + previous.revision() + "\"", new TypeReference<>() { });
     }
     public CompletableFuture<List<PackageOption>> options(long workId) {
         return request("GET", "/works/" + workId + "/document-options?size=100", null, null, new TypeReference<>() { });

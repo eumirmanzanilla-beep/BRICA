@@ -178,7 +178,7 @@ public class Work {
 
         var errors = new LinkedHashMap<String, String>();
 
-        InputRules.requiredText(errors, "name", name, 255);
+        InputRules.validWorkName(errors, "name", name, 255);
         if (location != null && location.length() > 255) {
             errors.put("location", "Máximo 255 caracteres.");
         }

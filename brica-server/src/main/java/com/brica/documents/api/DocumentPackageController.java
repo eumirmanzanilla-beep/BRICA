@@ -41,6 +41,15 @@ public class DocumentPackageController {
     public void discard(@PathVariable("id") Long id, @RequestHeader(value = "If-Match", required = false) String expected) {
         service.discard(id, expected);
     }
+    @DeleteMapping("/{id}") @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable("id") Long id, @RequestHeader(value = "If-Match", required = false) String expected) {
+        service.discard(id, expected);
+    }
+    @PostMapping("/{id}/confirmation")
+    public ResponseEntity<DocumentPackageService.PackageView> confirm(@PathVariable("id") Long id,
+            @RequestHeader(value = "If-Match", required = false) String expected) {
+        return response(service.confirmReady(id, expected));
+    }
     @PostMapping("/{id}/templates")
     public ResponseEntity<DocumentPackageService.CreatedTemplate> createTemplate(@PathVariable("id") Long id,
             @RequestHeader(value = "If-Match", required = false) String expected,

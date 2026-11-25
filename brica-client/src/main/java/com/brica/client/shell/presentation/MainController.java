@@ -32,8 +32,8 @@ public class MainController {
         var user = session.user();
         clientsNavButton.setDisable(!user.can("CLIENTS_READ"));
         worksNavButton.setDisable(!user.can("WORKS_READ"));
-        contractsNavButton.setDisable(!user.can("CONTRACTS_READ") && !user.can("CONTRACTS_WRITE"));
         documentsNavButton.setDisable(!DocumentContextAccess.canConfigureForWork(user));
+        navigateTo(Section.HOME);
     }
 
     @FXML
@@ -64,8 +64,6 @@ public class MainController {
     @FXML
     private Button worksNavButton;
 
-    @FXML
-    private Button contractsNavButton;
     @FXML private Button documentsNavButton;
 
     // Encabezado y contenido principal
@@ -101,14 +99,7 @@ public class MainController {
                 "Aquí aparecerá el módulo de obras."
         ),
 
-        DOCUMENTS("Catálogo de campos", "Definición de campos reutilizables", "reference-fields-view.fxml", "Catálogo de campos"),
-
-        CONTRACTS(
-                "Contratos",
-                "Registro de contratos",
-                "contracts-view.fxml",
-                "Aquí aparecerá el registro de contratos."
-        );
+        DOCUMENTS("Catálogo de campos", "Definición de campos reutilizables", "reference-fields-view.fxml", "Catálogo de campos");
 
         private final String title;
         private final String subtitle;
@@ -150,10 +141,6 @@ public class MainController {
         navigateTo(Section.WORKS);
     }
 
-    @FXML
-    private void onNavigateContracts() {
-        navigateTo(Section.CONTRACTS);
-    }
     @FXML private void onNavigateDocuments() {
         if (DocumentContextAccess.canConfigureForWork(session == null ? null : session.user())) {
             navigateTo(Section.DOCUMENTS);
@@ -229,9 +216,9 @@ public class MainController {
             dashboardController.configure(
                     () -> navigateTo(Section.CLIENTS),
                     () -> navigateTo(Section.WORKS),
-                    () -> navigateTo(Section.CONTRACTS),
                     this::onCheckServer,
-                    serverStatusLabel.textProperty()
+                    serverStatusLabel.textProperty(),
+                    session != null && session.user().can("WORKS_READ")
             );
         }
 
@@ -244,7 +231,6 @@ public class MainController {
             case CLIENTS -> "/com/brica/client/clients/clients-view.fxml";
             case WORKS -> "/com/brica/client/works/works-view.fxml";
             case DOCUMENTS -> "/com/brica/client/documents/reference-fields-view.fxml";
-            case CONTRACTS -> "/com/brica/client/contracts/contracts-view.fxml";
         };
     }
 
@@ -281,7 +267,6 @@ public class MainController {
                 homeNavButton,
                 clientsNavButton,
                 worksNavButton,
-                contractsNavButton,
                 documentsNavButton
         );
 
@@ -293,7 +278,6 @@ public class MainController {
             case HOME -> homeNavButton;
             case CLIENTS -> clientsNavButton;
             case WORKS -> worksNavButton;
-            case CONTRACTS -> contractsNavButton;
             case DOCUMENTS -> documentsNavButton;
         };
 

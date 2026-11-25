@@ -64,6 +64,26 @@ class DocxTests(unittest.TestCase):
                 _, _, report = prepare(content)
                 self.assertTrue(report["diagnostics"])
                 self.assertFalse(report["staticDocument"])
+                self.assertEqual(marker.decode(), report["diagnostics"][0]["marker"])
+
+    def test_invalid_marker_reports_the_specific_key_character(self):
+        content = modify(self.content, "word/header1.xml",
+                         lambda b: b.replace(b"{{NOMBRE_CLIENTE}}", b"{{NOMBRE,CLIENTE}}"))
+
+        _, _, report = prepare(content)
+
+        self.assertEqual("{{NOMBRE,CLIENTE}}", report["diagnostics"][0]["marker"])
+        self.assertEqual("El carácter ',' no se reconoce en la clave.", report["diagnostics"][0]["message"])
+
+    def test_standalone_closing_brace_identifies_the_specific_problem(self):
+        content = modify(self.content, "word/header1.xml",
+                         lambda b: b.replace(b"{{NOMBRE_CLIENTE}}", b"{{NOMBRE_CLIENTE}}}"))
+
+        _, _, report = prepare(content)
+
+        self.assertEqual("}", report["diagnostics"][0]["marker"])
+        self.assertEqual("El carácter '}' no tiene una llave de apertura '{' correspondiente.",
+                         report["diagnostics"][0]["message"])
 
     def test_text_box_and_field_instructions_are_not_silently_ignored(self):
         for fragment in [b"<w:r><w:instrText>{{HIDDEN}}</w:instrText></w:r>",

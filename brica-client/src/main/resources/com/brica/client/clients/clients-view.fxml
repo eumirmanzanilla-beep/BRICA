@@ -21,11 +21,11 @@
     <VBox spacing="5.0">
 
         <Label
-            text="Directorio de clientes"
+            text="Clientes"
             styleClass="content-title"/>
 
         <Label
-            text="Consulta y administra los clientes registrados en BRICA."
+            text="Mantén el directorio de clientes y su representación legal."
             wrapText="true"
             styleClass="content-description"/>
 
@@ -35,11 +35,11 @@
     <FlowPane
         hgap="8.0"
         vgap="8.0"
-        alignment="CENTER_LEFT">
+        alignment="CENTER_LEFT" styleClass="section-actions">
 
         <Button
             fx:id="newClientButton"
-            text="+ Nuevo cliente"
+            text="Registrar cliente"
             onAction="#onNewClient"
             styleClass="primary-button"/>
 

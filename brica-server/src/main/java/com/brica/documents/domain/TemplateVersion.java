@@ -19,6 +19,8 @@ public class TemplateVersion {
     private String name;
     @Column(name = "deleted_at")
     private java.time.OffsetDateTime deletedAt;
+    @Column(name = "current_version", nullable = false)
+    private boolean current = true;
 
     protected TemplateVersion() { }
     public TemplateVersion(Long templateId, int number, Long fileId, boolean staticDocument, String analysisJson) {
@@ -36,6 +38,11 @@ public class TemplateVersion {
         this.name = name;
     }
     public void delete() { if (deletedAt == null) { deletedAt = java.time.OffsetDateTime.now(); } }
+    public void setCurrent(boolean current) {
+        if (deletedAt != null) { throw new DocumentRuleException("VERSION_DELETED", "La versión eliminada es de solo lectura."); }
+        this.current = current;
+    }
+    public boolean isCurrent() { return current; }
     public String getName() { return name; }
     public java.time.OffsetDateTime getDeletedAt() { return deletedAt; }
     public TemplateVersionId getId() { return id; }

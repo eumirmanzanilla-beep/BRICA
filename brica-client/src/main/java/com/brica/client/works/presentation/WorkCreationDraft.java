@@ -39,6 +39,16 @@ public final class WorkCreationDraft {
     public void uploadedContract(Attachment value) { uploadedContract = value; }
     public Attachment uploadedBaseBudget() { return uploadedBaseBudget; }
     public void uploadedBaseBudget(Attachment value) { uploadedBaseBudget = value; }
+    public void clearAttachment(Attachment value) {
+        if (value != null && value.equals(uploadedContract)) {
+            contractAttachment = null;
+            uploadedContract = null;
+        }
+        if (value != null && value.equals(uploadedBaseBudget)) {
+            baseBudgetAttachment = null;
+            uploadedBaseBudget = null;
+        }
+    }
     public WorkDto work() { return work; }
     public void work(WorkDto value) { work = value; }
     public VersionedInformation information() { return information; }

@@ -103,8 +103,8 @@ class SecurityHttpIntegrationTest {
         var created = admin.json("POST", "/reference-fields", fieldBody(), true);
         assertEquals(201, created.statusCode(), created.body());
         long fieldId = JSON.readTree(created.body()).path("id").asLong();
-        long first = work("Obra A", "Cliente A");
-        long second = work("Obra B", "Cliente B");
+        long first = work("Obra_A", "Cliente A");
+        long second = work("Obra_B", "Cliente B");
         String body = "{\"workId\":" + first + ",\"fieldIds\":[" + fieldId + "]}";
         assertEquals(403, admin.json("POST", "/reference-values/resolve", body, true).statusCode());
         var reader = login(account("Reader", "DOCUMENT_VALUES_READ"));
@@ -113,8 +113,8 @@ class SecurityHttpIntegrationTest {
                 "{\"workId\":" + second + ",\"fieldIds\":[" + fieldId + "]}", true);
         assertEquals(200, a.statusCode(), a.body());
         assertEquals(200, b.statusCode(), b.body());
-        assertEquals("Obra A", JSON.readTree(a.body()).path(0).path("textValue").asText());
-        assertEquals("Obra B", JSON.readTree(b.body()).path(0).path("textValue").asText());
+        assertEquals("Obra_A", JSON.readTree(a.body()).path(0).path("textValue").asText());
+        assertEquals("Obra_B", JSON.readTree(b.body()).path(0).path("textValue").asText());
         long before = jdbc.queryForObject("SELECT count(*) FROM reference_fields", Long.class);
         assertEquals(403, reader.json("POST", "/reference-fields", fieldBody(), true).statusCode());
         assertEquals(403, reader.json("PUT", "/reference-fields/" + fieldId,
