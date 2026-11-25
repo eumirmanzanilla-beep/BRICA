@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-25T12:51:00-06:00",
+  "title": "Design System: BRICA",
+  "extensions": {
+    "colorMeta": {
+      "shell-ink": {"role": "neutral", "displayName": "Structural Ink", "canonical": "#17313D", "tonalRamp": ["#132A34", "#17313D", "#264652", "#5D727B", "#B7CAD0", "#E8EFF1", "#F9FBFB", "#FFFFFF"]},
+      "document-teal": {"role": "primary", "displayName": "Document Teal", "canonical": "#1B7F7A", "tonalRamp": ["#0E5551", "#126762", "#1B7F7A", "#3F9F99", "#88C5C0", "#CFE6E2", "#EAF4F2", "#F4FAF9"]},
+      "attention-amber": {"role": "tertiary", "displayName": "Attention Amber", "canonical": "#E2B44B", "tonalRamp": ["#62450D", "#8D6515", "#B98523", "#E2B44B", "#EDCC78", "#F6E6B8", "#FCF5E3", "#FFFDF7"]},
+      "workspace-mist": {"role": "neutral", "displayName": "Workspace Mist", "canonical": "#E8EFF1", "tonalRamp": ["#25424D", "#5D727B", "#8FA5AB", "#B9C9CD", "#C8D5D8", "#E0E8EA", "#E8EFF1", "#F9FBFB"]}
+    },
+    "typographyMeta": {
+      "display": {"displayName": "Operational Display", "purpose": "Page and focused-dialog titles."},
+      "body": {"displayName": "Working Copy", "purpose": "Data, forms and contextual instructions."},
+      "label": {"displayName": "Technical Label", "purpose": "Table headers and compact metadata."}
+    },
+    "shadows": [],
+    "motion": [],
+    "breakpoints": []
+  },
+  "components": [],
+  "narrative": {
+    "northStar": "Dossier de obra",
+    "overview": "A calm, technical operating system for construction records. A dark rail establishes orientation, paper surfaces carry work, and teal makes available document actions explicit.",
+    "keyCharacteristics": ["Persistent structural rail", "Paper-like working surfaces", "Semantic action and attention colors", "Dense but legible data presentation"],
+    "rules": [
+      {"name": "Action Color Rule", "body": "Teal means an available primary action, an active route or a confirmed work state.", "section": "colors"},
+      {"name": "Plain Language Rule", "body": "Actions name the job being done rather than using generic verbs without context.", "section": "typography"}
+    ],
+    "dos": ["Do preserve the rail, contextual header and working canvas as separate orientation layers.", "Do keep data tables legible and comparison-friendly."],
+    "donts": ["Don't use a primary action color as a generic decorative accent.", "Don't turn every group of information into a card."]
+  }
+}
